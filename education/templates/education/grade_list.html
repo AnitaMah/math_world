@@ -1,0 +1,7 @@
+<h1>Класи</h1>
+
+<ul>
+  {% for g in grades %}
+    <li><a href="{% url 'section_list' g.id %}">{{ g.number }} клас</a></li>
+  {% endfor %}
+</ul>

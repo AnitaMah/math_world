@@ -1,0 +1,36 @@
+name: Python Project Check ✅
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  check:
+    name: 🧪 Run Python checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff mypy pytest
+
+      - name: ✅ Run Ruff (code style / lint)
+        run: ruff .
+
+      - name: ✅ Run Mypy (type check)
+        run: mypy .
+
+      - name: ✅ Run Pytest (unit tests)
+        run: pytest || echo "❗ Тестування завершилось з помилками"

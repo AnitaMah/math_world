@@ -1,0 +1,11 @@
+<h1>{{ section.name_uk }}</h1>
+
+<h2>Параграфи</h2>
+
+<ul>
+  {% for p in paragraphs %}
+    <li><a href="{% url 'item_list' p.id %}">§ {{ p.number }}. {{ p.name_uk }}</a></li>
+  {% endfor %}
+</ul>
+
+<a href="{% url 'section_list' section.grade.id %}">Назад</a>

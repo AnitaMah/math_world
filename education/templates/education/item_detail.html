@@ -1,0 +1,9 @@
+<h1>{{ item.number }}. {{ item.content }}</h1>
+
+<h2>Теорія</h2>
+<p>{{ tp.theory }}</p>
+
+<h2>Задача</h2>
+<p>{{ tp.practice }}</p>
+
+<a href="{% url 'item_list' item.paragraph.id %}">Назад</a>
