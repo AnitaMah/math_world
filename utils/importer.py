@@ -1,37 +1,27 @@
 from education.models import Grade, Section, Paragraph, Item
-from archive.task_queue import add_all_items_to_queue, create_task_table
 from utils.curriculum_loader import read_curriculum
 from utils.helpers import roman_to_int
 
-def import_curriculum_to_db(filepath="data/5_class_ukr.txt", grade_number=5, grade_name="Математика 5 клас"):
-    create_task_table()
-    text = read_curriculum(filepath)
-    lines = text.strip().split('\n')
+def import_curriculum_to_db(file_path: str, grade_number: int):
+    data = read_curriculum(file_path)
 
-    current_grade = Grade.objects.create(number=grade_number, name_uk=grade_name)
-    current_section = current_paragraph = None
+    grade, _ = Grade.objects.get_or_create(number=grade_number)
 
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
+    for section_title, paragraphs in data.items():
+        section = Section.objects.create(title=section_title, grade=grade)
 
-        if line.startswith("Розділ"):
-            roman, name = line.split(". ", 1)
-            num = roman_to_int(roman.replace("Розділ ", ""))
-            current_section = Section.objects.create(grade=current_grade, number=num, name_uk=name)
-            continue
+        for paragraph_num, (paragraph_title, items) in enumerate(paragraphs.items(), start=1):
+            paragraph = Paragraph.objects.create(
+                title=paragraph_title,
+                number=paragraph_num,
+                section=section
+            )
 
-        if line.startswith("§"):
-            _, rest = line.split("§", 1)
-            num, name = rest.strip().split(". ", 1)
-            current_paragraph = Paragraph.objects.create(section=current_section, number=int(num), name_uk=name)
-            continue
+            for item_number, item_text in enumerate(items, start=1):
+                Item.objects.create(
+                    paragraph=paragraph,
+                    number=item_number,
+                    content=item_text.strip()
+                )
 
-        if line[0].isdigit() and ". " in line:
-            num, content = line.split(". ", 1)
-            Item.objects.create(paragraph=current_paragraph, number=int(num), content=content)
-    print("📘 Навчальна програма імпортована до бази даних.")
-
-    # ✅ Ось цей виклик:
-    add_all_items_to_queue()
+    print("✅ Успішно імпортовано навчальну програму до бази даних")
