@@ -6,7 +6,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "math_world.settings")
 django.setup()
 
 from education.models import Item
-from llm_worker import generate_theory_practice_task
+from archive.llm_worker import generate_theory_practice_task
 
 
 def add_all_items_to_queue():

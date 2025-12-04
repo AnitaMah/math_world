@@ -1,5 +1,5 @@
 from education.models import Grade, Section, Paragraph, Item
-from utils.task_queue import add_all_items_to_queue, create_task_table
+from archive.task_queue import add_all_items_to_queue, create_task_table
 from utils.curriculum_loader import read_curriculum
 from utils.helpers import roman_to_int
 
