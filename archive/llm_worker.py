@@ -31,12 +31,12 @@ def generate_theory_practice_task(item_id, item_name):
         tp.practice = practice
         tp.save()
 
-        with sqlite3.connect("tasks.db") as conn:
+        with sqlite3.connect("../tasks.db") as conn:
             conn.execute("UPDATE task_queue SET status='done' WHERE item_id=?", (item_id,))
 
         print("✅ Успішно!")
 
     except Exception as e:
         print("❌ Помилка:", e)
-        with sqlite3.connect("tasks.db") as conn:
+        with sqlite3.connect("../tasks.db") as conn:
             conn.execute("UPDATE task_queue SET status='error' WHERE item_id=?", (item_id,))
