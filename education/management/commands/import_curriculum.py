@@ -51,6 +51,14 @@ class Command(BaseCommand):
             default="uk",
             help="Language code (stored on the grade name for now)",
         )
+        parser.add_argument(
+            "--reset",
+            action="store_true",
+            help=(
+                "Скинути існуючі дані цього класу перед імпортом: видаляє клас та"
+                " всі його розділи/параграфи/пункти, після чого завантажує файл"
+            ),
+        )
 
     def handle(self, *args, **options):
         file_path = options.get("file")
@@ -69,7 +77,7 @@ class Command(BaseCommand):
                     f"Не вдалось визначити клас з назви файлу '{path.name}'. Додайте --grade."
                 )
             self.stdout.write(f"➡️  Імпорт класу {grade_number} з файлу {path}")
-            self._import_file(path, grade_number, language)
+            self._import_file(path, grade_number, language, reset=options.get("reset"))
 
     def _discover_files(self, file_path: str | None, directory: str) -> list[Path]:
         if file_path:
@@ -83,7 +91,7 @@ class Command(BaseCommand):
         match = re.search(r"(\d+)_class", path.name)
         return int(match.group(1)) if match else None
 
-    def _import_file(self, path: Path, grade_number: int, language: str) -> None:
+    def _import_file(self, path: Path, grade_number: int, language: str, reset: bool) -> None:
         lines = path.read_text(encoding="utf-8").splitlines()
 
         # Імпорт може починатися з будь-якої мови, тому задаємо обидва поля,
@@ -92,11 +100,17 @@ class Command(BaseCommand):
             "name_uk": f"{grade_number} клас",
             "name_de": f"Klasse {grade_number}",
         }
-        
-        grade, _ = Grade.objects.get_or_create(
-            number=grade_number,
-            defaults=grade_defaults,
-        )
+
+        if reset:
+            deleted, _ = Grade.objects.filter(number=grade_number).delete()
+            if deleted:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"  ⚠️  Видалено існуючі записи класу {grade_number} перед повторним імпортом"
+                    )
+                )
+
+        grade, _ = Grade.objects.get_or_create(number=grade_number, defaults=grade_defaults)
 
         if language == "uk" and not grade.name_uk:
             grade.name_uk = f"{grade_number} клас"
