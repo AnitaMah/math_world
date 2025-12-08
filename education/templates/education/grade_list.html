@@ -4,35 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ content.grade_title }}</title>
-    <style>
-        :root {
-            --bg: #f6f8fb;
-            --card: #ffffff;
-            --primary: #2563eb;
-            --text: #0f172a;
-            --muted: #475569;
-            --border: #e2e8f0;
-        }
-        body {
-            margin: 0;
-            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            background: var(--bg);
-            color: var(--text);
-        }
-        .page { max-width: 1100px; margin: 0 auto; padding: 32px 20px 60px; }
-        .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-        .title { margin: 0; font-size: clamp(26px, 4vw, 34px); }
-        .lead { margin: 4px 0 0; color: var(--muted); max-width: 720px; }
-        .lang { padding: 8px 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
-        .lang a { color: var(--primary); text-decoration: none; font-weight: 600; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 22px; }
-        .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; box-shadow: 0 12px 28px rgba(15,23,42,0.05); }
-        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 999px; background: rgba(37,99,235,0.1); color: var(--primary); font-weight: 700; font-size: 12px; letter-spacing: 0.02em; }
-        .card h3 { margin: 10px 0 6px; font-size: 20px; }
-        .card p { margin: 0 0 12px; color: var(--muted); }
-        .meta { display: flex; gap: 12px; color: var(--muted); font-size: 14px; }
-        .button { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 12px; background: linear-gradient(135deg, var(--primary), #1d4ed8); color: #fff; text-decoration: none; font-weight: 700; box-shadow: 0 10px 20px rgba(37,99,235,0.2); }
-    </style>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'education/grade_list.css' %}">
 </head>
 <body>
     <div class="page">
