@@ -264,7 +264,7 @@
                 <p>{{ content.cta.body }}</p>
                 <div class="note">{{ content.cta_note }}</div>
             </div>
-            <a href="{% url 'grade_list' %}">
+            <a href="{% url 'grade_list' %}?lang={{ lang }}">
                 {{ content.cta.button }} →
             </a>
         </div>
