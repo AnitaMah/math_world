@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ section }} · {{ content.paragraphs }}</title>
+    <style>
+        :root { --bg: #f8fafc; --card: #fff; --primary: #2563eb; --muted: #475569; --border: #e2e8f0; }
+        body { margin: 0; font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: var(--bg); color: #0f172a; }
+        .page { max-width: 920px; margin: 0 auto; padding: 28px 18px 60px; }
+        .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .title { margin: 0; font-size: 24px; }
+        .lang { padding: 8px 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+        .lang a { color: var(--primary); text-decoration: none; font-weight: 600; }
+        .list { display: grid; gap: 12px; margin-top: 18px; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; box-shadow: 0 10px 26px rgba(15,23,42,0.05); }
+        .card h3 { margin: 0 0 6px; font-size: 18px; }
+        .meta { color: var(--muted); font-size: 14px; }
+        .button { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 10px 12px; background: linear-gradient(135deg, var(--primary), #1d4ed8); color: #fff; text-decoration: none; border-radius: 12px; font-weight: 700; }
+        .back { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; text-decoration: none; color: var(--primary); font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="top">
+            <div>
+                <p class="meta">{{ content.paragraphs }}</p>
+                <h1 class="title">{{ section }}</h1>
+            </div>
+            <div class="lang">
+                <strong>{{ current_lang_label }}</strong>
+                <span>·</span>
+                <a href="?{{ toggle_query }}">{{ other_lang_label }}</a>
+            </div>
+        </div>
+
+        <div class="list">
+            {% for paragraph in paragraphs %}
+                <div class="card">
+                    <h3>§ {{ paragraph.number }}. {{ paragraph.title }}</h3>
+                    <div class="meta">{{ paragraph.items_count }} · {{ content.items }}</div>
+                    <a class="button" href="{% url 'item_list' paragraph.id %}?lang={{ lang }}">{{ content.open }} →</a>
+                </div>
+            {% endfor %}
+        </div>
+
+        <a class="back" href="{% url 'section_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>
+    </div>
+</body>
+</html>

@@ -1,12 +1,12 @@
-# education/views.py
-
 from django.conf import settings
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import get_object_or_404, render
 from django.utils.http import urlencode
 
-from education.models import Grade, Section, Paragraph, Item, TheoryPractice
+from education.models import Grade, Item, Paragraph, Section, TheoryPractice
 from utils.geometry import is_geometry_topic
 
+
+LANG_LABELS = {"uk": "Українська", "de": "Deutsch"}
 
 UI_COPY = {
     "uk": {
@@ -46,13 +46,48 @@ UI_COPY = {
 }
 
 
+LIST_COPY = {
+    "uk": {
+        "grade_title": "Список класів",
+        "grade_lead": "Оберіть клас, щоб перейти до змісту тем і параграфів.",
+        "sections": "Розділи",
+        "paragraphs": "Параграфи",
+        "items": "Пункти",
+        "open": "Відкрити",
+        "back": "Назад",
+    },
+    "de": {
+        "grade_title": "Klassenübersicht",
+        "grade_lead": "Wähle eine Klasse, um Themen und Paragraphen zu öffnen.",
+        "sections": "Abschnitte",
+        "paragraphs": "Paragraphen",
+        "items": "Punkte",
+        "open": "Öffnen",
+        "back": "Zurück",
+    },
+}
+
+
+def _get_lang(request):
+    lang = request.GET.get("lang", "uk")
+    return "de" if lang == "de" else "uk"
+
+
+def _localized_value(value_uk, value_de, lang, fallback=None):
+    if lang == "de" and value_de:
+        return value_de
+    if value_uk:
+        return value_uk
+    return fallback
+
+
 # -------------------------------------------------------
 # 1. Список класів
 # -------------------------------------------------------
 
+
 def mint_overview(request):
-    lang = request.GET.get("lang", "uk")
-    lang = "de" if lang == "de" else "uk"
+    lang = _get_lang(request)
 
     content = UI_COPY[lang]
     grades = (
@@ -64,28 +99,15 @@ def mint_overview(request):
 
     grade_cards = []
     for grade in grades:
-        grade_name = grade.name_de if lang == "de" and grade.name_de else grade.name_uk
-        grade_name = grade_name or f"{grade.number}"
-        theme = (
-            grade.theme_de
-            if lang == "de" and grade.theme_de
-            else grade.theme_uk
-        ) or grade_name
+        grade_name = _localized_value(grade.name_uk, grade.name_de, lang, fallback=f"{grade.number}")
+        theme = _localized_value(grade.theme_uk, grade.theme_de, lang, fallback=grade_name)
 
         sections = []
         for section in grade.section_set.all().order_by("number"):
-            section_title = (
-                section.name_de
-                if lang == "de" and section.name_de
-                else section.name_uk
-            )
+            section_title = _localized_value(section.name_uk, section.name_de, lang, fallback=f"{section.number}")
             paragraphs = []
             for paragraph in section.paragraph_set.all().order_by("number"):
-                paragraph_title = (
-                    paragraph.name_de
-                    if lang == "de" and paragraph.name_de
-                    else paragraph.name_uk
-                )
+                paragraph_title = _localized_value(paragraph.name_uk, paragraph.name_de, lang, fallback=f"{paragraph.number}")
 
                 paragraph_items = []
                 for item in paragraph.item_set.all().order_by("number"):
@@ -119,15 +141,16 @@ def mint_overview(request):
 
             sections.append({"title": section_title, "paragraphs": paragraphs})
 
-        grade_cards.append({
-            "grade": grade_name,
-            "theme": theme,
-            "sections": sections,
-        })
+        grade_cards.append(
+            {
+                "grade": grade_name,
+                "theme": theme,
+                "sections": sections,
+            }
+        )
 
     other_lang = "uk" if lang == "de" else "de"
     toggle_query = urlencode({"lang": other_lang})
-    lang_labels = {"uk": "Українська", "de": "Deutsch"}
 
     return render(
         request,
@@ -138,58 +161,202 @@ def mint_overview(request):
             "grades": grade_cards,
             "toggle_query": toggle_query,
             "other_lang": other_lang,
-            "current_lang_label": lang_labels[lang],
-            "other_lang_label": lang_labels[other_lang],
+            "current_lang_label": LANG_LABELS[lang],
+            "other_lang_label": LANG_LABELS[other_lang],
         },
     )
 
 
 def grade_list(request):
-    grades = Grade.objects.all().order_by("number")
-    return render(request, "education/grade_list.html", {"grades": grades})
+    lang = _get_lang(request)
+    content = LIST_COPY[lang]
+    grades = (
+        Grade.objects.all()
+        .order_by("number")
+        .prefetch_related("section_set__paragraph_set__item_set")
+    )
+
+    grade_cards = []
+    for grade in grades:
+        grade_name = _localized_value(grade.name_uk, grade.name_de, lang, fallback=f"{grade.number}")
+        theme = _localized_value(grade.theme_uk, grade.theme_de, lang, fallback=grade_name)
+        sections = grade.section_set.all()
+        grade_cards.append(
+            {
+                "id": grade.id,
+                "grade": grade_name,
+                "theme": theme or grade_name,
+                "sections_count": sections.count(),
+            }
+        )
+
+    other_lang = "uk" if lang == "de" else "de"
+    toggle_query = urlencode({"lang": other_lang})
+
+    return render(
+        request,
+        "education/grade_list.html",
+        {
+            "lang": lang,
+            "grades": grade_cards,
+            "content": content,
+            "toggle_query": toggle_query,
+            "current_lang_label": LANG_LABELS[lang],
+            "other_lang_label": LANG_LABELS[other_lang],
+        },
+    )
 
 
 # -------------------------------------------------------
 # 2. Список розділів конкретного класу
 # -------------------------------------------------------
 
+
 def section_list(request, grade_id):
+    lang = _get_lang(request)
     grade = get_object_or_404(Grade, id=grade_id)
-    sections = Section.objects.filter(grade=grade).order_by("number")
-    return render(request, "education/section_list.html", {
-        "grade": grade,
-        "sections": sections
-    })
+    sections = (
+        Section.objects.filter(grade=grade)
+        .order_by("number")
+        .prefetch_related("paragraph_set__item_set")
+    )
+
+    grade_name = _localized_value(grade.name_uk, grade.name_de, lang, fallback=f"{grade.number}")
+    content = LIST_COPY[lang]
+
+    section_cards = []
+    for section in sections:
+        title = _localized_value(section.name_uk, section.name_de, lang, fallback=f"{section.number}")
+        section_cards.append(
+            {
+                "id": section.id,
+                "title": title,
+                "paragraphs_count": section.paragraph_set.count(),
+            }
+        )
+
+    other_lang = "uk" if lang == "de" else "de"
+    toggle_query = urlencode({"lang": other_lang})
+
+    return render(
+        request,
+        "education/section_list.html",
+        {
+            "lang": lang,
+            "grade": grade_name,
+            "content": content,
+            "sections": section_cards,
+            "toggle_query": toggle_query,
+            "current_lang_label": LANG_LABELS[lang],
+            "other_lang_label": LANG_LABELS[other_lang],
+            "grade_id": grade.id,
+        },
+    )
 
 
 # -------------------------------------------------------
 # 3. Список параграфів конкретного розділу
 # -------------------------------------------------------
 
+
 def paragraph_list(request, section_id):
+    lang = _get_lang(request)
     section = get_object_or_404(Section, id=section_id)
-    paragraphs = Paragraph.objects.filter(section=section).order_by("number")
-@@ -38,29 +174,33 @@ def paragraph_list(request, section_id):
-        "paragraphs": paragraphs
-    })
+    paragraphs = (
+        Paragraph.objects.filter(section=section)
+        .order_by("number")
+        .prefetch_related("item_set")
+    )
+
+    section_title = _localized_value(section.name_uk, section.name_de, lang, fallback=f"{section.number}")
+    content = LIST_COPY[lang]
+
+    paragraph_cards = []
+    for paragraph in paragraphs:
+        title = _localized_value(paragraph.name_uk, paragraph.name_de, lang, fallback=f"{paragraph.number}")
+        paragraph_cards.append(
+            {
+                "id": paragraph.id,
+                "title": title,
+                "items_count": paragraph.item_set.count(),
+                "number": paragraph.number,
+            }
+        )
+
+    other_lang = "uk" if lang == "de" else "de"
+    toggle_query = urlencode({"lang": other_lang})
+
+    return render(
+        request,
+        "education/paragraph_list.html",
+        {
+            "lang": lang,
+            "section": section_title,
+            "content": content,
+            "paragraphs": paragraph_cards,
+            "toggle_query": toggle_query,
+            "current_lang_label": LANG_LABELS[lang],
+            "other_lang_label": LANG_LABELS[other_lang],
+            "section_id": section.id,
+            "grade_id": section.grade.id,
+        },
+    )
 
 
 # -------------------------------------------------------
 # 4. Список пунктів конкретного параграфу
 # -------------------------------------------------------
 
+
 def item_list(request, paragraph_id):
+    lang = _get_lang(request)
     paragraph = get_object_or_404(Paragraph, id=paragraph_id)
     items = Item.objects.filter(paragraph=paragraph).order_by("number")
-    return render(request, "education/item_list.html", {
-        "paragraph": paragraph,
-        "items": items
-    })
+
+    paragraph_title = _localized_value(paragraph.name_uk, paragraph.name_de, lang, fallback=f"{paragraph.number}")
+    content = LIST_COPY[lang]
+
+    item_cards = []
+    for item in items:
+        text = item.content_de if lang == "de" and item.content_de else item.content
+        if not text:
+            continue
+        lines = [line.strip().lstrip("• ") for line in text.splitlines() if line.strip()]
+        if not lines:
+            continue
+        item_cards.append(
+            {
+                "id": item.id,
+                "title": lines[0],
+                "details": lines[1:],
+                "number": item.number,
+            }
+        )
+
+    other_lang = "uk" if lang == "de" else "de"
+    toggle_query = urlencode({"lang": other_lang})
+
+    return render(
+        request,
+        "education/item_list.html",
+        {
+            "lang": lang,
+            "paragraph": paragraph_title,
+            "content": content,
+            "items": item_cards,
+            "toggle_query": toggle_query,
+            "current_lang_label": LANG_LABELS[lang],
+            "other_lang_label": LANG_LABELS[other_lang],
+            "section_id": paragraph.section.id,
+            "grade_id": paragraph.section.grade.id,
+        },
+    )
 
 
 # -------------------------------------------------------
 # 5. Перегляд конкретного пункту + теорія + практика
 # -------------------------------------------------------
+
 
 def item_detail(request, item_id):
     item = get_object_or_404(Item, id=item_id)
@@ -197,9 +364,13 @@ def item_detail(request, item_id):
 
     is_geometry = is_geometry_topic(item.content)
 
-    return render(request, "education/item_detail.html", {
-        "item": item,
-        "tp": tp,
-        "is_geometry": is_geometry,
-        "media_url": settings.MEDIA_URL,
-    })
+    return render(
+        request,
+        "education/item_detail.html",
+        {
+            "item": item,
+            "tp": tp,
+            "is_geometry": is_geometry,
+            "media_url": settings.MEDIA_URL,
+        },
+    )
