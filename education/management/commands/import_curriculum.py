@@ -1,209 +1,141 @@
-from __future__ import annotations
-
-import re
+import json
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
+from django.db import transaction
 
-from education.models import Grade, Section, Paragraph, Item
+from education.models import Grade, Item, Paragraph, Section, TheoryPractice
+from utils.llm_client import DEFAULT_MODEL, send_llm_prompt
 
 
-ROMAN_MAP = {
-    "I": 1,
-    "V": 5,
-    "X": 10,
-    "L": 50,
-    "C": 100,
-    "D": 500,
-    "M": 1000,
+CURRICULUM_PROMPT = """
+You are a curriculum architect. Convert the raw text below into JSON for a math program.
+Return ONLY valid JSON with this shape:
+{
+  "grades": [
+    {
+      "number": <int>,
+      "name_uk": <str>,
+      "name_de": <str or null>,
+      "theme_uk": <str>,
+      "theme_de": <str or null>,
+      "sections": [
+        {
+          "number": <int>,
+          "name_uk": <str>,
+          "name_de": <str or null>,
+          "paragraphs": [
+            {
+              "number": <int>,
+              "name_uk": <str>,
+              "name_de": <str or null>,
+              "items": [
+                {"number": <int>, "content": <str>, "content_de": <str or null>}
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
+Text to convert:
+"""
 
 
-def roman_to_int(value: str) -> int:
-    total = 0
-    previous = 0
-    for char in value.upper():
-        current = ROMAN_MAP.get(char, 0)
-        if current > previous:
-            total += current - 2 * previous
-        else:
-            total += current
-        previous = current
-    return total if total > 0 else 0
+def _generate_theory_practice(prompt_text: str, model: str) -> tuple[str, str]:
+    enrichment_prompt = (
+        "Згенеруй стислий блок 'Теорія' та блок 'Практика' у форматі JSON "
+        "{\"theory\": \"...\", \"practice\": \"...\"} для теми: "
+        f"{prompt_text}"
+    )
+    response = send_llm_prompt(enrichment_prompt, model=model)
+    try:
+        parsed = json.loads(response)
+        return parsed.get("theory", ""), parsed.get("practice", "")
+    except Exception:
+        return response, ""
 
 
 class Command(BaseCommand):
-    help = (
-        "Import curriculum text files into Grade/Section/Paragraph/Item models. "
-        "Accepts a single --file or scans a directory for '*_class_*.txt' files."
-    )
+    help = "Import a curriculum text file via local Ollama and fill the database (grades → sections → paragraphs → items)."
 
     def add_arguments(self, parser):
-        parser.add_argument("--file", help="Path to a single curriculum .txt file")
+        parser.add_argument("text_path", type=str, help="Path to a UTF-8 text document with the curriculum")
         parser.add_argument(
-            "--directory",
-            default="data",
-            help="Directory with one or more '*_class_*.txt' files",
-        )
-        parser.add_argument("--grade", type=int, help="Grade number for --file")
-        parser.add_argument(
-            "--language",
-            default="uk",
-            help="Language code (stored on the grade name for now)",
+            "--model",
+            default=DEFAULT_MODEL,
+            help="Ollama model name to use for parsing (default from utils.llm_client)",
         )
         parser.add_argument(
-            "--reset",
+            "--generate-details",
             action="store_true",
-            help=(
-                "Скинути існуючі дані цього класу перед імпортом: видаляє клас та"
-                " всі його розділи/параграфи/пункти, після чого завантажує файл"
-            ),
+            help="Also generate theory/practice blocks for each item using the LLM",
+        )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Parse with the LLM but do not write to the database",
         )
 
     def handle(self, *args, **options):
-        file_path = options.get("file")
-        directory = options.get("directory")
-        grade_override = options.get("grade")
-        language = options.get("language")
+        text_path = Path(options["text_path"])
+        if not text_path.exists():
+            raise CommandError(f"File not found: {text_path}")
 
-        files = self._discover_files(file_path, directory)
-        if not files:
-            raise CommandError("Не знайдено жодного файлу для імпорту.")
+        raw_text = text_path.read_text(encoding="utf-8")
+        prompt = CURRICULUM_PROMPT + raw_text
+        self.stdout.write(self.style.WARNING(f"Sending curriculum to Ollama model '{options['model']}'..."))
+        response = send_llm_prompt(prompt, model=options["model"])
 
-        for path in files:
-            grade_number = grade_override or self._infer_grade(path)
-            if not grade_number:
-                raise CommandError(
-                    f"Не вдалось визначити клас з назви файлу '{path.name}'. Додайте --grade."
+        try:
+            payload = json.loads(response)
+        except json.JSONDecodeError as exc:
+            raise CommandError(f"LLM did not return JSON: {exc}\nRaw response:\n{response}") from exc
+
+        grades_data = payload.get("grades", [])
+        if not grades_data:
+            raise CommandError("No grades found in parsed payload")
+
+        if options["dry_run"]:
+            self.stdout.write(self.style.SUCCESS(f"Parsed {len(grades_data)} grades (dry run, no writes)"))
+            return
+
+        with transaction.atomic():
+            for grade_data in grades_data:
+                grade = Grade.objects.create(
+                    number=grade_data.get("number") or 0,
+                    name_uk=grade_data.get("name_uk") or "",
+                    name_de=grade_data.get("name_de") or None,
+                    theme_uk=grade_data.get("theme_uk") or "",
+                    theme_de=grade_data.get("theme_de") or None,
                 )
-            self.stdout.write(f"➡️  Імпорт класу {grade_number} з файлу {path}")
-            self._import_file(path, grade_number, language, reset=options.get("reset"))
-
-    def _discover_files(self, file_path: str | None, directory: str) -> list[Path]:
-        if file_path:
-            return [Path(file_path)]
-        base = Path(directory)
-        if not base.exists():
-            return []
-        return sorted(base.glob("*_class_*.txt"))
-
-    def _infer_grade(self, path: Path) -> int | None:
-        match = re.search(r"(\d+)_class", path.name)
-        return int(match.group(1)) if match else None
-
-    def _import_file(self, path: Path, grade_number: int, language: str, reset: bool) -> None:
-        lines = path.read_text(encoding="utf-8").splitlines()
-
-        # Імпорт може починатися з будь-якої мови, тому задаємо обидва поля,
-        # щоб уникнути помилки через обов'язкове name_uk/content.
-        grade_defaults = {
-            "name_uk": f"{grade_number} клас",
-            "name_de": f"Klasse {grade_number}",
-        }
-
-        if reset:
-            deleted, _ = Grade.objects.filter(number=grade_number).delete()
-            if deleted:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"  ⚠️  Видалено існуючі записи класу {grade_number} перед повторним імпортом"
+                for section_data in grade_data.get("sections", []):
+                    section = Section.objects.create(
+                        grade=grade,
+                        number=section_data.get("number") or 0,
+                        name_uk=section_data.get("name_uk") or "",
+                        name_de=section_data.get("name_de") or None,
                     )
-                )
+                    for paragraph_data in section_data.get("paragraphs", []):
+                        paragraph = Paragraph.objects.create(
+                            section=section,
+                            number=paragraph_data.get("number") or 0,
+                            name_uk=paragraph_data.get("name_uk") or "",
+                            name_de=paragraph_data.get("name_de") or None,
+                        )
+                        for item_data in paragraph_data.get("items", []):
+                            item = Item.objects.create(
+                                paragraph=paragraph,
+                                number=item_data.get("number") or 0,
+                                content=item_data.get("content") or "",
+                                content_de=item_data.get("content_de") or None,
+                            )
+                            if options["generate_details"]:
+                                theory, practice = _generate_theory_practice(item.content, options["model"])
+                                TheoryPractice.objects.update_or_create(
+                                    item=item,
+                                    defaults={"theory": theory, "practice": practice},
+                                )
 
-        grade, _ = Grade.objects.get_or_create(number=grade_number, defaults=grade_defaults)
-
-        if language == "uk" and not grade.name_uk:
-            grade.name_uk = f"{grade_number} клас"
-        if language == "de" and not grade.name_de:
-            grade.name_de = f"Klasse {grade_number}"
-        grade.save()
-
-        current_section = None
-        current_paragraph = None
-        current_item = None
-        section_count = paragraph_count = item_count = 0
-
-        for raw_line in lines:
-            line = raw_line.strip()
-            if not line:
-                continue
-
-            section_match = re.match(r"^Розділ\s+([IVXLCDM]+)\.\s*(.*)$", line)
-            if section_match:
-                section_count += 1
-                section_title = section_match.group(2).strip() or line
-                section_number = roman_to_int(section_match.group(1)) or section_count
-                section_defaults = {"name_uk": section_title, "name_de": section_title}
-                current_section, _ = Section.objects.get_or_create(
-                    grade=grade,
-                    number=section_number,
-                    defaults=section_defaults,
-                )
-                if language == "uk":
-                    current_section.name_uk = section_title
-                else:
-                    current_section.name_de = section_title
-                current_section.save()
-                current_paragraph = None
-                current_item = None
-                self.stdout.write(f"  • Розділ {section_number}: {section_title}")
-                continue
-
-            paragraph_match = re.match(r"^§\s*(\d+)\.\s*(.*)$", line)
-            if paragraph_match and current_section:
-                paragraph_count += 1
-                paragraph_number = int(paragraph_match.group(1))
-                paragraph_title = paragraph_match.group(2).strip() or line
-                paragraph_defaults = {"name_uk": paragraph_title, "name_de": paragraph_title}
-                current_paragraph, _ = Paragraph.objects.get_or_create(
-                    section=current_section,
-                    number=paragraph_number,
-                    defaults=paragraph_defaults,
-                )
-                if language == "uk":
-                    current_paragraph.name_uk = paragraph_title
-                else:
-                    current_paragraph.name_de = paragraph_title
-                current_paragraph.save()
-                current_item = None
-                self.stdout.write(f"    ◦ Параграф {paragraph_number}: {paragraph_title}")
-                continue
-
-            item_match = re.match(r"^(\d+)\.\s*(.*)$", line)
-            if item_match and current_paragraph:
-                item_count += 1
-                item_number = int(item_match.group(1))
-                item_text = item_match.group(2).strip() or line
-                defaults = {"content": item_text, "content_de": item_text}
-                current_item, _ = Item.objects.get_or_create(
-                    paragraph=current_paragraph,
-                    number=item_number,
-                    defaults=defaults,
-                )
-                if language == "uk":
-                    current_item.content = item_text
-                else:
-                    current_item.content_de = item_text
-                current_item.save()
-                continue
-
-            bullet_match = re.match(r"^[•\-]\s*(.*)$", line)
-            if bullet_match and current_item:
-                extra = bullet_match.group(1).strip()
-                field = "content_de" if language == "de" else "content"
-                existing = getattr(current_item, field) or ""
-                setattr(current_item, field, f"{existing}\n• {extra}".strip())
-                current_item.save(update_fields=[field])
-                continue
-
-            if current_item:
-                field = "content_de" if language == "de" else "content"
-                existing = getattr(current_item, field) or ""
-                setattr(current_item, field, f"{existing}\n{line}".strip())
-                current_item.save(update_fields=[field])
-
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Готово: {section_count} розділів, {paragraph_count} параграфів, {item_count} пунктів."
-            )
-        )
+        self.stdout.write(self.style.SUCCESS(f"Imported {len(grades_data)} grades via Ollama"))
