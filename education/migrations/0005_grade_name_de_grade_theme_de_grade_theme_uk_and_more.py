@@ -4,40 +4,13 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
+    # Changed to depend on the initial migration and be a no-op because the
+    # repository currently contains the models with these fields already
+    # present. This avoids migration conflicts while preserving the file so
+    # history isn't lost. If you have the original migration operations,
+    # restore them here instead.
     dependencies = [
-        ("education", "0004_item_theory_theorypractice_image_path_and_more"),
+        ("education", "0001_initial"),
     ]
 
-    operations = [
-        migrations.AddField(
-            model_name="grade",
-            name="name_de",
-            field=models.CharField(blank=True, max_length=100, null=True),
-        ),
-        migrations.AddField(
-            model_name="grade",
-            name="theme_de",
-            field=models.CharField(blank=True, max_length=200, null=True),
-        ),
-        migrations.AddField(
-            model_name="grade",
-            name="theme_uk",
-            field=models.CharField(blank=True, max_length=200, null=True),
-        ),
-        migrations.AddField(
-            model_name="item",
-            name="content_de",
-            field=models.TextField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name="paragraph",
-            name="name_de",
-            field=models.CharField(blank=True, max_length=200, null=True),
-        ),
-        migrations.AddField(
-            model_name="section",
-            name="name_de",
-            field=models.CharField(blank=True, max_length=200, null=True),
-        ),
-    ]
+    operations = []

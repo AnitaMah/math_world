@@ -232,6 +232,7 @@ def section_list(request, grade_id):
         .prefetch_related("paragraph_set__item_set")
     )
 
+    lang = _get_lang(request)
     grade_name = grade.name_de if lang == "de" and grade.name_de else grade.name_uk
     content = LIST_COPY[lang]
 
@@ -278,6 +279,7 @@ def paragraph_list(request, section_id):
         .prefetch_related("item_set")
     )
 
+    lang = _get_lang(request)
     section_title = section.name_de if lang == "de" and section.name_de else section.name_uk
     content = LIST_COPY[lang]
 
