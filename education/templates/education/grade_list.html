@@ -5,32 +5,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ content.grade_title }}</title>
-    <link rel="stylesheet" href="{% static 'education/grade_list.css' %}">
+    <link rel="stylesheet" href="map_ui.css">
 </head>
 <body>
-    <div class="page">
-        <div class="header">
-            <div>
-                <h1 class="title">{{ content.grade_title }}</h1>
-                <p class="lead">{{ content.grade_lead }}</p>
-            </div>
-            <div class="lang">
-                <strong>{{ current_lang_label }}</strong>
-                <span>·</span>
-                <a href="?{{ toggle_query }}">{{ other_lang_label }}</a>
-            </div>
+<div class="page">
+    <div class="header">
+        <div>
+            <h1 class="title">{{ content.grade_title }}</h1>
+            <p class="lead">{{ content.grade_lead }}</p>
         </div>
-
-        <div class="grid">
-            {% for grade in grades %}
-                <div class="card">
-                    <div class="badge">{{ grade.grade }}</div>
-                    <h3>{{ grade.theme }}</h3>
-                    <div class="meta">{{ grade.sections_count }} · {{ content.sections }}</div>
-                    <a class="button" href="{% url 'section_list' grade.id %}?lang={{ lang }}">{{ content.open }} →</a>
-                </div>
-            {% endfor %}
+        <div class="lang-switch">
+            <strong>{{ current_lang_label }}</strong>
+            <span>·</span>
+            <a href="?{{ toggle_query }}">{{ other_lang_label }}</a>
         </div>
     </div>
+    {% include 'education/_map_partial.html' %}
+</div>
 </body>
 </html>

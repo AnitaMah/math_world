@@ -5,72 +5,52 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ paragraph }} · {{ content.items }}</title>
-    <link rel="stylesheet" href="{% static 'education/item_detail.css' %}">
+    <link rel="stylesheet" href="map_ui.css">
 </head>
 <body>
-    <div class="page">
-        <div class="top">
-            <div>
-                <p class="details">{{ content.items }}</p>
-                <h1 class="title">{{ paragraph }}</h1>
-            </div>
-            <div class="lang">
-                <strong>{{ current_lang_label }}</strong>
-                <span>·</span>
-                <a href="?{{ toggle_query }}">{{ other_lang_label }}</a>
-            </div>
+<div class="page">
+    <div class="header">
+        <div>
+            <h1 class="title">{{ paragraph }}</h1>
+            <p class="lead">{{ content.items }}</p>
         </div>
-
-        <div class="detail">
-            {% with item=items.0 %}
-                <div class="card">
-                    <h2>{{ item.number }}. {{ item.title }}</h2>
-                    {% if item.details %}
-                        <div class="details">
-                            <ul>
-                                {% for detail in item.details %}
-                                    <li>{{ detail }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                </div>
-            {% endwith %}
-
-            <div class="theory-practice">
-                {% if tp %}
-                    <nav class="tp-nav">
-                        <a href="#theory">Теорія</a> · <a href="#practice">Практика</a>
-                    </nav>
-
-                    <section id="theory">
-                        <h3>Теорія</h3>
-                        {% if tp.theory %}
-                            <div class="tp-content">{{ tp.theory|linebreaksbr }}</div>
-                        {% else %}
-                            <p class="muted">Теорія поки відсутня.</p>
-                        {% endif %}
-                    </section>
-
-                    <section id="practice">
-                        <h3>Практика</h3>
-                        {% if tp.practice %}
-                            <div class="tp-content">{{ tp.practice|linebreaksbr }}</div>
-                        {% else %}
-                            <p class="muted">Практика поки відсутня.</p>
-                        {% endif %}
-                    </section>
-                {% else %}
-                    <p class="muted">Теорія та практика для цього пункту не знайдені.</p>
-                {% endif %}
-            </div>
+        <div class="lang-switch">
+            <strong>{{ current_lang_label }}</strong>
+            <span>·</span>
+            <a href="?{{ toggle_query }}">{{ other_lang_label }}</a>
         </div>
+    </div>
+    {% include 'education/_map_partial.html' %}
 
-        {% if section_id %}
-            <a class="back" href="{% url 'paragraph_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>
+    <div class="node item detail">
+        {% with item=items.0 %}
+            <h2>{{ item.number }}. {{ item.title }}</h2>
+            {% if item.details %}
+                <ul>
+                    {% for detail in item.details %}
+                        <li>{{ detail }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        {% if tp %}
+            <h3>Теорія</h3>
+            {% if tp.theory %}
+                <div class="tp-content">{{ tp.theory|linebreaksbr }}</div>
+            {% else %}
+                <p class="muted">Теорія поки відсутня.</p>
+            {% endif %}
+            <h3>Практика</h3>
+            {% if tp.practice %}
+                <div class="tp-content">{{ tp.practice|linebreaksbr }}</div>
+            {% else %}
+                <p class="muted">Практика поки відсутня.</p>
+            {% endif %}
         {% else %}
-            <a class="back" href="{% url 'grade_list' %}?lang={{ lang }}">← {{ content.back }}</a>
+            <p class="muted">Теорія та практика не знайдені.</p>
         {% endif %}
     </div>
+    <a class="button back" href="{% url 'paragraph_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>
+</div>
 </body>
 </html>

@@ -1,0 +1,21 @@
+{% load static %}
+<div class="map-wrap">
+    <div class="map-controls" style="display: flex; gap: 12px; align-items: center; margin-bottom: 10px;">
+        <button id="resetProgressBtn" class="button">Reset progress</button>
+        <div id="mapProgressStatus" style="color: var(--muted); font-size: 14px;"></div>
+    </div>
+
+    <!-- Завжди показуємо карту (без умови) -->
+    <img id="mapImg" src="{% static 'education/img/5_class_map.png' %}" alt="Карта" style="width:100%;height:auto;display:block;" />
+
+    <!-- SVG поверх картинки -->
+    <svg id="mapSvg" width="100%" height="800" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<!-- Підключення JS -->
+<script src="{% static 'education/map.js' %}"></script>
+<script>
+    const map = {{ map_data|safe }};
+    const lang = '{{ lang }}';
+    const showLinks = {{ show_links|yesno:"true,false" }};
+</script>

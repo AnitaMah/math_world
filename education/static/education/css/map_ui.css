@@ -1,0 +1,125 @@
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #0f1117;
+    color: #fff;
+}
+
+.page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.title {
+    font-size: 2.5rem;
+    margin: 0;
+    color: #fff;
+}
+
+.lead {
+    margin-top: 8px;
+    font-size: 1.2rem;
+    color: #ccc;
+}
+
+.lang-switch {
+    font-size: 1rem;
+    margin-top: 10px;
+}
+
+.lang-switch a {
+    color: #00bfff;
+    text-decoration: none;
+}
+
+.lang-switch a:hover {
+    text-decoration: underline;
+}
+
+.map-wrap {
+    position: relative;
+    overflow-x: auto;
+    padding-top: 20px;
+}
+
+#mapSvg {
+    width: 100%;
+    height: 700px;
+    display: block;
+    position: relative; /* default, may be changed to absolute when image overlay used */
+}
+
+/* When an image is present we position the svg absolutely over it */
+.map-wrap.has-image #mapSvg {
+    position: absolute;
+    left: 0;
+    top: 0;
+    pointer-events: none; /* enable clicks on svg elements only where we explicitly allow */
+}
+.map-wrap.has-image svg g, .map-wrap.has-image svg circle, .map-wrap.has-image svg text {
+    pointer-events: auto; /* enable interaction for nodes/labels */
+}
+
+.button {
+    padding: 8px 12px;
+    border: none;
+    background-color: #00bfff;
+    color: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.button:hover {
+    background-color: #00a0cc;
+}
+
+/* Map node styles */
+.node-circle {
+    transition: transform 0.12s ease, r 0.12s ease, opacity 0.12s ease;
+}
+.node-label {
+    pointer-events: none; /* text clicks handled separately */
+    font-weight: 600;
+    font-family: 'Segoe UI', sans-serif;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+}
+.node-focused {
+    stroke: #ffd54f !important;
+    stroke-width: 4px !important;
+    transform: scale(1.05);
+}
+
+/* tooltip */
+.map-tooltip {
+    position: absolute;
+    background: rgba(16,18,22,0.95);
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    pointer-events: none;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    display: none;
+    z-index: 40;
+}
+
+.map-controls .back-btn {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+@media (max-width: 800px) {
+    .title { font-size: 1.6rem; }
+    #mapSvg { height: 600px; }
+}

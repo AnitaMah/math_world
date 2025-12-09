@@ -7,7 +7,7 @@ from education import views as education_views
 
 
 urlpatterns = [
-    path("", education_views.mint_overview, name="mint_overview"),
+    path('', education_views.grade_list, name='home'),  # ← додай цей рядок
     path("grades/", education_views.grade_list, name="grade_list"),
     path("grades/<int:grade_id>/sections/", education_views.section_list, name="section_list"),
     path("sections/<int:section_id>/paragraphs/", education_views.paragraph_list, name="paragraph_list"),

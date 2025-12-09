@@ -5,33 +5,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ grade }} · {{ content.sections }}</title>
-    <link rel="stylesheet" href="{% static 'education/section_list.css' %}">
+    <link rel="stylesheet" href="map_ui.css">
 </head>
 <body>
-    <div class="page">
-        <div class="top">
-            <div>
-                <p class="meta">{{ content.sections }}</p>
-                <h1 class="title">{{ grade }}</h1>
-            </div>
-            <div class="lang">
-                <strong>{{ current_lang_label }}</strong>
-                <span>·</span>
-                <a href="?{{ toggle_query }}">{{ other_lang_label }}</a>
-            </div>
+<div class="page">
+    <div class="header">
+        <div>
+            <h1 class="title">{{ grade }}</h1>
+            <p class="lead">{{ content.sections }}</p>
         </div>
-
-        <div class="grid">
-            {% for section in sections %}
-                <div class="card">
-                    <h3>{{ section.title }}</h3>
-                    <p>{{ section.paragraphs_count }} · {{ content.paragraphs }}</p>
-                    <a class="button" href="{% url 'paragraph_list' section.id %}?lang={{ lang }}">{{ content.open }} →</a>
-                </div>
-            {% endfor %}
+        <div class="lang-switch">
+            <strong>{{ current_lang_label }}</strong>
+            <span>·</span>
+            <a href="?{{ toggle_query }}">{{ other_lang_label }}</a>
         </div>
-
-        <a class="back" href="{% url 'grade_list' %}?lang={{ lang }}">← {{ content.back }}</a>
     </div>
+    {% include 'education/_map_partial.html' %}
+    <a class="button back" href="{% url 'grade_list' %}?lang={{ lang }}">← {{ content.back }}</a>
+</div>
 </body>
 </html>
