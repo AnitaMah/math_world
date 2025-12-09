@@ -452,18 +452,46 @@ def item_list(request, paragraph_id):
 
 
 def item_detail(request, item_id):
+    lang = _get_lang(request)
     item = get_object_or_404(Item, id=item_id)
     tp = TheoryPractice.objects.filter(item=item).first()
 
     is_geometry = is_geometry_topic(item.content)
 
+    # Build context similar to item_list but for a single item so templates expecting lists continue working
+    content = LIST_COPY[lang]
+    other_lang = "uk" if lang == "de" else "de"
+    toggle_query = urlencode({"lang": other_lang})
+
+    # paragraph and navigation ids
+    paragraph = item.paragraph
+    paragraph_title = _localized_value(paragraph.name_uk, paragraph.name_de, lang, fallback=f"{paragraph.number}")
+
+    item_text = item.content_de if lang == "de" and item.content_de else item.content
+    lines = [line.strip().lstrip("• ") for line in item_text.splitlines() if line.strip()] if item_text else []
+    item_card = {
+        "id": item.id,
+        "title": lines[0] if lines else f"{item.number}",
+        "details": lines[1:] if len(lines) > 1 else [],
+        "number": item.number,
+    }
+
     return render(
         request,
         "education/item_detail.html",
         {
+            "lang": lang,
             "item": item,
             "tp": tp,
             "is_geometry": is_geometry,
             "media_url": settings.MEDIA_URL,
+            "content": content,
+            "items": [item_card],
+            "paragraph": paragraph_title,
+            "toggle_query": toggle_query,
+            "current_lang_label": LANG_LABELS[lang],
+            "other_lang_label": LANG_LABELS[other_lang],
+            "section_id": paragraph.section.id,
+            "grade_id": paragraph.section.grade.id,
         },
     )

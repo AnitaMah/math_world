@@ -4,15 +4,15 @@
     {% load static %}
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{{ paragraph }} · {{ content.items }}</title>
+    <title>{{ content.toc_title }}</title>
     <link rel="stylesheet" href="{% static 'education/mint_overview.css' %}">
 </head>
 <body>
     <div class="page">
         <div class="top">
             <div>
-                <p class="details">{{ content.items }}</p>
-                <h1 class="title">{{ paragraph }}</h1>
+                <p class="details">{{ content.toc_lead }}</p>
+                <h1 class="title">{{ content.title }}</h1>
             </div>
             <div class="lang">
                 <strong>{{ current_lang_label }}</strong>
@@ -21,25 +21,295 @@
             </div>
         </div>
 
-        <div class="list">
-            {% for item in items %}
-                <div class="card">
-                    <h3>{{ item.number }}. {{ item.title }}</h3>
-                    {% if item.details %}
-                        <div class="details">
-                            <ul>
-                                {% for detail in item.details %}
-                                    <li>{{ detail }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                    <a class="button" href="{% url 'item_detail' item.id %}">{{ content.open }} →</a>
-                </div>
-            {% endfor %}
+        <div class="map-wrap">
+            <div class="map-controls" style="display:flex;gap:12px;align-items:center;margin-bottom:10px;">
+                <button id="resetProgressBtn" style="padding:8px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.03);color:var(--text);cursor:pointer;">Reset progress</button>
+                <div id="mapProgressStatus" style="color:var(--muted);font-size:14px;"></div>
+            </div>
+            <svg id="mapSvg" width="100%" height="700" viewBox="0 0 1200 900" preserveAspectRatio="xMidYMid meet"></svg>
         </div>
+        <script>
+            (function(){
+                const map = {{ map_data|safe }};
+                const lang = '{{ lang }}';
+                const svg = document.getElementById('mapSvg');
 
-        <a class="back" href="{% url 'paragraph_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>
+                // Index nodes and links
+                const nodesById = {};
+                map.nodes.forEach(n => nodesById[n.id] = n);
+                const linksByFrom = {};
+                map.links.forEach(l => {
+                    linksByFrom[l.from] = linksByFrom[l.from] || [];
+                    linksByFrom[l.from].push(l.to);
+                });
+                // incoming links (prerequisites)
+                const linksTo = {};
+                map.links.forEach(l => {
+                    linksTo[l.to] = linksTo[l.to] || [];
+                    linksTo[l.to].push(l.from);
+                });
+
+                // Progress persistence (localStorage)
+                const STORAGE_KEY = 'map_progress_unlocked_v1';
+                function loadProgress(){
+                    try{
+                        const raw = localStorage.getItem(STORAGE_KEY);
+                        return raw ? JSON.parse(raw) : {};
+                    }catch(e){ return {}; }
+                }
+                function saveProgress(obj){
+                    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }catch(e){}
+                }
+                const progress = loadProgress();
+
+                function makeURL(node){
+                    const id = node.id;
+                    if(id.startsWith('g-')){
+                        const gid = id.slice(2);
+                        return `/grades/${gid}/sections/?lang=${lang}`;
+                    }
+                    if(id.startsWith('s-')){
+                        const sid = id.slice(2);
+                        return `/sections/${sid}/paragraphs/?lang=${lang}`;
+                    }
+                    if(id.startsWith('p-')){
+                        const pid = id.slice(2);
+                        return `/paragraphs/${pid}/items/?lang=${lang}`;
+                    }
+                    if(id.startsWith('i-')){
+                        const iid = id.slice(2);
+                        return `/items/${iid}/?lang=${lang}`;
+                    }
+                    return '#';
+                }
+
+                // Element maps
+                const nodeElements = {};
+                const linkElements = {};
+                const expanded = {};
+
+                function createNodeElement(node){
+                    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+                    g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+                    g.dataset.nodeId = node.id;
+                    g.style.cursor = 'pointer';
+
+                    // Slightly larger base radii for better readability when scaled
+                    const r = node.type === 'grade' ? 56 : node.type === 'section' ? 20 : node.type === 'paragraph' ? 12 : 8;
+                    const fill = node.type === 'grade' ? '#2563eb' : node.type === 'section' ? '#1e40af' : node.type === 'paragraph' ? '#60a5fa' : '#93c5fd';
+
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+                    circle.setAttribute('r', r);
+                    circle.setAttribute('fill', fill);
+                    circle.setAttribute('stroke', '#fff');
+                    circle.setAttribute('stroke-width', '2');
+                    g.appendChild(circle);
+
+                    const text = document.createElementNS('http://www.w3.org/2000/svg','text');
+                    text.setAttribute('x', 0);
+                    text.setAttribute('y', node.type === 'grade' ? 6 : 4);
+                    text.setAttribute('text-anchor', 'middle');
+                    // Use viewBox units for font-size so it scales with the svg
+                    text.setAttribute('font-size', node.type === 'grade' ? '16' : '10');
+                    text.setAttribute('fill', '#ffffff');
+                    text.textContent = node.label.length > 20 ? node.label.slice(0,18) + '…' : node.label;
+                    if(node.type === 'grade') g.appendChild(text);
+
+                    g._circle = circle;
+                    g._text = text;
+                    return g;
+                }
+
+                function drawInitial(){
+                    // draw only grade nodes initially
+                    map.nodes.forEach(node => {
+                        const el = createNodeElement(node);
+                        nodeElements[node.id] = el;
+                        // By default keep non-grade nodes hidden unless progress says otherwise
+                        if(node.type !== 'grade') {
+                            const initiallyUnlocked = !!progress[node.id];
+                            if(!initiallyUnlocked){
+                                el.style.opacity = 0;
+                                el.style.pointerEvents = 'none';
+                            }
+                        }
+                        svg.appendChild(el);
+                        // click handler
+                        el.addEventListener('click', function(e){
+                            e.stopPropagation();
+                            handleNodeClick(node.id);
+                        });
+                        el.addEventListener('mouseenter', function(){ el._circle.setAttribute('opacity', '0.85'); });
+                        el.addEventListener('mouseleave', function(){ el._circle.setAttribute('opacity', '1'); });
+                    });
+
+                    // click outside to collapse all
+                    svg.addEventListener('click', function(){
+                        collapseAll();
+                    });
+                }
+
+                function drawLink(fromId, toId){
+                    const key = `${fromId}___${toId}`;
+                    if(linkElements[key]) return linkElements[key];
+                    const from = nodesById[fromId];
+                    const to = nodesById[toId];
+                    if(!from || !to) return null;
+                    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+                    line.setAttribute('x1', from.x);
+                    line.setAttribute('y1', from.y);
+                    line.setAttribute('x2', to.x);
+                    line.setAttribute('y2', to.y);
+                    line.setAttribute('stroke', '#cbd5e1');
+                    line.setAttribute('stroke-width', '2');
+                    line.style.opacity = 0;
+                    svg.insertBefore(line, svg.firstChild);
+                    linkElements[key] = line;
+                    return line;
+                }
+
+                function revealNode(id){
+                    const el = nodeElements[id];
+                    if(!el) return;
+                    el.style.transition = 'opacity 220ms, transform 220ms';
+                    el.style.opacity = 1;
+                    el.style.pointerEvents = '';
+                    // persist unlock state
+                    progress[id] = true;
+                    saveProgress(progress);
+                    renderProgressStatus();
+                }
+
+                function hideNode(id){
+                    const el = nodeElements[id];
+                    if(!el) return;
+                    el.style.opacity = 0;
+                    el.style.pointerEvents = 'none';
+                }
+
+                function handleNodeClick(id){
+                    const node = nodesById[id];
+                    // if node has children, toggle expansion
+                    const children = linksByFrom[id] || [];
+                    // check if this node is allowed to be interacted with
+                    const incoming = linksTo[id] || [];
+                    const allowed = incoming.length === 0 || incoming.every(pid => !!progress[pid]);
+                    if(!allowed){
+                        // brief visual feedback: pulse the node
+                        const el = nodeElements[id];
+                        if(el && el._circle){
+                            el._circle.animate([
+                                { transform: 'scale(1.00)' },
+                                { transform: 'scale(1.06)' },
+                                { transform: 'scale(1.00)' }
+                            ], { duration: 420 });
+                        }
+                        return; // blocked until prerequisites complete
+                    }
+                    if(children.length > 0){
+                        if(expanded[id]){
+                            // collapse subtree
+                            collapseSubtree(id);
+                            expanded[id] = false;
+                        } else {
+                            // reveal immediate children
+                            children.forEach(cid => {
+                                revealNode(cid);
+                                const ln = drawLink(id, cid);
+                                if(ln) ln.style.opacity = 1;
+                            });
+                            expanded[id] = true;
+                            // mark this node as progressed/unlocked
+                            progress[id] = true;
+                            saveProgress(progress);
+                            renderProgressStatus();
+                        }
+                        return;
+                    }
+                    // otherwise navigate
+                    const nodeObj = nodesById[id];
+                    const url = makeURL(nodeObj);
+                    if(url && url !== '#') window.location.href = url;
+                }
+
+                function collapseSubtree(id){
+                    const children = linksByFrom[id] || [];
+                    children.forEach(cid => {
+                        // recursively collapse children
+                        if(expanded[cid]) collapseSubtree(cid);
+                        // hide link
+                        const key = `${id}___${cid}`;
+                        const ln = linkElements[key];
+                        if(ln) ln.style.opacity = 0;
+                        // hide node
+                        hideNode(cid);
+                        expanded[cid] = false;
+                    });
+                    expanded[id] = false;
+                }
+
+                function collapseAll(){
+                    Object.keys(expanded).forEach(id => {
+                        if(expanded[id]) collapseSubtree(id);
+                    });
+                }
+
+                // initialize
+                drawInitial();
+
+                // Progress status rendering
+                const statusEl = document.getElementById('mapProgressStatus');
+                function renderProgressStatus(){
+                    try{
+                        const keys = Object.keys(progress).filter(k => progress[k]);
+                        const total = map.nodes.length;
+                        statusEl.textContent = `Unlocked: ${keys.length} / ${total}`;
+                    }catch(e){ /* ignore */ }
+                }
+
+                function resetProgress(){
+                    try{
+                        // clear stored
+                        localStorage.removeItem(STORAGE_KEY);
+                        // reset in-memory
+                        Object.keys(progress).forEach(k => delete progress[k]);
+                        // hide non-grade nodes and collapse all
+                        map.nodes.forEach(node => {
+                            const el = nodeElements[node.id];
+                            if(!el) return;
+                            if(node.type !== 'grade'){
+                                el.style.opacity = 0;
+                                el.style.pointerEvents = 'none';
+                            }
+                        });
+                        // remove link visuals
+                        Object.values(linkElements).forEach(ln => { if(ln && ln.style) ln.style.opacity = 0; });
+                        Object.keys(expanded).forEach(k => expanded[k] = false);
+                        renderProgressStatus();
+                    }catch(e){ console.warn('reset failed', e); }
+                }
+
+                // wire reset button
+                const resetBtn = document.getElementById('resetProgressBtn');
+                if(resetBtn) resetBtn.addEventListener('click', function(){ if(confirm('Reset map progress?')) resetProgress(); });
+
+                // initial render of status
+                renderProgressStatus();
+
+                // Handle resize to keep SVG readable; reflow isn't heavy because elements are SVG user units
+                let resizeTimer = null;
+                function onResize(){
+                    // we could re-calc positions if map_data used absolute pixel coords; here viewBox scales everything
+                    // but we may tweak stroke widths or opacity depending on size in future
+                    if(resizeTimer) clearTimeout(resizeTimer);
+                    resizeTimer = setTimeout(()=>{
+                        // placeholder for future dynamic adjustments
+                    }, 120);
+                }
+                window.addEventListener('resize', onResize);
+
+            })();
+        </script>
     </div>
 </body>
 </html>

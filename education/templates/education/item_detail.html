@@ -21,10 +21,10 @@
             </div>
         </div>
 
-        <div class="list">
-            {% for item in items %}
+        <div class="detail">
+            {% with item=items.0 %}
                 <div class="card">
-                    <h3>{{ item.number }}. {{ item.title }}</h3>
+                    <h2>{{ item.number }}. {{ item.title }}</h2>
                     {% if item.details %}
                         <div class="details">
                             <ul>
@@ -34,12 +34,43 @@
                             </ul>
                         </div>
                     {% endif %}
-                    <a class="button" href="{% url 'item_detail' item.id %}">{{ content.open }} →</a>
                 </div>
-            {% endfor %}
+            {% endwith %}
+
+            <div class="theory-practice">
+                {% if tp %}
+                    <nav class="tp-nav">
+                        <a href="#theory">Теорія</a> · <a href="#practice">Практика</a>
+                    </nav>
+
+                    <section id="theory">
+                        <h3>Теорія</h3>
+                        {% if tp.theory %}
+                            <div class="tp-content">{{ tp.theory|linebreaksbr }}</div>
+                        {% else %}
+                            <p class="muted">Теорія поки відсутня.</p>
+                        {% endif %}
+                    </section>
+
+                    <section id="practice">
+                        <h3>Практика</h3>
+                        {% if tp.practice %}
+                            <div class="tp-content">{{ tp.practice|linebreaksbr }}</div>
+                        {% else %}
+                            <p class="muted">Практика поки відсутня.</p>
+                        {% endif %}
+                    </section>
+                {% else %}
+                    <p class="muted">Теорія та практика для цього пункту не знайдені.</p>
+                {% endif %}
+            </div>
         </div>
 
-        <a class="back" href="{% url 'paragraph_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>
+        {% if section_id %}
+            <a class="back" href="{% url 'paragraph_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>
+        {% else %}
+            <a class="back" href="{% url 'grade_list' %}?lang={{ lang }}">← {{ content.back }}</a>
+        {% endif %}
     </div>
 </body>
 </html>

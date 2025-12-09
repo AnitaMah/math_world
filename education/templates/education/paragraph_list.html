@@ -31,7 +31,11 @@
             {% endfor %}
         </div>
 
-        <a class="back" href="{% url 'section_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>
+        {% if section_id %}
+            <a class="back" href="{% url 'section_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>
+        {% else %}
+            <a class="back" href="{% url 'grade_list' %}?lang={{ lang }}">← {{ content.back }}</a>
+        {% endif %}
     </div>
 </body>
 </html>

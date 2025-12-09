@@ -1,3 +1,32 @@
+/* Responsive map container */
+.map-wrap {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 12px;
+}
+
+.map-wrap svg {
+    width: 100%;
+    height: min(75vh, 900px);
+    display: block;
+    background: transparent;
+}
+
+/* Make SVG text more legible */
+.map-wrap svg text {
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+/* Larger tappable areas on mobile */
+@media (max-width: 640px) {
+    .map-wrap svg { height: min(80vh, 900px); }
+}
+
+/* Improve contrast for links/lines */
+.map-wrap svg line { stroke: #cbd5e1; stroke-linecap: round; }
 :root {
     --bg: #0b1021;
     --card: #0f172a;
