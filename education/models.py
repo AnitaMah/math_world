@@ -18,12 +18,10 @@ class Subject(models.Model):
 
 
 class Grade(models.Model):
-    # Nullable for now (Step 5 of the refactor plan): a data migration
-    # backfills every existing row to the "math" Subject before this is
-    # made required (Step 7), so nothing breaks in between.
-    subject = models.ForeignKey(
-        Subject, on_delete=models.PROTECT, null=True, blank=True
-    )
+    # Required as of Step 7 of the refactor plan. Step 6's data migration
+    # backfilled every pre-existing row to the "math" Subject first, so
+    # this tightening doesn't break anything already in the database.
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT)
     number = models.IntegerField()
     name_uk = models.CharField(max_length=100)
     name_de = models.CharField(max_length=100, blank=True, null=True)

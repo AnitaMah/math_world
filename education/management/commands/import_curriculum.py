@@ -19,7 +19,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from education.models import Grade, Item, Paragraph, Section
+from education.models import Grade, Item, Paragraph, Section, Subject
 from education.parsing.subject_profiles import get_profile
 from education.parsing.toc_parser import parse_toc
 
@@ -49,6 +49,14 @@ class Command(BaseCommand):
             help="Профіль парсингу: math, ukr_language, generic (див. subject_profiles.py)",
         )
         parser.add_argument(
+            "--subject-code",
+            default=None,
+            help=(
+                "Код предмета (Subject.code) для цього класу, напр. 'math'. "
+                "Якщо не вказано, використовується те саме значення, що й --subject."
+            ),
+        )
+        parser.add_argument(
             "--reset",
             action="store_true",
             help="Видалити попередній вміст цього класу перед імпортом",
@@ -59,6 +67,7 @@ class Command(BaseCommand):
         grade_number = options["grade"]
         lang = options["language"]
         profile = get_profile(options["subject"])
+        subject_code = options["subject_code"] or options["subject"]
 
         if not file_path.exists():
             raise CommandError(f"Файл не знайдено: {file_path}")
@@ -76,8 +85,24 @@ class Command(BaseCommand):
             )
 
         with transaction.atomic():
+            subject, subject_created = Subject.objects.get_or_create(
+                code=subject_code,
+                defaults={"name_uk": subject_code},
+            )
+            if subject_created:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"ℹ️ Створено новий Subject(code={subject_code!r}) з тимчасовою "
+                        f"назвою -- задайте нормальну name_uk/name_de в адмінці."
+                    )
+                )
+
+            # Grade is now scoped by (number, subject): the same grade
+            # number can exist once per subject (e.g. two separate
+            # "5 клас" rows, one for math and one for ukr_mova).
             grade, _ = Grade.objects.get_or_create(
                 number=grade_number,
+                subject=subject,
                 defaults={name_field: f"{grade_number} клас"},
             )
             if not getattr(grade, name_field):

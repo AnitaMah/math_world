@@ -4,7 +4,7 @@ from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase
 
-from education.models import Grade, Item, Paragraph, Section
+from education.models import Grade, Item, Paragraph, Section, Subject
 
 
 class ImportCurriculumCommandTests(TestCase):
@@ -77,7 +77,10 @@ class ImportCurriculumCommandTests(TestCase):
         self.assertNotIn("Зміст 271", all_content)
 
     def test_reset_flag_removes_previous_grade_content_before_import(self):
-        grade = Grade.objects.create(number=5, name_uk="5 клас")
+        math_subject, _ = Subject.objects.get_or_create(
+            code="math", defaults={"name_uk": "Математика"}
+        )
+        grade = Grade.objects.create(number=5, subject=math_subject, name_uk="5 клас")
         section = Section.objects.create(grade=grade, number=99, name_uk="Старий розділ")
         paragraph = Paragraph.objects.create(section=section, number=1, name_uk="Старий параграф")
         Item.objects.create(paragraph=paragraph, number=1, content="Старий пункт")
