@@ -1,0 +1,105 @@
+"""
+Subject-specific parsing rules for curriculum table-of-contents files.
+
+Different school subjects lay out their table of contents differently.
+A math textbook uses "Розділ" (Part, roman numeral) > "§ N." (paragraph) >
+"N. Title" (numbered lesson) > "• Title" (optional historical/aside box).
+A language-arts subject might instead use "Тема N." or "Урок N." with no
+Part/§ nesting at all, and no "§" symbol whatsoever.
+
+Rather than hard-code math's structure into the parser, each subject gets a
+SubjectProfile describing which regular expressions identify each kind of
+line. The parser (toc_parser.py) is generic and subject-agnostic; it just
+asks the active profile "what kind of line is this?".
+
+Add a new profile here (and register it in PROFILES) for each new subject
+instead of editing the parser itself.
+"""
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+from typing import List, Pattern
+
+
+@dataclass
+class SubjectProfile:
+    name: str
+
+    # "Розділ I. ..." -- a top-level Part. Sequentially numbered regardless
+    # of the roman numeral's actual value (robust to numbering typos).
+    part_re: Pattern = field(
+        default_factory=lambda: re.compile(r"^Розділ\s+[IVXLCDM]+\.")
+    )
+
+    # "§ 4. Звичайні дроби" -- maps to our Paragraph model.
+    section_re: Pattern = field(
+        default_factory=lambda: re.compile(r"^§\s*(\d+)\.\s*(.*)$")
+    )
+
+    # "25. Уявлення про звичайні дроби" -- maps to our Item model.
+    # A list because some subjects use several markers ("N.", "Урок N.",
+    # "Тема N."); the first pattern that matches wins.
+    item_res: List[Pattern] = field(
+        default_factory=lambda: [re.compile(r"^(\d+)\.\s*(.+)$")]
+    )
+
+    # "• Від ліктів та долонь до метричної системи" -- a historical /
+    # "did you know" aside nested under the item above it. Folded into
+    # that item's content rather than becoming its own row.
+    bullet_re: Pattern = field(
+        default_factory=lambda: re.compile(r"^[•·▪]\s*(.+)$")
+    )
+
+    # Lines that are structurally *noise* in a copy-pasted/OCR'd table of
+    # contents and must never become content: self-test blurbs, chapter
+    # summaries, back-matter, and running-header page-number bleed
+    # ("Зміст 271" -- "Contents" + a stray page number).
+    skip_res: List[Pattern] = field(
+        default_factory=lambda: [
+            re.compile(r"^Завдання\s*№\s*\d+", re.IGNORECASE),
+            re.compile(r"^Головне\s+в\s+параграф", re.IGNORECASE),
+            re.compile(r"^(Вправи для повторення|Відповіді)", re.IGNORECASE),
+            re.compile(r"^Зміст\s*\d*$", re.IGNORECASE),
+        ]
+    )
+
+    # If true, a blank line closes off the current item so that unmarked
+    # continuation text after it starts a *new* item instead of being
+    # silently appended to the previous one. Safe for math (no blank
+    # lines inside an entry) and important for prose subjects where
+    # paragraphs are separated by blank lines rather than markers.
+    blank_line_ends_item: bool = True
+
+    # Fallback titles used only when content appears before any explicit
+    # Part/§ heading (e.g. a subject with no "Розділ"/"§" concept at all).
+    default_section_title: str = "Загальний розділ"
+    default_paragraph_title: str = "Загальний параграф"
+
+
+MATH_PROFILE = SubjectProfile(name="math")
+
+# Ukrainian-language-arts style profile: numbered lessons may be labelled
+# "Урок N." or "Тема N." in addition to a bare "N.", and there is
+# typically no "§" concept. Adjust/extend once a real ukr-language TOC
+# is available -- this is a starting point, not a final answer.
+UKR_LANGUAGE_PROFILE = SubjectProfile(
+    name="ukr_language",
+    item_res=[
+        re.compile(r"^Урок\s+(\d+)\.\s*(.+)$", re.IGNORECASE),
+        re.compile(r"^Тема\s+(\d+)\.\s*(.+)$", re.IGNORECASE),
+        re.compile(r"^(\d+)\.\s*(.+)$"),
+    ],
+)
+
+GENERIC_PROFILE = SubjectProfile(name="generic")
+
+PROFILES = {
+    "math": MATH_PROFILE,
+    "ukr_language": UKR_LANGUAGE_PROFILE,
+    "generic": GENERIC_PROFILE,
+}
+
+
+def get_profile(name: str) -> SubjectProfile:
+    return PROFILES.get(name, MATH_PROFILE)
