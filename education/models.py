@@ -18,6 +18,12 @@ class Subject(models.Model):
 
 
 class Grade(models.Model):
+    # Nullable for now (Step 5 of the refactor plan): a data migration
+    # backfills every existing row to the "math" Subject before this is
+    # made required (Step 7), so nothing breaks in between.
+    subject = models.ForeignKey(
+        Subject, on_delete=models.PROTECT, null=True, blank=True
+    )
     number = models.IntegerField()
     name_uk = models.CharField(max_length=100)
     name_de = models.CharField(max_length=100, blank=True, null=True)
