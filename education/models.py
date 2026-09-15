@@ -1,6 +1,22 @@
 from django.db import models
 
 
+class Subject(models.Model):
+    """
+    A school subject (math, Ukrainian language, ...). Added so Grade can
+    stop being keyed only by number -- two subjects' 5th grade curricula
+    would otherwise collide under the same Grade row. Not yet linked to
+    Grade (see Step 5 of the refactor plan); this step only introduces
+    the table.
+    """
+    code = models.CharField(max_length=50, unique=True)
+    name_uk = models.CharField(max_length=100)
+    name_de = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.name_uk
+
+
 class Grade(models.Model):
     number = models.IntegerField()
     name_uk = models.CharField(max_length=100)

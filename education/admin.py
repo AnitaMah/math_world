@@ -1,6 +1,6 @@
 #education/admin.py
 from django.contrib import admin
-from .models import Grade, Section, Paragraph, Item, TheoryPractice
+from .models import Grade, Section, Paragraph, Item, TheoryPractice, Subject
 
 class SectionInline(admin.TabularInline):
     model = Section
@@ -37,3 +37,7 @@ class ItemAdmin(admin.ModelAdmin):
 @admin.register(TheoryPractice)
 class TheoryPracticeAdmin(admin.ModelAdmin):
     pass
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = ("code", "name_uk", "name_de")
