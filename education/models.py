@@ -95,6 +95,54 @@ class Item(models.Model):
         return f"Завдання {self.number} ({self.paragraph})"
 
 
+class ContentBlock(models.Model):
+    """
+    One piece of a lesson's real content: a theory paragraph, a self-check
+    question, an oral warm-up exercise, a written exercise (with its
+    difficulty marker), a review exercise, the "Задача від Мудрої Сови"
+    problem, or a "Коли зроблено уроки" historical aside. A lesson repeats
+    each of these a variable number of times (0 asides, 8 exercises, ...),
+    which is why this is a separate table keyed to Item rather than more
+    flat fields on Item -- see Section 2 of the refactor plan for the
+    reasoning. Empty for now: this step only adds the table, no parsing
+    writes to it yet (see Steps 12+).
+    """
+
+    BLOCK_TYPE_CHOICES = [
+        ("theory", "Теорія"),
+        ("self_check", "Самоперевірка (❓)"),
+        ("oral_exercise", "Розв'язуємо усно"),
+        ("exercise", "Вправа"),
+        ("review_exercise", "Вправа для повторення"),
+        ("wise_owl", "Задача від Мудрої Сови"),
+        ("history_aside", "Коли зроблено уроки"),
+    ]
+
+    # Difficulty markers used by "Вправи" exercises in this textbook:
+    # ° (basic), plain/no mark (standard), ·· (advanced), * (olympiad/club).
+    DIFFICULTY_CHOICES = [
+        ("basic", "° початковий"),
+        ("standard", "стандартний"),
+        ("advanced", "·· високий"),
+        ("olympiad", "* гурток/факультатив"),
+    ]
+
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="content_blocks")
+    block_type = models.CharField(max_length=20, choices=BLOCK_TYPE_CHOICES)
+    order = models.PositiveIntegerField(default=0)
+    text = models.TextField()
+    difficulty = models.CharField(
+        max_length=20, choices=DIFFICULTY_CHOICES, blank=True, null=True
+    )
+    image_path = models.CharField(max_length=255, blank=True, null=True)
+
+    class Meta:
+        ordering = ["item", "order"]
+
+    def __str__(self):
+        return f"{self.get_block_type_display()} для {self.item} (#{self.order})"
+
+
 class TheoryPractice(models.Model):
     item = models.OneToOneField(Item, on_delete=models.CASCADE)
     theory = models.TextField(blank=True)

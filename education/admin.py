@@ -1,6 +1,6 @@
 #education/admin.py
 from django.contrib import admin
-from .models import Grade, Section, Paragraph, Item, TheoryPractice, Subject
+from .models import Grade, Section, Paragraph, Item, TheoryPractice, Subject, ContentBlock
 
 class SectionInline(admin.TabularInline):
     model = Section
@@ -18,6 +18,11 @@ class TheoryPracticeInline(admin.TabularInline):
     model = TheoryPractice
     extra = 0
 
+class ContentBlockInline(admin.TabularInline):
+    model = ContentBlock
+    extra = 0
+    fields = ("block_type", "order", "difficulty", "text", "image_path")
+
 @admin.register(Grade)
 class GradeAdmin(admin.ModelAdmin):
     inlines = [SectionInline]
@@ -32,7 +37,7 @@ class ParagraphAdmin(admin.ModelAdmin):
 
 @admin.register(Item)
 class ItemAdmin(admin.ModelAdmin):
-    inlines = [TheoryPracticeInline]
+    inlines = [TheoryPracticeInline, ContentBlockInline]
 
 @admin.register(TheoryPractice)
 class TheoryPracticeAdmin(admin.ModelAdmin):
