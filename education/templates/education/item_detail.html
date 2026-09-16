@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ paragraph }} · {{ content.items }}</title>
-    <link rel="stylesheet" href="map_ui.css">
+    <link rel="stylesheet" href="{% static 'education/css/map_ui.css' %}">
 </head>
 <body>
 <div class="page">
@@ -20,19 +20,17 @@
             <a href="?{{ toggle_query }}">{{ other_lang_label }}</a>
         </div>
     </div>
-    {% include 'education/_map_partial.html' %}
 
     <div class="node item detail">
-        {% with item=items.0 %}
-            <h2>{{ item.number }}. {{ item.title }}</h2>
-            {% if item.details %}
-                <ul>
-                    {% for detail in item.details %}
-                        <li>{{ detail }}</li>
-                    {% endfor %}
-                </ul>
-            {% endif %}
-        {% endwith %}
+        <h2>{{ item.number }}. {{ item.details.0 }}</h2>
+        {% if item.details|length > 1 %}
+            <ul>
+                {% for detail in item.details|slice:"1:" %}
+                    <li>{{ detail }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
         {% if tp %}
             <h3>Теорія</h3>
             {% if tp.theory %}
@@ -46,11 +44,33 @@
             {% else %}
                 <p class="muted">Практика поки відсутня.</p>
             {% endif %}
-        {% else %}
-            <p class="muted">Теорія та практика не знайдені.</p>
         {% endif %}
+
+        {# ContentBlocks: theory/exercises/asides added by the content-extraction #}
+        {# pipeline (Steps 12+). Grouped by type; each group falls back to a muted #}
+        {# placeholder rather than disappearing, so the page never looks broken #}
+        {# while content is still being imported for a given lesson. #}
+        {% for block_type, blocks in blocks_by_type.items %}
+            <h3>{{ blocks.0.get_block_type_display }}</h3>
+            <ul class="content-block-list">
+                {% for block in blocks %}
+                    <li class="content-block content-block--{{ block.block_type }}">
+                        {% if block.difficulty %}
+                            <span class="difficulty">{{ block.get_difficulty_display }}</span>
+                        {% endif %}
+                        <div class="content-block-text">{{ block.text|linebreaksbr }}</div>
+                        {% if block.image_path %}
+                            <img src="{{ media_url }}{{ block.image_path }}" alt="" class="content-block-image">
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% empty %}
+            <p class="muted">Детальний контент (теорія, вправи) для цього пункту ще не імпортовано.</p>
+        {% endfor %}
     </div>
-    <a class="button back" href="{% url 'paragraph_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>
+
+    <a class="button back" href="{% url 'item_list' paragraph_id %}?lang={{ lang }}">← {{ content.back }}</a>
 </div>
 </body>
 </html>

@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{{ content.grade_title }}</title>
-    <link rel="stylesheet" href="map_ui.css">
+    <link rel="stylesheet" href="{% static 'education/css/map_ui.css' %}">
 </head>
 <body>
 <div class="page">
@@ -20,6 +20,20 @@
             <a href="?{{ toggle_query }}">{{ other_lang_label }}</a>
         </div>
     </div>
+
+    <ul class="card-list">
+        {% for grade in grades %}
+            <li class="card">
+                <a href="{% url 'section_list' grade.id %}?lang={{ lang }}">
+                    <strong>{{ grade.name }}</strong>
+                    <span class="muted">{{ grade.subject }}</span>
+                </a>
+            </li>
+        {% empty %}
+            <li class="muted">Класів поки немає.</li>
+        {% endfor %}
+    </ul>
+
     {% include 'education/_map_partial.html' %}
 </div>
 </body>
