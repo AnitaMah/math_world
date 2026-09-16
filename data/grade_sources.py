@@ -50,8 +50,14 @@ GRADE_SOURCES = [
         profile="math_tarasenkova",
         textbook="Тарасенкова, повний підручник",
         pdf_path="Matematyka_6klas_Tarasenkova.pdf",
-        clean_txt_path=None,
-        status="pdf_only",
+        clean_txt_path="data/6_class_ukr.txt",
+        # Розділ/§ only -- reconstructed from the real contents page
+        # (PDF pages 303-304), which is heavily OCR-garbled (dot leaders,
+        # "§" misread as a stray digit) and doesn't list individual
+        # lesson titles at all, unlike Merzlyak's TOC. Item rows will be
+        # empty until lesson titles are extracted from each §'s actual
+        # pages in a later step -- see refactor plan Step 36.
+        status="sections_only_no_items",
     ),
     GradeSource(
         grade=7,

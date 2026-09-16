@@ -91,13 +91,22 @@ class SubjectProfile:
 # Section 1). This is the one profile that's been validated end-to-end.
 MATH_MERZLYAK_PROFILE = SubjectProfile(name="math_merzlyak")
 
-# Placeholder for grade 6 (Tarasenkova, Matematyka_6klas_Tarasenkova.pdf
-# -- already added to the project, not yet OCR'd/reviewed). Starts as an
-# identical copy of the Merzlyak profile since the Розділ/§/numbered-item
-# structure is a common Ukrainian textbook convention, but this MUST be
-# checked against that book's actual OCR'd TOC (Steps 12-14) before
-# trusting it -- do not import grade 6 for real until then.
-MATH_TARASENKOVA_PROFILE = SubjectProfile(name="math_tarasenkova")
+# Grade 6 (Tarasenkova, Matematyka_6klas_Tarasenkova.pdf). Confirmed
+# against the real contents page (pages 303-304 of the PDF -- this book's
+# "Зміст" sits at the back, not the front): "Розділ" uses an ARABIC
+# numeral ("РОЗДІЛ 5", confirmed unmangled in the answer key on page 297)
+# unlike Merzlyak's Roman numerals. The contents page only lists
+# Розділ/§ headings, not individual numbered lessons underneath each § --
+# unlike Merzlyak's TOC, which listed lesson titles too. So for now this
+# profile only produces Section/Paragraph rows; Item rows stay empty
+# until lesson titles are extracted from each §'s actual pages in a
+# later step. Also note: this book's OCR misreads "§" as a stray digit
+# ("81." instead of "§1.") -- real "§" characters are used in the
+# hand-corrected data/6_class_ukr.txt fixture, not the raw OCR output.
+MATH_TARASENKOVA_PROFILE = SubjectProfile(
+    name="math_tarasenkova",
+    part_re=re.compile(r"^Розділ\s+(\d+)\.", re.IGNORECASE),
+)
 
 # "math" is kept as a backwards-compatible alias for Merzlyak (grade 5),
 # since existing commands/tests already call --subject math.

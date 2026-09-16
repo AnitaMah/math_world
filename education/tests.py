@@ -104,6 +104,71 @@ class ImportCurriculumCommandTests(TestCase):
         self.assertEqual(Item.objects.filter(paragraph__section__grade=grade).count(), 38)
 
 
+class ImportCurriculumGrade6TarasenkovaTests(TestCase):
+    """
+    Exercises import_curriculum against data/6_class_ukr.txt -- grade 6's
+    Tarasenkova textbook, using the math_tarasenkova profile (Розділ uses
+    Arabic numerals, unlike Merzlyak's Roman numerals -- see Step 35/36
+    of the refactor plan). This file only has Розділ/§ headings, no
+    individual lesson titles: Tarasenkova's real table of contents (PDF
+    pages 303-304) doesn't list lesson titles the way Merzlyak's does, so
+    Item rows are intentionally empty for now, pending a later step that
+    extracts them from each §'s actual pages.
+    """
+
+    def setUp(self):
+        self.sample_file = Path(settings.BASE_DIR) / "data" / "6_class_ukr.txt"
+
+    def test_import_creates_sections_and_paragraphs_with_no_items_yet(self):
+        call_command(
+            "import_curriculum",
+            "--file",
+            str(self.sample_file),
+            "--grade",
+            "6",
+            "--language",
+            "uk",
+            "--subject",
+            "math_tarasenkova",
+            "--subject-code",
+            "math",
+        )
+
+        grade = Grade.objects.get(number=6, subject__code="math")
+        self.assertEqual(Section.objects.filter(grade=grade).count(), 5)
+        self.assertEqual(Paragraph.objects.filter(section__grade=grade).count(), 35)
+        self.assertEqual(Item.objects.filter(paragraph__section__grade=grade).count(), 0)
+
+    def test_grade_6_and_grade_5_coexist_under_the_same_math_subject(self):
+        call_command(
+            "import_curriculum",
+            "--file",
+            str(Path(settings.BASE_DIR) / "data" / "5_class_ukr.txt"),
+            "--grade",
+            "5",
+            "--language",
+            "uk",
+        )
+        call_command(
+            "import_curriculum",
+            "--file",
+            str(self.sample_file),
+            "--grade",
+            "6",
+            "--language",
+            "uk",
+            "--subject",
+            "math_tarasenkova",
+            "--subject-code",
+            "math",
+        )
+
+        math_subject = Subject.objects.get(code="math")
+        self.assertEqual(Grade.objects.filter(subject=math_subject).count(), 2)
+        self.assertTrue(Grade.objects.filter(number=5, subject=math_subject).exists())
+        self.assertTrue(Grade.objects.filter(number=6, subject=math_subject).exists())
+
+
 class MathHeuristicTests(TestCase):
     """
     Step 28: the local (no API calls) heuristic that flags which OCR'd
