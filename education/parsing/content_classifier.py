@@ -119,14 +119,15 @@ EXERCISE_BLOCK_END_MARKERS_RE = [
     re.compile(r"Розв'язуємо усно", re.IGNORECASE),
 ]
 
-# A numbered exercise, optionally followed by a difficulty marker before
-# the period. The book uses a small superscript circle (°) to mark an
-# easier/introductory exercise; OCR is inconsistent about it -- observed
-# in real text as a straight double-quote (") rather than a degree sign.
-# Other markers mentioned in the original diagnosis (··, *) haven't
-# actually been observed in OCR'd text yet, so only the confirmed one is
-# matched for now rather than guessing at the others' OCR renderings.
-EXERCISE_ITEM_RE = re.compile(r'^(\d+)(["°]?)\.\s*(.*)$')
+# A numbered exercise, optionally followed by a difficulty marker right
+# after the period. The book uses a small superscript circle (°) to mark
+# an easier/introductory exercise; OCR is inconsistent about it --
+# observed in real text as a straight double-quote (") rather than a
+# degree sign, and rendered *after* the period (e.g. `2." Якого числа...`),
+# not before it. Other markers mentioned in the original diagnosis (··, *)
+# haven't actually been observed in OCR'd text yet, so only the confirmed
+# one is matched for now rather than guessing at the others' OCR renderings.
+EXERCISE_ITEM_RE = re.compile(r'^(\d+)\.(["°]?)\s*(.*)$')
 
 
 @dataclass
