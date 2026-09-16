@@ -288,3 +288,95 @@ def find_oral_exercise_blocks(raw_text: str) -> List[OralExerciseBlock]:
         i += 1
 
     return blocks
+
+
+# ---------------------------------------------------------------------
+# Step 18: "wise_owl" -- the "Задача від Мудрої Сови" problem. Per the
+# refactor plan, "usually exactly one per item, simplest to detect" --
+# confirmed against two real occurrences in review/section_1_text/
+# combined.txt (lines 115 and 347): the marker is followed by exactly
+# one numbered problem (continuing the lesson's overall exercise
+# numbering, e.g. "17." / "44." -- not its own 1-based count), ending at
+# the very next blank line.
+#
+# Unlike find_review_exercise_blocks/find_exercise_blocks (which
+# deliberately do NOT stop at a blank line, since those lists hold many
+# items separated by blanks), a wise_owl block holds exactly one item --
+# so the first blank line *after real content has started* reliably
+# marks its end. This also sidesteps a genuine OCR hazard seen in the
+# first real example: the block sits at the very end of one lesson,
+# immediately followed by the next lesson's title bleeding in with no
+# marker of its own ("2. Цифри. Десятковий запис натуральних чисел") --
+# stopping at the first blank line means that bleed-through is never
+# captured, without needing to special-case it.
+#
+# Uses .search (not .match/^) for the marker itself, same as
+# BLOCK_END_MARKERS_RE above, since OCR frequently prepends garbage
+# before it -- confirmed here as both "зб ... ох |" and "з»".
+# ---------------------------------------------------------------------
+
+WISE_OWL_MARKER_RE = re.compile(r"Задача від Мудрої Сови", re.IGNORECASE)
+
+WISE_OWL_BLOCK_END_MARKERS_RE = [
+    re.compile(r"Коли зроблено уроки", re.IGNORECASE),
+    re.compile(r"Вправи для повторення", re.IGNORECASE),
+    re.compile(r"^\W*Вправи\W*$", re.IGNORECASE),
+    re.compile(r"Розв'язуємо усно", re.IGNORECASE),
+]
+
+
+@dataclass
+class WiseOwlBlock:
+    start_line: int          # 0-indexed line number in the input, for review
+    end_line: int
+    text: str                # raw captured text, unedited -- OCR mistakes and all
+
+
+def find_wise_owl_blocks(raw_text: str) -> List[WiseOwlBlock]:
+    """
+    Scans raw OCR'd lesson text for "Задача від Мудрої Сови" blocks and
+    returns each one's raw captured text plus its line range.
+
+    Deliberately conservative like find_review_exercise_blocks: if a
+    block doesn't contain at least one numbered line, it's dropped
+    rather than guessed at -- a missed block is safer than a wrong one.
+    """
+    lines = raw_text.splitlines()
+    blocks: List[WiseOwlBlock] = []
+
+    i = 0
+    while i < len(lines):
+        if WISE_OWL_MARKER_RE.search(lines[i].strip()):
+            start = i
+            i += 1
+            captured: List[str] = []
+            started = False
+
+            while i < len(lines):
+                stripped = lines[i].strip()
+
+                if not stripped:
+                    # A blank line before any real content has been
+                    # captured is just the gap between the marker and
+                    # its problem (both real examples have one) -- skip
+                    # it. Once content has started, a blank line is
+                    # exactly what marks the end of this single item.
+                    if started:
+                        break
+                    i += 1
+                    continue
+
+                if any(rx.search(stripped) for rx in WISE_OWL_BLOCK_END_MARKERS_RE):
+                    break
+
+                captured.append(lines[i])
+                started = True
+                i += 1
+
+            block_text = "\n".join(captured).strip()
+            if any(NUMBERED_LINE_RE.match(l.strip()) for l in captured):
+                blocks.append(WiseOwlBlock(start_line=start, end_line=i, text=block_text))
+            continue
+        i += 1
+
+    return blocks

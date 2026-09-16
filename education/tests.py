@@ -9,6 +9,7 @@ from education.parsing.content_classifier import (
     find_exercise_blocks,
     find_oral_exercise_blocks,
     find_review_exercise_blocks,
+    find_wise_owl_blocks,
 )
 from education.parsing.math_heuristic import annotate_blocks, needs_vision_ocr
 
@@ -344,6 +345,68 @@ class ContentClassifierTests(TestCase):
 
     def test_no_marker_means_no_oral_exercise_blocks(self):
         self.assertEqual(find_oral_exercise_blocks("Просто якийсь текст."), [])
+
+    # Step 18: verbatim excerpts of both real "Задача від Мудрої Сови"
+    # occurrences in review/section_1_text/combined.txt. The first (lines
+    # 111-123) has the garbled "зб ... ох |" OCR prefix on the marker
+    # line and, right after its single problem, bleeds straight into the
+    # *next lesson's title* with no marker of its own -- the hardest real
+    # case, since the block must end at the blank line rather than
+    # swallowing that next lesson. The second (lines 344-354) is cleaner
+    # OCR-wise ("з»" prefix) and ends at a proper "Коли зроблено уроки"
+    # marker instead.
+    WISE_OWL_EXCERPT_WITH_LESSON_BLEED = """\
+16. На одній ділянці ростуть 34 кущі смородини, а на другій -- на
+18 кущів менше. Скільки всього кущів смородини росте на двох
+ділянках?
+
+зб Задача від Мудрої Сови ох |
+
+17. У квадраті (рис. 1) суми чисел, записаних у кож- ор зі
+ному стовпчику, у кожному рядку і на кожній
+діагоналі, яка містить три клітини, мають бути мі
+рівними. Знайдіть число, яке має бути записане
+замість зірочки. Рис. 1
+
+2. Цифри. Десятковий запис натуральних чисел
+"""
+
+    WISE_OWL_EXCERPT_ENDING_AT_HISTORY_ASIDE = """\
+43. За три дні коваль Вакула виготовив 432 підкови. Скільки підків
+він виготовить за 5 днів, працюючи так само завзято?
+
+з» Задача від Мудрої Сови
+
+44. У цьому році день народження батька був у неділю. У який
+день тижня святкувала день народження мати, якщо вона на
+62 дні молодша від батька?
+
+Коли зроблено уроки
+Як рахували в давнину
+"""
+
+    def test_wise_owl_block_found_despite_garbled_marker_prefix(self):
+        blocks = find_wise_owl_blocks(self.WISE_OWL_EXCERPT_WITH_LESSON_BLEED)
+        self.assertEqual(len(blocks), 1)
+        self.assertIn("17. У квадраті", blocks[0].text)
+
+    def test_wise_owl_block_stops_before_next_lesson_bleed_through(self):
+        blocks = find_wise_owl_blocks(self.WISE_OWL_EXCERPT_WITH_LESSON_BLEED)
+        # The next lesson's title bleeds in right after the block, with
+        # no marker of its own -- it must not leak into the captured text.
+        self.assertNotIn("Цифри. Десятковий запис", blocks[0].text)
+
+    def test_wise_owl_block_found_with_clean_marker(self):
+        blocks = find_wise_owl_blocks(self.WISE_OWL_EXCERPT_ENDING_AT_HISTORY_ASIDE)
+        self.assertEqual(len(blocks), 1)
+        self.assertIn("44. У цьому році", blocks[0].text)
+
+    def test_wise_owl_block_stops_before_history_aside_marker(self):
+        blocks = find_wise_owl_blocks(self.WISE_OWL_EXCERPT_ENDING_AT_HISTORY_ASIDE)
+        self.assertNotIn("Коли зроблено уроки", blocks[0].text)
+
+    def test_no_marker_means_no_wise_owl_blocks(self):
+        self.assertEqual(find_wise_owl_blocks("Просто якийсь текст."), [])
 
 
 class MathHeuristicTests(TestCase):
