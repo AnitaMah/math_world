@@ -77,7 +77,31 @@ class SubjectProfile:
     default_paragraph_title: str = "Загальний параграф"
 
 
-MATH_PROFILE = SubjectProfile(name="math")
+# NOTE ON GRADES 5-9: a SubjectProfile is keyed to a *textbook/author*,
+# not a grade number -- Grade is already free-standing (scoped by
+# (number, subject) in the model, see import_curriculum.py), so nothing
+# here needs to change to support grade 6, 7, 8, 9. What differs between
+# grades is which author wrote that grade's book, and authors format
+# their table of contents slightly differently. Add one profile per
+# textbook you actually have source text for; reuse an existing profile
+# across grades only once you've confirmed (by OCR'ing that grade's real
+# TOC pages, Steps 12-14) that its heading conventions actually match.
+
+# Confirmed against the real grade-5 Merzlyak textbook (see refactor plan
+# Section 1). This is the one profile that's been validated end-to-end.
+MATH_MERZLYAK_PROFILE = SubjectProfile(name="math_merzlyak")
+
+# Placeholder for grade 6 (Tarasenkova, Matematyka_6klas_Tarasenkova.pdf
+# -- already added to the project, not yet OCR'd/reviewed). Starts as an
+# identical copy of the Merzlyak profile since the Розділ/§/numbered-item
+# structure is a common Ukrainian textbook convention, but this MUST be
+# checked against that book's actual OCR'd TOC (Steps 12-14) before
+# trusting it -- do not import grade 6 for real until then.
+MATH_TARASENKOVA_PROFILE = SubjectProfile(name="math_tarasenkova")
+
+# "math" is kept as a backwards-compatible alias for Merzlyak (grade 5),
+# since existing commands/tests already call --subject math.
+MATH_PROFILE = MATH_MERZLYAK_PROFILE
 
 # Ukrainian-language-arts style profile: numbered lessons may be labelled
 # "Урок N." or "Тема N." in addition to a bare "N.", and there is
@@ -96,6 +120,8 @@ GENERIC_PROFILE = SubjectProfile(name="generic")
 
 PROFILES = {
     "math": MATH_PROFILE,
+    "math_merzlyak": MATH_MERZLYAK_PROFILE,
+    "math_tarasenkova": MATH_TARASENKOVA_PROFILE,
     "ukr_language": UKR_LANGUAGE_PROFILE,
     "generic": GENERIC_PROFILE,
 }
