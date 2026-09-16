@@ -200,3 +200,91 @@ def find_exercise_blocks(raw_text: str) -> List[ExerciseBlock]:
         i += 1
 
     return blocks
+
+
+# ---------------------------------------------------------------------
+# Step 17: "oral_exercise" -- the "Розв'язуємо усно" (mental-math warm-up)
+# list. Confirmed against real OCR'd text (review/section_1_text/
+# combined.txt, lines 44 and 197): a bare "Розв'язуємо усно" heading on
+# its own line, followed by a plain numbered list ("1.", "2.", ...) with
+# no difficulty markers -- unlike "exercise" (Step 16), this textbook
+# never marks an oral warm-up item as easier/harder, so ExerciseItem's
+# marker group isn't reused here; a simpler ExerciseItem-alike without a
+# difficulty field is enough. Both real occurrences end at the next bare
+# "Вправи" heading, but any of the other named-section markers are
+# treated as an end too, in case a lesson has no "Вправи" list at all.
+# ---------------------------------------------------------------------
+
+ORAL_EXERCISE_MARKER_RE = re.compile(r"^Розв'язуємо усно\s*$", re.IGNORECASE)
+
+ORAL_EXERCISE_BLOCK_END_MARKERS_RE = [
+    re.compile(r"^\W*Вправи\W*$", re.IGNORECASE),
+    re.compile(r"Вправи для повторення", re.IGNORECASE),
+    re.compile(r"Задача від Мудрої Сови", re.IGNORECASE),
+    re.compile(r"Коли зроблено уроки", re.IGNORECASE),
+]
+
+# A plain numbered item, no difficulty marker -- e.g. "1. Додайте:".
+ORAL_EXERCISE_ITEM_RE = re.compile(r"^(\d+)\.\s*(.*)$")
+
+
+@dataclass
+class OralExerciseItem:
+    number: int
+    text: str
+
+
+@dataclass
+class OralExerciseBlock:
+    start_line: int
+    end_line: int
+    items: List[OralExerciseItem] = field(default_factory=list)
+
+
+def find_oral_exercise_blocks(raw_text: str) -> List[OralExerciseBlock]:
+    """
+    Scans raw OCR'd lesson text for "Розв'язуємо усно" blocks and splits
+    each into individual numbered OralExerciseItems.
+
+    Reuses the same increasing-number guard as find_exercise_blocks: a
+    running page header re-using a low number (the same class of OCR
+    bleed-through documented there, e.g. "10 9 1. Натуральні числа") must
+    not be mistaken for a new item, so any match whose number doesn't
+    exceed the highest one seen so far is folded into the current item's
+    text instead of starting a new one.
+    """
+    lines = raw_text.splitlines()
+    blocks: List[OralExerciseBlock] = []
+
+    i = 0
+    while i < len(lines):
+        if ORAL_EXERCISE_MARKER_RE.match(lines[i].strip()):
+            start = i
+            i += 1
+            items: List[OralExerciseItem] = []
+            current: Optional[OralExerciseItem] = None
+            max_number_seen = 0
+
+            while i < len(lines):
+                stripped = lines[i].strip()
+                if any(rx.search(stripped) for rx in ORAL_EXERCISE_BLOCK_END_MARKERS_RE):
+                    break
+
+                m = ORAL_EXERCISE_ITEM_RE.match(stripped)
+                if m and int(m.group(1)) > max_number_seen:
+                    number = int(m.group(1))
+                    max_number_seen = number
+                    current = OralExerciseItem(number=number, text=m.group(2).strip())
+                    items.append(current)
+                elif stripped and current is not None:
+                    current.text += "\n" + stripped
+                # else: stray line before the first real item, or a
+                # blank line -- dropped, not appended anywhere.
+                i += 1
+
+            if items:
+                blocks.append(OralExerciseBlock(start_line=start, end_line=i, items=items))
+            continue
+        i += 1
+
+    return blocks

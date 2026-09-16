@@ -1,8 +1,9 @@
 """
 Step 20 (early/dry-run form): CLI to run a content classifier over raw
 OCR'd text and print what it would create -- nothing is written to the
-database. Currently supports only "review_exercise" (Step 15); more
-block types get added here as Steps 16-19 land.
+database. Supports "review_exercise" (Step 15), "exercise" (Step 16), and
+"oral_exercise" (Step 17) so far; "wise_owl" and "history_aside" (Steps
+18-19) get added here once those classifiers exist.
 
 Usage:
     python scripts/classify_content.py review\\section_1_text\\combined.txt --block-type review_exercise
@@ -17,13 +18,21 @@ from pathlib import Path
 # without having the project installed as a package.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from education.parsing.content_classifier import find_exercise_blocks, find_review_exercise_blocks
+from education.parsing.content_classifier import (
+    find_exercise_blocks,
+    find_oral_exercise_blocks,
+    find_review_exercise_blocks,
+)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("text_file", type=Path)
-    parser.add_argument("--block-type", default="review_exercise", choices=["review_exercise", "exercise"])
+    parser.add_argument(
+        "--block-type",
+        default="review_exercise",
+        choices=["review_exercise", "exercise", "oral_exercise"],
+    )
     args = parser.parse_args()
 
     if not args.text_file.exists():
@@ -48,6 +57,15 @@ def main():
             for item in block.items:
                 tag = f" [{item.difficulty}]" if item.difficulty else ""
                 print(f"  {item.number}{tag}: {item.text}")
+            print()
+
+    elif args.block_type == "oral_exercise":
+        blocks = find_oral_exercise_blocks(raw_text)
+        print(f"Found {len(blocks)} '{args.block_type}' block(s) (DRY RUN -- nothing written):\n")
+        for n, block in enumerate(blocks, start=1):
+            print(f"--- Block {n} (lines {block.start_line}-{block.end_line}, {len(block.items)} item(s)) ---")
+            for item in block.items:
+                print(f"  {item.number}: {item.text}")
             print()
 
 

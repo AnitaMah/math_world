@@ -5,7 +5,11 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from education.models import Grade, Item, Paragraph, Section, Subject
-from education.parsing.content_classifier import find_exercise_blocks, find_review_exercise_blocks
+from education.parsing.content_classifier import (
+    find_exercise_blocks,
+    find_oral_exercise_blocks,
+    find_review_exercise_blocks,
+)
 from education.parsing.math_heuristic import annotate_blocks, needs_vision_ocr
 
 
@@ -296,6 +300,50 @@ class ContentClassifierTests(TestCase):
         blocks = find_exercise_blocks(self.EXERCISE_EXCERPT)
         all_text = " ".join(item.text for item in blocks[0].items)
         self.assertNotIn("Вправи для повторення", all_text)
+
+    # Step 17: verbatim excerpt of item 1's "Розв'язуємо усно" (mental-math
+    # warm-up) block, real OCR text (review/section_1_text/combined.txt,
+    # lines 44-57) -- a plain numbered list with no difficulty markers,
+    # ending at the following bare "Вправи" heading.
+    ORAL_EXERCISE_EXCERPT = """\
+Розв'язуємо усно
+1. Додайте:
+1)4817; 2)1619; 3)25 134; 4) 52 149.
+2. Відніміть:
+1) 6 від 14; 2) 7 від 23; 3)відЗ32 число 3; 4)від 45 число 19.
+3. Помножте:
+1) 12 на 4; 2) 5 на 20; 3) 13 на 6; 4)10 на 100.
+4. Поділіть:
+1)36 на 12; 2)55 на11; 3)над8 число 96; 4)на 20 число 160.
+5. Біля школи ростуть каштани і тополі. Каштанів росте 7, а то-
+поль -- у З рази більше. Скільки дерев росте біля школи?
+6. У школі 370 учнів. Чи знайдуться серед них хоча б два учні, які
+святкують день народження в один і той самий день?
+Вправи
+"""
+
+    def test_oral_exercise_block_finds_all_items_in_order(self):
+        blocks = find_oral_exercise_blocks(self.ORAL_EXERCISE_EXCERPT)
+        self.assertEqual(len(blocks), 1)
+        numbers = [item.number for item in blocks[0].items]
+        self.assertEqual(numbers, [1, 2, 3, 4, 5, 6])
+
+    def test_oral_exercise_block_captures_multiline_item_text(self):
+        blocks = find_oral_exercise_blocks(self.ORAL_EXERCISE_EXCERPT)
+        by_number = {item.number: item for item in blocks[0].items}
+        # Item 5's sentence wraps onto the next OCR line ("а то-" / "поль
+        # -- у..."); the continuation must be folded into item 5's text,
+        # not dropped or treated as a new item.
+        self.assertIn("Каштанів росте 7", by_number[5].text)
+        self.assertIn("поль -- у З рази більше", by_number[5].text)
+
+    def test_oral_exercise_block_stops_before_exercise_marker(self):
+        blocks = find_oral_exercise_blocks(self.ORAL_EXERCISE_EXCERPT)
+        all_text = " ".join(item.text for item in blocks[0].items)
+        self.assertNotIn("Вправи", all_text)
+
+    def test_no_marker_means_no_oral_exercise_blocks(self):
+        self.assertEqual(find_oral_exercise_blocks("Просто якийсь текст."), [])
 
 
 class MathHeuristicTests(TestCase):
