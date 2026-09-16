@@ -5,7 +5,7 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from education.models import Grade, Item, Paragraph, Section, Subject
-from education.parsing.content_classifier import find_review_exercise_blocks
+from education.parsing.content_classifier import find_exercise_blocks, find_review_exercise_blocks
 from education.parsing.math_heuristic import annotate_blocks, needs_vision_ocr
 
 
@@ -238,6 +238,64 @@ class ContentClassifierTests(TestCase):
 
     def test_no_marker_means_no_blocks(self):
         self.assertEqual(find_review_exercise_blocks("Просто якийсь текст."), [])
+
+    # Step 16: verbatim excerpt of item 1's plain "Вправи" list, real OCR
+    # text -- including the genuine page-header bleed-through
+    # ("2. Цифри. Десятковий запис натуральних чисел 7") that appears
+    # mid-list and looks exactly like a new numbered exercise, and the
+    # real difficulty markers OCR renders as a straight quote after
+    # items 2 and 6.
+    EXERCISE_EXCERPT = """\
+Вправи
+1. Назвіть 14 перших натуральних чисел.
+2." Якого числа не вистачає в записі, щоб він позначав натуральний
+ряд: 1,2, 3,4,5, 6, 7, 9, 10, 11,...?
+3. Із чисел 5, 1 8, 129,0, з 4128, 5 виберіть натуральні.
+6
+4. Яке число в натуральному ряду стоїть за числом:
+1) 34; 2) 246; 3) 8297?
+5. Запишіть число, яке в натуральному ряду стоїть за числом:
+1) 72; 2) 121; 3) 6459.
+6." Яке число в натуральному ряду передує числу:
+1) 58; 2) 631; 3) 4500?
+7. Запишіть число, яке в натуральному ряду передує числу:
+1) 42; 2) 215; 3) 3240.
+2. Цифри. Десятковий запис натуральних чисел 7
+
+8. Скільки чисел стоїть у натуральному ряду між числами:
+1)6 124; 2) 18 181?
+Вправи для повторення
+"""
+
+    def test_exercise_block_finds_all_items_in_order(self):
+        blocks = find_exercise_blocks(self.EXERCISE_EXCERPT)
+        self.assertEqual(len(blocks), 1)
+        numbers = [item.number for item in blocks[0].items]
+        self.assertEqual(numbers, [1, 2, 3, 4, 5, 6, 7, 8])
+
+    def test_exercise_block_captures_difficulty_markers(self):
+        blocks = find_exercise_blocks(self.EXERCISE_EXCERPT)
+        by_number = {item.number: item for item in blocks[0].items}
+        self.assertEqual(by_number[2].difficulty, "basic")
+        self.assertEqual(by_number[6].difficulty, "basic")
+        self.assertIsNone(by_number[1].difficulty)
+        self.assertIsNone(by_number[7].difficulty)
+
+    def test_exercise_block_absorbs_page_header_bleed_without_creating_bogus_item(self):
+        blocks = find_exercise_blocks(self.EXERCISE_EXCERPT)
+        numbers = [item.number for item in blocks[0].items]
+        # The page-header bleed line re-uses "2." mid-list -- it must
+        # NOT appear as a second, out-of-order item 2.
+        self.assertEqual(numbers.count(2), 1)
+        # Its text should have been folded into item 7 (the item open
+        # when the bleed line appeared), not silently dropped.
+        by_number = {item.number: item for item in blocks[0].items}
+        self.assertIn("Цифри. Десятковий запис", by_number[7].text)
+
+    def test_exercise_block_stops_before_review_exercise_marker(self):
+        blocks = find_exercise_blocks(self.EXERCISE_EXCERPT)
+        all_text = " ".join(item.text for item in blocks[0].items)
+        self.assertNotIn("Вправи для повторення", all_text)
 
 
 class MathHeuristicTests(TestCase):

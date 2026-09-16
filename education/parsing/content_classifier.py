@@ -14,14 +14,15 @@ actually run against the real DB" bug.
 
 Step 15 implements exactly one block type: "review_exercise" ("Вправи
 для повторення" -- the clearest, least ambiguous marker in the book,
-per the refactor plan). Later steps (16-19) add exercise, oral_exercise,
-wise_owl, and history_aside the same way.
+per the refactor plan). Step 16 adds "exercise" (the plain "Вправи"
+list, capturing each item's difficulty marker). Later steps (17-19) add
+oral_exercise, wise_owl, and history_aside the same way.
 """
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 # The exact marker that opens a "review exercises" block. Confirmed
 # against real OCR'd text (review/section_1_text/combined.txt, §1 of the
@@ -95,6 +96,105 @@ def find_review_exercise_blocks(raw_text: str) -> List[ReviewExerciseBlock]:
                 blocks.append(
                     ReviewExerciseBlock(start_line=start, end_line=i, text=block_text)
                 )
+            continue
+        i += 1
+
+    return blocks
+
+
+# ---------------------------------------------------------------------
+# Step 16: "exercise" -- the plain "Вправи" list (not "для повторення"),
+# capturing each numbered item's difficulty marker if present.
+# ---------------------------------------------------------------------
+
+# A bare "Вправи" heading, not "Вправи для повторення" -- the negative
+# case is automatic here since this only matches when nothing else is on
+# the line.
+EXERCISE_MARKER_RE = re.compile(r"^\W*Вправи\W*$", re.IGNORECASE)
+
+EXERCISE_BLOCK_END_MARKERS_RE = [
+    re.compile(r"Вправи для повторення", re.IGNORECASE),
+    re.compile(r"Задача від Мудрої Сови", re.IGNORECASE),
+    re.compile(r"Коли зроблено уроки", re.IGNORECASE),
+    re.compile(r"Розв'язуємо усно", re.IGNORECASE),
+]
+
+# A numbered exercise, optionally followed by a difficulty marker before
+# the period. The book uses a small superscript circle (°) to mark an
+# easier/introductory exercise; OCR is inconsistent about it -- observed
+# in real text as a straight double-quote (") rather than a degree sign.
+# Other markers mentioned in the original diagnosis (··, *) haven't
+# actually been observed in OCR'd text yet, so only the confirmed one is
+# matched for now rather than guessing at the others' OCR renderings.
+EXERCISE_ITEM_RE = re.compile(r'^(\d+)(["°]?)\.\s*(.*)$')
+
+
+@dataclass
+class ExerciseItem:
+    number: int
+    difficulty: Optional[str]   # "basic" if a marker was found, else None (standard)
+    text: str
+
+
+@dataclass
+class ExerciseBlock:
+    start_line: int
+    end_line: int
+    items: List[ExerciseItem] = field(default_factory=list)
+
+
+def find_exercise_blocks(raw_text: str) -> List[ExerciseBlock]:
+    """
+    Scans raw OCR'd lesson text for plain "Вправи" lists and splits each
+    into individual numbered ExerciseItems, tagging a difficulty marker
+    when present.
+
+    Guards against a real false positive found while testing against
+    actual OCR'd text: a running page header ("2. Цифри. Десятковий
+    запис натуральних чисел 7") bleeds into the middle of an exercise
+    list and looks exactly like a new numbered item. Since real exercise
+    numbers only ever increase within one list, any "match" whose number
+    doesn't exceed the highest one seen so far is treated as noise and
+    folded into the current item's text instead of starting a new one --
+    catches this class of bleed-through without hardcoding the specific
+    noise text, which would only handle this one exact case.
+    """
+    lines = raw_text.splitlines()
+    blocks: List[ExerciseBlock] = []
+
+    i = 0
+    while i < len(lines):
+        if EXERCISE_MARKER_RE.match(lines[i].strip()):
+            start = i
+            i += 1
+            items: List[ExerciseItem] = []
+            current: Optional[ExerciseItem] = None
+            max_number_seen = 0
+
+            while i < len(lines):
+                stripped = lines[i].strip()
+                if any(rx.search(stripped) for rx in EXERCISE_BLOCK_END_MARKERS_RE):
+                    break
+
+                m = EXERCISE_ITEM_RE.match(stripped)
+                if m and int(m.group(1)) > max_number_seen:
+                    number = int(m.group(1))
+                    max_number_seen = number
+                    marker = m.group(2)
+                    current = ExerciseItem(
+                        number=number,
+                        difficulty="basic" if marker else None,
+                        text=m.group(3).strip(),
+                    )
+                    items.append(current)
+                elif stripped and current is not None:
+                    current.text += "\n" + stripped
+                # else: stray line before the first real item, or a
+                # blank line -- dropped, not appended anywhere.
+                i += 1
+
+            if items:
+                blocks.append(ExerciseBlock(start_line=start, end_line=i, items=items))
             continue
         i += 1
 
