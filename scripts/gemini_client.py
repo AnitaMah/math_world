@@ -12,15 +12,20 @@ Why this exists instead of calling google-genai directly everywhere:
 
 This module deliberately does NOT hardcode a model name at import time --
 Google's free-tier model lineup and quotas have moved more than once in
-2026 (2.0 -> 2.5 -> 3.x Flash). Pass the current best "Flash" model name
-via GEMINI_MODEL (env var) or the `model` argument; check
-https://aistudio.google.com/rate-limit for whatever currently has the
+2026 (2.0 -> 2.5 -> 3.x Flash), and third-party docs/blogs can lag or lead
+what's actually live on a given key. Run `scripts/list_gemini_models.py`
+to see the real, current model names your key can call before picking
+one via GEMINI_MODEL (env var) or the `model` argument; check
+https://aistudio.google.com/rate-limit for whichever currently has the
 most generous free daily quota.
 
 Setup:
     pip install google-genai python-dotenv
     export GEMINI_API_KEY=...        # from https://aistudio.google.com/apikey
-    export GEMINI_MODEL=gemini-3-flash   # best free-tier daily cap as of Sept 2026
+    export GEMINI_MODEL=gemini-3.6-flash   # gemini-2.5-flash and gemini-3.8-flash both
+                                            # returned errors telling us to use this one
+                                            # (Sept 2026) -- Google's own API error message
+                                            # is more reliable here than any doc/blog guess.
 
 Quick test:
     python scripts/gemini_client.py "Say hello in Ukrainian in five words."
@@ -33,6 +38,18 @@ import os
 import sys
 import time
 from pathlib import Path
+
+try:
+    from dotenv import load_dotenv  # type: ignore
+
+    # Loads .env from the current working directory (project root, when
+    # run via `python manage.py shell` or `python scripts/...`) into
+    # os.environ, if it isn't loaded there already. Safe to call more than
+    # once; does nothing if python-dotenv isn't installed yet, since
+    # GEMINI_API_KEY can still be set as a real environment variable.
+    load_dotenv()
+except ImportError:
+    pass
 from typing import Optional
 
 CACHE_DIR = Path("review/gemini_cache")
@@ -59,7 +76,7 @@ class GeminiClient:
                 "GEMINI_API_KEY not set. Get a free key at "
                 "https://aistudio.google.com/apikey and `export GEMINI_API_KEY=...`"
             )
-        self.model = model or os.environ.get("GEMINI_MODEL", "gemini-3-flash")
+        self.model = model or os.environ.get("GEMINI_MODEL", "gemini-3.6-flash")
         self.daily_budget = daily_budget
         self.cache_dir = cache_dir
         self.budget_file = budget_file
@@ -166,12 +183,15 @@ class GeminiClient:
     def _write_cache(self, key: str, value: dict) -> None:
         self._cache_path(key).write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
 
-    def _call_with_backoff(self, fn, max_retries: int = 1):
+    def _call_with_backoff(self, fn, max_retries: int = 2):
         try:
             return fn()
-        except Exception as e:  # noqa: BLE001 - surfacing SDK errors as-is after one retry
+        except Exception as e:  # noqa: BLE001 - surfacing SDK errors as-is after retries
             message = str(e)
-            if "429" in message and max_retries > 0:
+            # 429 = rate limited (our own request pace); 503 = the model
+            # is temporarily overloaded on Google's side. Both are worth
+            # a short wait-and-retry rather than failing the whole call.
+            if ("429" in message or "503" in message or "UNAVAILABLE" in message) and max_retries > 0:
                 time.sleep(20)
                 return self._call_with_backoff(fn, max_retries=max_retries - 1)
             raise

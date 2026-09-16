@@ -41,3 +41,24 @@ def save_image_diagram(image, item_id: int) -> str:
     file_path = target_dir / f"item_{item_id}.png"
     image.save(file_path)
     return str(file_path.relative_to(settings.MEDIA_ROOT))
+
+
+def save_svg_diagram(svg_markup: str | None, item_id: int) -> str | None:
+    """
+    Зберігає текстову SVG-розмітку (повернуту LLM) у
+    media/generated/item_{id}.svg. Раніше `llm_worker.py` імпортував цю
+    функцію, якої не існувало (був лише `save_image_diagram`, який очікує
+    PIL Image, а не текст) -- це викликало ImportError одразу при старті
+    Celery worker'а. Якщо модель не повернула схожого на SVG тексту,
+    нічого не зберігаємо і повертаємо None (виклик у llm_worker.py вже
+    очікує на такий випадок).
+    """
+    if not svg_markup or "<svg" not in svg_markup.lower():
+        return None
+
+    target_dir = Path(settings.MEDIA_ROOT) / "generated"
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    file_path = target_dir / f"item_{item_id}.svg"
+    file_path.write_text(svg_markup, encoding="utf-8")
+    return str(file_path.relative_to(settings.MEDIA_ROOT))
