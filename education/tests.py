@@ -1,7 +1,9 @@
+from io import StringIO
 from pathlib import Path
 
 from django.conf import settings
 from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 
 from education.models import Grade, Item, Paragraph, Section, Subject
@@ -174,6 +176,52 @@ class ImportCurriculumGrade6TarasenkovaTests(TestCase):
         self.assertEqual(Grade.objects.filter(subject=math_subject).count(), 2)
         self.assertTrue(Grade.objects.filter(number=5, subject=math_subject).exists())
         self.assertTrue(Grade.objects.filter(number=6, subject=math_subject).exists())
+
+
+class ImportCurriculumDryRunTests(TestCase):
+    """
+    Step 20: import_curriculum --dry-run wires the same management
+    command to the Step 15-19 content classifiers (via
+    collect_content_block_previews) instead of the TOC importer above --
+    given raw OCR'd lesson text, it prints the ContentBlocks that would
+    be created without touching the database at all.
+    """
+
+    def setUp(self):
+        self.content_file = Path(settings.BASE_DIR) / "review" / "section_1_text" / "combined.txt"
+
+    def test_dry_run_requires_content_file(self):
+        with self.assertRaises(CommandError):
+            call_command("import_curriculum", "--dry-run", stdout=StringIO())
+
+    def test_dry_run_prints_previews_without_writing_to_db(self):
+        out = StringIO()
+        call_command(
+            "import_curriculum", "--dry-run", "--content-file", str(self.content_file), stdout=out
+        )
+        output = out.getvalue()
+        self.assertIn("ContentBlock", output)
+        self.assertIn("exercise", output)
+        self.assertIn("history_aside", output)
+        self.assertEqual(Grade.objects.count(), 0)
+        self.assertEqual(Section.objects.count(), 0)
+        self.assertEqual(Paragraph.objects.count(), 0)
+        self.assertEqual(Item.objects.count(), 0)
+
+    def test_dry_run_does_not_require_file_or_grade(self):
+        out = StringIO()
+        call_command(
+            "import_curriculum", "--dry-run", "--content-file", str(self.content_file), stdout=out
+        )
+        self.assertIn("ContentBlock", out.getvalue())
+
+    def test_dry_run_orders_previews_by_document_position(self):
+        out = StringIO()
+        call_command(
+            "import_curriculum", "--dry-run", "--content-file", str(self.content_file), stdout=out
+        )
+        output = out.getvalue()
+        self.assertLess(output.index("oral_exercise"), output.index(" exercise"))
 
 
 class ContentClassifierTests(TestCase):

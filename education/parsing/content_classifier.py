@@ -466,3 +466,78 @@ def find_history_aside_blocks(raw_text: str) -> List[HistoryAsideBlock]:
         i += 1
 
     return blocks
+
+
+def collect_content_block_previews(raw_text: str) -> List[dict]:
+    """
+    Step 20: runs every Step 15-19 classifier over the same raw OCR text
+    and merges their output into one document-ordered list of "preview"
+    dicts -- one per future ContentBlock row -- for import_curriculum
+    --dry-run to print without touching the database.
+
+    exercise/oral_exercise blocks group several numbered items under one
+    marker, but ContentBlock is one row per item, so those blocks are
+    expanded here into one preview per item instead of one preview per
+    block.
+    """
+    previews: List[dict] = []
+
+    for block in find_review_exercise_blocks(raw_text):
+        previews.append(
+            {
+                "start_line": block.start_line,
+                "block_type": "review_exercise",
+                "difficulty": None,
+                "text": block.text,
+            }
+        )
+
+    for block in find_exercise_blocks(raw_text):
+        for item in block.items:
+            previews.append(
+                {
+                    "start_line": block.start_line,
+                    "block_type": "exercise",
+                    "difficulty": item.difficulty,
+                    "text": item.text,
+                }
+            )
+
+    for block in find_oral_exercise_blocks(raw_text):
+        for item in block.items:
+            previews.append(
+                {
+                    "start_line": block.start_line,
+                    "block_type": "oral_exercise",
+                    "difficulty": None,
+                    "text": item.text,
+                }
+            )
+
+    for block in find_wise_owl_blocks(raw_text):
+        previews.append(
+            {
+                "start_line": block.start_line,
+                "block_type": "wise_owl",
+                "difficulty": None,
+                "text": block.text,
+            }
+        )
+
+    for block in find_history_aside_blocks(raw_text):
+        previews.append(
+            {
+                "start_line": block.start_line,
+                "block_type": "history_aside",
+                "difficulty": None,
+                "text": block.text,
+            }
+        )
+
+    previews.sort(key=lambda p: p["start_line"])
+    for order, preview in enumerate(previews):
+        preview["order"] = order
+
+    return previews
+
+    return blocks

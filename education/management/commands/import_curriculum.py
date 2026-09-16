@@ -11,6 +11,16 @@ Usage:
 particular curriculum's headings (see education/parsing/subject_profiles.py).
 Use "math" for a Розділ/§/numbered-lesson textbook, or "generic" for a
 subject with no such structure (every paragraph of text becomes one item).
+
+Step 20 also wires the Step 15-19 content-block classifiers into this same
+command as a dry run, so there's one place to run curriculum imports from:
+
+    python manage.py import_curriculum --dry-run \\
+        --content-file review/section_1_text/combined.txt
+
+--dry-run prints the ContentBlocks the classifiers would create for
+--content-file's raw OCR text, in document order, without writing anything
+to the database. --file/--grade are not required in this mode.
 """
 from __future__ import annotations
 
@@ -20,6 +30,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from education.models import Grade, Item, Paragraph, Section, Subject
+from education.parsing.content_classifier import collect_content_block_previews
 from education.parsing.subject_profiles import get_profile
 from education.parsing.toc_parser import parse_toc
 
@@ -27,15 +38,17 @@ from education.parsing.toc_parser import parse_toc
 class Command(BaseCommand):
     help = (
         "Імпортує зміст підручника (Розділ/§/пункти) напряму з текстового "
-        "файлу у структуру Grade -> Section -> Paragraph -> Item."
+        "файлу у структуру Grade -> Section -> Paragraph -> Item. Також "
+        "підтримує --dry-run для попереднього перегляду ContentBlock(ів), "
+        "розпізнаних класифікаторами Step 15-19, без запису у БД."
     )
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--file", required=True, help="Шлях до txt-файлу зі змістом підручника"
+            "--file", required=False, help="Шлях до txt-файлу зі змістом підручника"
         )
         parser.add_argument(
-            "--grade", type=int, required=True, help="Клас, напр. 5"
+            "--grade", type=int, required=False, help="Клас, напр. 5"
         )
         parser.add_argument(
             "--language",
@@ -61,8 +74,30 @@ class Command(BaseCommand):
             action="store_true",
             help="Видалити попередній вміст цього класу перед імпортом",
         )
+        parser.add_argument(
+            "--dry-run",
+            action="store_true",
+            help=(
+                "Запустити класифікатори контент-блоків (Step 15-19) над "
+                "--content-file і вивести результат без запису у БД."
+            ),
+        )
+        parser.add_argument(
+            "--content-file",
+            default=None,
+            help="Шлях до сирого OCR-тексту для --dry-run",
+        )
 
     def handle(self, *args, **options):
+        if options["dry_run"]:
+            self._handle_dry_run(options)
+            return
+
+        if not options["file"]:
+            raise CommandError("--file обов'язковий (крім --dry-run)")
+        if not options["grade"]:
+            raise CommandError("--grade обов'язковий (крім --dry-run)")
+
         file_path = Path(options["file"])
         grade_number = options["grade"]
         lang = options["language"]
@@ -151,4 +186,30 @@ class Command(BaseCommand):
                     f"ℹ️ Пропущено {len(skipped)} службових рядків "
                     f"(Завдання/Головне/Зміст/Відповіді тощо) -- це очікувано."
                 )
+            )
+
+    def _handle_dry_run(self, options):
+        content_file = options["content_file"]
+        if not content_file:
+            raise CommandError("--dry-run вимагає --content-file <шлях до сирого OCR-тексту>")
+
+        content_path = Path(content_file)
+        if not content_path.exists():
+            raise CommandError(f"Файл не знайдено: {content_path}")
+
+        raw_text = content_path.read_text(encoding="utf-8")
+        previews = collect_content_block_previews(raw_text)
+
+        self.stdout.write(
+            f"Знайдено {len(previews)} ContentBlock(ів) з {content_path} "
+            f"(DRY RUN -- нічого не записано в БД):\n"
+        )
+        for preview in previews:
+            tag = f" [{preview['difficulty']}]" if preview["difficulty"] else ""
+            text = preview["text"]
+            if len(text) > 200:
+                text = text[:200] + "…"
+            self.stdout.write(
+                f"  #{preview['order']:>3} {preview['block_type']}{tag} "
+                f"(рядок {preview['start_line']}): {text}"
             )
