@@ -1,9 +1,9 @@
 """
 Step 20 (early/dry-run form): CLI to run a content classifier over raw
 OCR'd text and print what it would create -- nothing is written to the
-database. Supports "review_exercise" (Step 15), "exercise" (Step 16),
-"oral_exercise" (Step 17), and "wise_owl" (Step 18) so far;
-"history_aside" (Step 19) gets added here once that classifier exists.
+database. Now covers all five block types from Steps 15-19:
+"review_exercise", "exercise", "oral_exercise", "wise_owl", and
+"history_aside".
 
 Usage:
     python scripts/classify_content.py review\\section_1_text\\combined.txt --block-type review_exercise
@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from education.parsing.content_classifier import (
     find_exercise_blocks,
+    find_history_aside_blocks,
     find_oral_exercise_blocks,
     find_review_exercise_blocks,
     find_wise_owl_blocks,
@@ -32,7 +33,7 @@ def main():
     parser.add_argument(
         "--block-type",
         default="review_exercise",
-        choices=["review_exercise", "exercise", "oral_exercise", "wise_owl"],
+        choices=["review_exercise", "exercise", "oral_exercise", "wise_owl", "history_aside"],
     )
     args = parser.parse_args()
 
@@ -71,6 +72,14 @@ def main():
 
     elif args.block_type == "wise_owl":
         blocks = find_wise_owl_blocks(raw_text)
+        print(f"Found {len(blocks)} '{args.block_type}' block(s) (DRY RUN -- nothing written):\n")
+        for n, block in enumerate(blocks, start=1):
+            print(f"--- Block {n} (lines {block.start_line}-{block.end_line}) ---")
+            print(block.text)
+            print()
+
+    elif args.block_type == "history_aside":
+        blocks = find_history_aside_blocks(raw_text)
         print(f"Found {len(blocks)} '{args.block_type}' block(s) (DRY RUN -- nothing written):\n")
         for n, block in enumerate(blocks, start=1):
             print(f"--- Block {n} (lines {block.start_line}-{block.end_line}) ---")

@@ -380,3 +380,89 @@ def find_wise_owl_blocks(raw_text: str) -> List[WiseOwlBlock]:
         i += 1
 
     return blocks
+
+
+# ---------------------------------------------------------------------
+# Step 19: "history_aside" -- the "Коли зроблено уроки" historical box.
+# Per the refactor plan, "hardest, spans a page-layout box; do this
+# last" -- confirmed against the one real occurrence in
+# review/section_1_text/combined.txt (lines 353-493): unlike every other
+# block type here, this one is a genuine multi-paragraph essay (this
+# example alone runs ~140 lines), with no blank-line or short-marker
+# structure to lean on. It even contains an internal sub-heading of its
+# own ("Як називають «числа-велетні»", line 473) and running-header
+# bleed-through ("Як рахували в давнину 13", "їщ 9 1. Натуральні числа")
+# scattered through it -- none of that is specially handled, since it's
+# all just prose that becomes part of the captured text, same as any
+# other line.
+#
+# What actually, reliably ends this block: the next real lesson heading
+# ("3. Відрізок. Довжина відрізка", line 494). A direct check confirmed
+# NUMBERED_LINE_RE (already used elsewhere to *confirm* real content)
+# does not spuriously match anywhere else inside these ~140 lines, so it
+# doubles as the end condition here -- the only line it matches between
+# the marker and the real boundary is that boundary itself. The other
+# known block markers are included too, for the (not yet observed in
+# this fixture, but noted in the refactor plan Section 1.2) case of an
+# item having a second, separate "Коли зроблено уроки" aside, or any
+# other named block starting right after this one instead of a new
+# lesson.
+# ---------------------------------------------------------------------
+
+HISTORY_ASIDE_MARKER_RE = re.compile(r"Коли зроблено уроки", re.IGNORECASE)
+
+HISTORY_ASIDE_BLOCK_END_MARKERS_RE = [
+    re.compile(r"Вправи для повторення", re.IGNORECASE),
+    re.compile(r"^\W*Вправи\W*$", re.IGNORECASE),
+    re.compile(r"Розв'язуємо усно", re.IGNORECASE),
+    WISE_OWL_MARKER_RE,
+    HISTORY_ASIDE_MARKER_RE,
+]
+
+
+@dataclass
+class HistoryAsideBlock:
+    start_line: int          # 0-indexed line number in the input, for review
+    end_line: int
+    text: str                # raw captured text, unedited -- OCR mistakes and all
+
+
+def find_history_aside_blocks(raw_text: str) -> List[HistoryAsideBlock]:
+    """
+    Scans raw OCR'd lesson text for "Коли зроблено уроки" blocks and
+    returns each one's raw captured text plus its line range.
+
+    Unlike every other classifier in this module, does NOT require at
+    least one numbered line to confirm real content -- the opposite is
+    true here: a numbered line is exactly what signals the block has
+    ended (see the module comment above). The conservative check instead
+    is simply that some non-blank text was captured at all.
+    """
+    lines = raw_text.splitlines()
+    blocks: List[HistoryAsideBlock] = []
+
+    i = 0
+    while i < len(lines):
+        if HISTORY_ASIDE_MARKER_RE.search(lines[i].strip()):
+            start = i
+            i += 1
+            captured: List[str] = []
+
+            while i < len(lines):
+                stripped = lines[i].strip()
+
+                if stripped and NUMBERED_LINE_RE.match(stripped):
+                    break
+                if any(rx.search(stripped) for rx in HISTORY_ASIDE_BLOCK_END_MARKERS_RE):
+                    break
+
+                captured.append(lines[i])
+                i += 1
+
+            block_text = "\n".join(captured).strip()
+            if block_text:
+                blocks.append(HistoryAsideBlock(start_line=start, end_line=i, text=block_text))
+            continue
+        i += 1
+
+    return blocks
