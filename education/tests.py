@@ -5,6 +5,7 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from education.models import Grade, Item, Paragraph, Section, Subject
+from education.parsing.math_heuristic import annotate_blocks, needs_vision_ocr
 
 
 class ImportCurriculumCommandTests(TestCase):
@@ -101,3 +102,47 @@ class ImportCurriculumCommandTests(TestCase):
         self.assertFalse(Section.objects.filter(grade=grade, number=99).exists())
         self.assertEqual(Paragraph.objects.filter(section__grade=grade).count(), 5)
         self.assertEqual(Item.objects.filter(paragraph__section__grade=grade).count(), 38)
+
+
+class MathHeuristicTests(TestCase):
+    """
+    Step 28: the local (no API calls) heuristic that flags which OCR'd
+    blocks likely contain mangled math notation, so Step 29's Gemini
+    vision OCR only gets spent on those -- kept conservative on purpose,
+    since every false positive costs a rate-limited API call later.
+    """
+
+    def test_plain_ukrainian_prose_is_not_flagged(self):
+        text = (
+            "Дріб — це число, яке показує частину від цілого. "
+            "Знаменник показує, на скільки частин поділили ціле."
+        )
+        self.assertFalse(needs_vision_ocr(text))
+
+    def test_explicit_instruction_marker_is_flagged(self):
+        text = "Обчисліть периметр трикутника зі сторонами 3 см, 4 см і 5 см."
+        self.assertTrue(needs_vision_ocr(text))
+
+    def test_math_symbols_are_flagged(self):
+        text = "Розв'яжи: x + 5 = 12, знайди значення x."
+        self.assertTrue(needs_vision_ocr(text))
+
+    def test_garbled_fraction_fragments_are_flagged(self):
+        # Simulates what Tesseract tends to produce when it hits a
+        # fraction it can't read cleanly -- lots of short isolated
+        # digit/symbol tokens instead of a normal sentence.
+        text = "1 / 2 + 3 = . 4 5"
+        self.assertTrue(needs_vision_ocr(text))
+
+    def test_empty_text_is_not_flagged(self):
+        self.assertFalse(needs_vision_ocr(""))
+        self.assertFalse(needs_vision_ocr("   "))
+
+    def test_annotate_blocks_adds_flag_to_each_block(self):
+        blocks = [
+            {"text": "Просте речення без математики."},
+            {"text": "Обчисліть площу прямокутника."},
+        ]
+        annotated = annotate_blocks(blocks)
+        self.assertFalse(annotated[0]["needs_vision_ocr"])
+        self.assertTrue(annotated[1]["needs_vision_ocr"])
