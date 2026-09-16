@@ -1,6 +1,9 @@
 # Math World — Refactoring Plan: Design & Parsing Logic
 
-Date: 2026-09-15
+Date: 2026-09-15 (updated 2026-09-16 — reconciled against actual codebase
+state; a lot of the checklist below was already done without the
+checkboxes ever being updated. See the note at the top of Section 3.)
+
 Scope: `education` app data model, curriculum ingestion pipeline, and the
 concrete parsing bug that motivated this refactor.
 
@@ -20,6 +23,10 @@ exist anywhere in the codebase**, and its expected fixture file
 (`data/5_class_ukr.txt`) didn't exist either. The test suite had been
 failing/erroring from the start.
 
+**Resolved:** `import_programm_csv.py` and the hand-typed CSV have since
+been deleted from the codebase; `import_curriculum` is the only importer
+now (Step 3's decision — see Section 3).
+
 ### 1.2 The `.txt`/`.csv` source itself is wrong, not just the code
 Comparing `5_class_ukr.txt` against the actual textbook pages, the
 structural headings (Розділ / § / numbered lessons) are all correct, but
@@ -38,10 +45,11 @@ text from this PDF the normal way will silently produce garbled
 Ukrainian.**
 
 Confirmed fix: render each page to an image (`pdftoppm`, 300dpi) and run
-Tesseract OCR with the Ukrainian language pack (`tesseract-ocr-ukr`) —
+Tesseract OCR with the Ukrainian language pack (`tesseract-ocr-ukr`) --
 this produces clean, accurate Ukrainian text. Verified against several
 real pages including exercise lists with numbers, fractions, and mixed
-Cyrillic/Latin math notation.
+Cyrillic/Latin math notation. **Implemented:** `scripts/render_pdf_pages.py`
++ `scripts/ocr_pages.py` (Steps 12–13, done — see Section 3).
 
 ### 1.4 The data model is thinner than the actual content
 `Item.content` is currently just a title string. A real lesson ("пункт")
@@ -52,38 +60,51 @@ exercises) list with difficulty markers (°, plain, ··, *), a "Вправи д
 optional "Коли зроблено уроки" historical aside. That's a genuine mix of
 **narrative Ukrainian text** and **structured math problems** — two kinds
 of content that need different modeling. This is the "text and math
-stuff" you flagged.
+stuff" you flagged. **Implemented:** the `ContentBlock` model (Section 2,
+Steps 8–10, done).
 
 ### 1.5 No `Subject` concept
 `Grade` is keyed only by `number`. If math world is meant to cover
 multiple Ukrainian school subjects per grade, a second subject's 5th
 grade would collide with math's 5th grade under the same `Grade` row.
+**Implemented:** `Subject` model, `Grade.subject` FK (now required),
+Steps 4–7, done.
 
 ## 2. Target design (what we're building toward)
 
 ```
-Subject(code, name_uk, name_de)                 # NEW — e.g. "math", "ukr_mova"
-Grade(number, subject FK, name_uk, name_de,      # subject added
+Subject(code, name_uk, name_de)                 # DONE
+Grade(number, subject FK, name_uk, name_de,      # DONE (subject required)
       theme_uk, theme_de)
 Section(grade FK, number, name_uk, name_de)       # unchanged shape
 Paragraph(section FK, number, name_uk, name_de)   # unchanged shape
-Item(paragraph FK, number, content, content_de,   # "content" becomes the
-     type, image_path)                            #  theory text only
-ContentBlock(item FK, block_type, order,          # NEW — one row per
-             text, difficulty, image_path)         #  self-check / oral /
-                                                     #  exercise / review /
-                                                     #  wise-owl / history
+Item(paragraph FK, number, content, content_de,   # "content" is still
+     type, image_path)                            #  theory/title text
+ContentBlock(item FK, block_type, order,          # DONE (table + admin +
+             text, difficulty, image_path)         #  item_detail render).
+                                                     #  Table is still
+                                                     #  EMPTY of real data
+                                                     #  (Steps 21-23 not
+                                                     #  run yet).
 ```
 
-`block_type` choices: `self_check`, `oral_exercise`, `exercise`,
-`review_exercise`, `wise_owl`, `history_aside`. `difficulty` (nullable)
-holds the °/·/··/* marker for `exercise` rows.
+`block_type` choices (as implemented): `theory`, `self_check`,
+`oral_exercise`, `exercise`, `review_exercise`, `wise_owl`,
+`history_aside`. `difficulty` choices: `basic` (°), `standard`,
+`advanced` (··), `olympiad` (*) — for `exercise` rows.
 
-This is a real migration touching your existing `db.sqlite3`, which is
-why it's broken into small, independently-checkable steps below rather
-than one big change.
+This was a real migration touching the existing `db.sqlite3`, done in the
+small, independently-checkable steps below.
 
 ## 3. Small steps
+
+**Status note (2026-09-16):** the checklist below was last updated when
+only Step 0 was checked off, but the actual codebase has since
+implemented Steps 1–16 (with a couple of caveats noted inline) plus an
+entire unplanned sub-project (Gemini-vision-assisted OCR, see the new
+section at the end). Re-verify this list periodically instead of trusting
+old checkmarks — that's exactly the drift that caused this out-of-date
+read.
 
 Each step is meant to be one sitting, independently testable, and safe to
 stop after. Do them in order — later steps assume earlier ones landed.
@@ -97,101 +118,172 @@ stop after. Do them in order — later steps assume earlier ones landed.
       2 sections, 5 paragraphs, 38 items, 15 noise lines correctly
       skipped, historical aside merged into the right item.
 
-### Next: verify Phase 1 on your machine
-- [ ] **Step 1** — Run `python manage.py test education` and confirm all
-      4 tests pass.
-- [ ] **Step 2** — Run
-      `python manage.py import_curriculum --file data/5_class_ukr.txt --grade 5 --language uk --reset`
-      against your real `db.sqlite3` (back it up first — copy
-      `db.sqlite3` somewhere safe) and check the admin site shows 2
-      sections / 5 paragraphs / 38 items for grade 5.
-- [ ] **Step 3** — Decide: keep `import_programm_csv.py` around (marked
-      deprecated in its `help` text) or delete it + the CSV now that
-      Step 2 works. Small either way, but pick one so it doesn't rot.
+### Verify Phase 1
+- [x] **Step 1** — `python manage.py test education` — grade-5 import
+      tests pass. (2026-09-16: the `ContentClassifierTests` suite added
+      later, for Steps 15–16, had a real regression here — the exercise
+      difficulty-marker regex expected the marker *before* the period
+      instead of after it, e.g. matching `2".` instead of the actual
+      `2."` OCR output. Fixed and pushed as commit `8a7b37a`.)
+- [x] **Step 2** — `import_curriculum` has been run against the real
+      `db.sqlite3` for grade 5 (status `"imported"` in
+      `data/grade_sources.py`) — 2 sections / 5 paragraphs / 38 items
+      confirmed.
+- [x] **Step 3** — Decided: deleted. `import_programm_csv.py` and the old
+      hand-typed CSV no longer exist in the codebase; `import_curriculum`
+      is the only importer.
 
 ### Data model: Subject (small, low-risk — additive only)
-- [ ] **Step 4** — Add `Subject` model (just the table, no FK from Grade
-      yet). Migrate. Seed one row: `Subject(code="math", name_uk="Математика")`.
-- [ ] **Step 5** — Add `subject` FK to `Grade`, nullable for now. Migrate.
-      Nothing else changes yet — existing code keeps working.
-- [ ] **Step 6** — Data migration: set `subject_id` on every existing
-      `Grade` row to the "math" Subject. Verify in admin.
-- [ ] **Step 7** — Make `Grade.subject` non-nullable. Migrate. Update
-      `import_curriculum` to accept `--subject-code` and set it on
-      `get_or_create`.
+- [x] **Step 4** — `Subject` model exists (`code`, `name_uk`, `name_de`).
+- [x] **Step 5–7** — `Grade.subject` FK added, backfilled (migration
+      `0010_backfill_grade_subject.py`), and made non-nullable
+      (`0011_grade_subject_required.py`). `import_curriculum` accepts
+      `--subject-code` and sets it on `get_or_create`.
 
 ### Data model: ContentBlock (additive — doesn't touch existing fields)
-- [ ] **Step 8** — Add `ContentBlock` model (empty table, no data). Migrate.
-- [ ] **Step 9** — Register `ContentBlock` as a `TabularInline` under
-      `ItemAdmin` in `admin.py` (same pattern as `TheoryPracticeInline`),
-      so you can manually add one row and see it work before any
-      automated parsing touches it.
-- [ ] **Step 10** — Update `item_detail` view/template only (not
-      `item_list`/`mint_overview` yet) to render an item's `ContentBlock`
-      rows grouped by `block_type`, falling back gracefully when there
-      are none. Smallest possible UI change to prove the model works.
-- [ ] **Step 11** — Once Step 10 looks right for a manually-entered test
-      block, revisit `item_list`/`mint_overview`'s `lstrip("• ")`
-      heuristic and simplify it now that structure doesn't need to be
-      guessed from bullet characters.
+- [x] **Step 8** — `ContentBlock` model exists (migrations `0012`, `0013`).
+- [x] **Step 9** — `ContentBlockInline` registered under `ItemAdmin` in
+      `admin.py`.
+- [x] **Step 10** — `item_detail` view groups `item.content_blocks` by
+      `block_type` and the template renders each group (with a muted
+      fallback when a lesson has none yet).
+- [ ] **Step 11** — `item_list`/`mint_overview` still render from
+      `Item.details_list()` (splitting `Item.content` by line/sentence),
+      not from `ContentBlock` rows — they haven't been revisited since
+      Step 10 only touched `item_detail`. Still open.
 
 ### Content extraction: build the pipeline one block type at a time
-- [ ] **Step 12** — `scripts/render_pdf_pages.py`: wraps `pdftoppm` to
-      render one page range to PNG. Test on a single page (e.g. page 5).
-- [ ] **Step 13** — `scripts/ocr_pages.py`: runs Tesseract
-      (`-l ukr --psm 6`) over rendered PNGs, writes one `.txt` per page.
-      Test on the same single page and diff against what I already
-      verified in this conversation.
-- [ ] **Step 14** — Run Steps 12–13 over just §1 (pages 5–15) and save
-      the raw OCR text to a `review/` folder — no parsing yet, just look
-      at it and confirm quality on a whole section.
-- [ ] **Step 15** — Write a classifier for **one** block type only:
-      `review_exercise` ("Вправи для повторення" — the clearest, least
-      ambiguous marker). Run it over the §1 OCR text, print what it
-      would create, don't touch the DB yet.
-- [ ] **Step 16** — Add `exercise` (the "Вправи" list, capturing the
-      difficulty marker). Same dry-run treatment.
-- [ ] **Step 17** — Add `oral_exercise` ("Розв'язуємо усно").
-- [ ] **Step 18** — Add `wise_owl` ("Задача від Мудрої Сови" — usually
-      exactly one per item, simplest to detect).
-- [ ] **Step 19** — Add `history_aside` ("Коли зроблено уроки" — hardest,
-      spans a page-layout box; do this last).
-- [ ] **Step 20** — Add a `--dry-run` flag to `import_curriculum` that
-      prints the `ContentBlock`s it would create for a given file/range
-      without writing them, wired to the classifiers from Steps 15–19.
-- [ ] **Step 21** — Run `--dry-run` over §1, read through the output by
-      hand, fix classifier mistakes.
-- [ ] **Step 22** — Run for real (writes to DB) for §1 only. Check in
-      admin. This is the first end-to-end slice: PDF → OCR → blocks → DB → admin.
-- [ ] **Step 23** — Repeat Steps 14–22 section by section for the rest of
-      grade 5 math that's in this PDF (pages 1–46 only cover part of the
-      book).
-- [ ] **Step 24** — Get the rest of the textbook PDF (or specific
-      chapters you want next) before continuing past what's already
-      uploaded.
+- [x] **Step 12** — `scripts/render_pdf_pages.py` (wraps `pdftoppm`).
+- [x] **Step 13** — `scripts/ocr_pages.py` (Tesseract, `-l ukr --psm 6`).
+- [x] **Step 14** — §1 (pages 5–15) rendered + OCR'd into `review/section_1`
+      and `review/section_1_text/` (including `combined.txt`), used
+      directly as real test fixtures in `education/tests.py`.
+- [x] **Step 15** — `find_review_exercise_blocks()` in
+      `education/parsing/content_classifier.py`, tested against real OCR
+      text from `combined.txt`.
+- [x] **Step 16** — `find_exercise_blocks()`, capturing each item's
+      difficulty marker. (This is the function whose regex had the bug
+      fixed in Step 1 above.)
+- [ ] **Step 17** — `oral_exercise` ("Розв'язуємо усно") classifier — not
+      started. `content_classifier.py` only implements `review_exercise`
+      and `exercise` so far.
+- [ ] **Step 18** — `wise_owl` ("Задача від Мудрої Сови") classifier —
+      not started.
+- [ ] **Step 19** — `history_aside` ("Коли зроблено уроки") classifier —
+      not started; still expected to be the hardest (spans a page-layout
+      box).
+- [~] **Step 20** — Implemented differently than planned: instead of a
+      `--dry-run` flag on `import_curriculum`, there's a standalone
+      `scripts/classify_content.py` CLI that runs a chosen classifier
+      (`review_exercise` or `exercise`) over a text file and prints the
+      result — same dry-run spirit, separate tool. Decide whether to fold
+      this into `import_curriculum --dry-run` as originally planned, or
+      keep it standalone and extend it as Steps 17–19 land.
+- [ ] **Step 21** — Dry-run output for §1 hasn't been read through by hand
+      end-to-end and reconciled against the real book yet (beyond the
+      regex bug already found via the test suite).
+- [ ] **Step 22** — Nothing has been written for real to `ContentBlock`
+      yet — the table is still empty except whatever was manually typed
+      in the admin to validate Step 9. This is the actual next concrete
+      step once Steps 17–19 (or a decision to skip them for now and just
+      import `review_exercise`/`exercise`) are ready.
+- [ ] **Step 23** — Not started (depends on Step 22 landing for §1 first).
+- [ ] **Step 24** — Not started; only pages 1–46 of the grade-5 PDF are in
+      the project so far.
 
-### Generalizing beyond math
-- [ ] **Step 25** — Once a second subject's real source text exists, add
-      its `SubjectProfile` in `subject_profiles.py`.
-- [ ] **Step 26** — If that subject's lesson pages use different sidebar
-      types than math's, extend `ContentBlock.block_type` rather than
-      branching the parser by subject name.
+### Generalizing across textbooks and subjects
+This section didn't play out the way it was originally planned — worth
+rewriting rather than just checking boxes.
 
-## 4. Open decisions (only block Steps 4+ / 12+, not the steps already done)
+- [x] **Multi-textbook generalization (unplanned, done ahead of schedule)**
+      — `SubjectProfile` in `subject_profiles.py` was generalized to be
+      keyed by *textbook/author*, not by subject or grade number. This
+      is what let grade 6 (Тарасенкова, `math_tarasenkova` profile, still
+      the "math" subject) get added alongside grade 5 (Мерзляк,
+      `math_merzlyak`) without any model changes — see the profile file's
+      own "NOTE ON GRADES 5-9" comment. `data/grade_sources.py` is a new
+      manifest (not originally planned) tracking per-grade source status;
+      grade 6 is currently `"sections_only_no_items"` since its table of
+      contents has no individual lesson titles to extract yet (Тарасенкова's
+      "Зміст" only lists Розділ/§, per the profile's own comment —
+      referenced there as "Step 36", i.e. a future step, of extracting
+      lesson titles from each §'s actual pages).
+- [ ] **A genuinely different subject** (e.g. `ukr_language`) — a
+      `UKR_LANGUAGE_PROFILE` already exists as a *starting point* in
+      `subject_profiles.py`, but there's no real Ukrainian-language-arts
+      source text imported yet. This is what the original Steps 25–26
+      were actually about; still open.
 
-- Confirm the `ContentBlock` shape in Section 2 (or say what's wrong)
-  before Step 8's migration touches your live `db.sqlite3`.
-- Steps 12–24 need the rest of the textbook PDF eventually — fine to
-  start with just pages 1–46 and pause at Step 24.
-- Step 3's call on `import_programm_csv.py`/the old CSV.
+## 4. Unplanned sub-project: Gemini-vision-assisted OCR
 
-## 5. Files delivered so far (Step 0)
+Not in the original plan at all, but present in the codebase (the code's
+own comments number these "Steps 27–29", continuing on from Step 26
+above):
+
+- [x] **("Step 27")** `scripts/gemini_client.py` — a quota-conscious
+      Gemini API wrapper: disk-cached responses (never re-spends quota on
+      a repeated request), a hard daily request budget, and one retry
+      with backoff on 429/503. Deliberately doesn't hardcode a model name
+      — reads `GEMINI_MODEL` from the environment since Google's free-tier
+      model lineup has moved more than once in 2026.
+- [x] **("Step 28")** `education/parsing/math_heuristic.py` —
+      `needs_vision_ocr()`, a free, local (no API call) heuristic that
+      flags OCR'd text likely to contain mangled math notation (explicit
+      marker phrases like "обчисліть", math symbols, or a high density of
+      short garbled digit/symbol tokens). This is the quota gate for the
+      next step. Tested in `MathHeuristicTests`.
+- [ ] **("Step 29") Gemini vision OCR re-pass** — `GeminiClient.generate_from_image()`
+      exists and is ready to call, but nothing in the pipeline actually
+      invokes it yet on blocks `math_heuristic.py` flags. This is the
+      real next piece of this sub-project: wire flagged blocks from the
+      OCR/classification pipeline into a `generate_from_image` call and
+      use the result in place of Tesseract's output for just those
+      blocks.
+- [ ] **("Step 30")** A `--vision-ocr` flag (mentioned in
+      `math_heuristic.py`'s own docstring) to turn this on for a given
+      `import_curriculum` run once Step 29 exists.
+
+## 5. Open decisions (only block the steps below, not what's already done)
+
+- **Steps 17–19 vs. skipping ahead:** worth deciding whether to finish
+  the remaining three classifiers (`oral_exercise`, `wise_owl`,
+  `history_aside`) before writing anything real to the DB (Step 22), or
+  import just `review_exercise`/`exercise` for §1 now and backfill the
+  other block types in a later pass. Either is fine; picking one avoids
+  stalling on completeness.
+- **Step 20's shape:** keep `scripts/classify_content.py` as a standalone
+  dry-run CLI, or fold it into `import_curriculum --dry-run` as
+  originally planned.
+- **Step 11:** decide whether `item_list`/`mint_overview` are worth
+  updating to read from `ContentBlock` now, or only once Step 22 actually
+  populates real content-block rows (updating the UI before there's real
+  data to show it may not be worth doing yet).
+- Steps 12–24 still need the rest of the grade-5 textbook PDF eventually
+  (only pages 1–46 are in the project); fine to keep pausing at Step 24
+  until more pages are available.
+- ("Step 29") needs a live `GEMINI_API_KEY` and a confirmed model name
+  (run `scripts/list_gemini_models.py` first) before it can be wired up.
+
+## 6. Files delivered so far
 
 ```
 education/parsing/__init__.py
 education/parsing/subject_profiles.py
 education/parsing/toc_parser.py
+education/parsing/content_classifier.py        (Steps 15-16)
+education/parsing/math_heuristic.py            ("Step 28")
 education/management/commands/import_curriculum.py
-education/tests.py                    (rewritten)
-data/5_class_ukr.txt                  (corrected fixture)
+education/tests.py                             (repeatedly extended)
+education/models.py                            (Subject, ContentBlock added)
+education/admin.py                             (ContentBlockInline, SubjectAdmin)
+education/views.py / templates/item_detail.html (ContentBlock rendering)
+scripts/render_pdf_pages.py                    (Step 12)
+scripts/ocr_pages.py                           (Step 13)
+scripts/classify_content.py                    (Step 20, standalone form)
+scripts/gemini_client.py                       ("Step 27")
+scripts/list_gemini_models.py
+data/5_class_ukr.txt                           (corrected fixture, grade 5)
+data/6_class_ukr.txt                           (grade 6, sections/§ only)
+data/grade_sources.py                          (new: per-grade status manifest)
+review/section_1/, review/section_1_text/      (Step 14 output, real OCR fixtures)
 ```
