@@ -5,6 +5,7 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from education.models import Grade, Item, Paragraph, Section, Subject
+from education.parsing.content_classifier import find_review_exercise_blocks
 from education.parsing.math_heuristic import annotate_blocks, needs_vision_ocr
 
 
@@ -167,6 +168,76 @@ class ImportCurriculumGrade6TarasenkovaTests(TestCase):
         self.assertEqual(Grade.objects.filter(subject=math_subject).count(), 2)
         self.assertTrue(Grade.objects.filter(number=5, subject=math_subject).exists())
         self.assertTrue(Grade.objects.filter(number=6, subject=math_subject).exists())
+
+
+class ContentClassifierTests(TestCase):
+    """
+    Step 15: find_review_exercise_blocks() against real OCR'd text from
+    review/section_1_text/combined.txt (§1 of the grade-5 Merzlyak book,
+    pages 5-15) -- not synthetic fixtures, so this tests against actual
+    OCR noise, not an idealized version of it.
+    """
+
+    # Verbatim excerpt: item 1's exercise list through its "Задача від
+    # Мудрої Сови" marker (which has OCR garbage prepended, "зб ... ох |"
+    # -- exactly the case that motivated using .search over .match for
+    # end markers).
+    ITEM_1_EXCERPT = """\
+Вправи для повторення
+
+12. Обчисліть:
+
+1)238- 435; 4) 2000 - 546; 17) 98-34;
+2) 4385 - 2697; 5) 3400 - 896; 8) 645 : 36.
+3) 843 - 457; 6) 23 : 46;
+
+13. Назва «Україна» вперше згадується в Київському літописі (за
+Шатіївським списком) під 1187 роком на означення Переяслав-
+ської, Київської і Чернігівської земель. Скільки років минуло
+від першої літописної появи назви «Україна»?
+
+зб Задача від Мудрої Сови ох |
+"""
+
+    # Verbatim excerpt: item 2's exercise list through its "Коли
+    # зроблено уроки" marker (clean, no OCR garbage this time).
+    ITEM_2_EXCERPT = """\
+Вправи для повторення
+37. Обчисліть:
+1)24 564; 5) 407 - 306; 9) 1134 :42;
+2) 1754-60; 6)852:6; 10) 3198 : 26;
+
+38. Виконайте дії:
+1)49-26:(54 - 27); 3) (801 - 316) - 29;
+2)36:9-18-:5; 4) (488 -- 808): 18.
+
+Коли зроблено уроки
+Як рахували в давнину
+"""
+
+    def test_finds_review_exercise_block_ending_at_garbled_wise_owl_marker(self):
+        blocks = find_review_exercise_blocks(self.ITEM_1_EXCERPT)
+        self.assertEqual(len(blocks), 1)
+        self.assertIn("12. Обчисліть", blocks[0].text)
+        self.assertIn("13. Назва", blocks[0].text)
+        # The garbled marker line itself must not leak into the captured
+        # block -- it's where the block ends, not part of it.
+        self.assertNotIn("Мудрої Сови", blocks[0].text)
+
+    def test_finds_review_exercise_block_ending_at_history_aside_marker(self):
+        blocks = find_review_exercise_blocks(self.ITEM_2_EXCERPT)
+        self.assertEqual(len(blocks), 1)
+        self.assertIn("37. Обчисліть", blocks[0].text)
+        self.assertIn("38. Виконайте дії", blocks[0].text)
+        self.assertNotIn("Коли зроблено уроки", blocks[0].text)
+
+    def test_finds_both_blocks_when_concatenated(self):
+        combined = self.ITEM_1_EXCERPT + "\n" + self.ITEM_2_EXCERPT
+        blocks = find_review_exercise_blocks(combined)
+        self.assertEqual(len(blocks), 2)
+
+    def test_no_marker_means_no_blocks(self):
+        self.assertEqual(find_review_exercise_blocks("Просто якийсь текст."), [])
 
 
 class MathHeuristicTests(TestCase):
