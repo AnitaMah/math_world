@@ -296,9 +296,18 @@ above):
       "review/section_1_text,review/section_1_rest_text"` (add
       `--vision-ocr-limit 3 --dry-run` first to sanity-check a few
       corrections before spending quota on all 65).
-- [ ] **("Step 30")** A `--vision-ocr` flag (mentioned in
-      `math_heuristic.py`'s own docstring) to turn this on for a given
-      `import_curriculum` run once Step 29 exists.
+- [x] **("Step 30", resolved)** The plan originally imagined this flag
+      on `import_curriculum`, but that command never writes
+      `ContentBlock` rows (it only does the TOC import and the Step 20
+      dry-run preview) -- `import_content_blocks` is what actually
+      writes them, so that's where `--vision-ocr` naturally landed as
+      part of Step 29 instead. No separate work needed here.
+      Also added `VisionOcrHelperTests` (5 tests) for the network-free
+      parts of Step 29 -- the line-to-page mapping, and the flag/limit/
+      merge logic in `_apply_vision_ocr` with `GeminiClient` mocked out
+      (covers the budget-exceeded-mid-run path too) -- since the feature
+      couldn't be run against a real Gemini call from this sandbox.
+      47/47 tests passing.
 
 ## 5. Open decisions (only block the steps below, not what's already done)
 

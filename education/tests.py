@@ -826,3 +826,193 @@ class ImportContentBlocksCommandTests(TestCase):
                 reset=True,
             )
             self.assertEqual(ContentBlock.objects.count(), 4)
+
+
+class VisionOcrHelperTests(TestCase):
+    """
+    Step 29: unit tests for the local, network-free logic behind
+    --vision-ocr -- since the feature itself can't be exercised against a
+    real Gemini call from the sandbox that built it (network-blocked
+    there, see REFACTOR_PLAN.md's Step 29 note). These cover the two
+    pieces that don't touch the network: mapping a block's raw-text line
+    number to the page image it actually came from, and the
+    flag/limit/merge logic in _apply_vision_ocr with GeminiClient mocked
+    out (so no real API key or network access is needed to run them).
+    """
+
+    def test_collect_numbered_files_matches_page_number_pattern(self):
+        import tempfile
+        from pathlib import Path
+
+        from education.management.commands.import_content_blocks import (
+            _collect_numbered_files,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            (tmp_path / "page-05.png").write_text("x")
+            (tmp_path / "page-16.png").write_text("x")
+            (tmp_path / "not-a-page.png").write_text("x")
+
+            found = _collect_numbered_files([tmp_path], "png")
+
+        self.assertEqual(set(found.keys()), {5, 16})
+
+    def test_build_line_to_page_map_uses_page_line_counts(self):
+        import tempfile
+        from pathlib import Path
+
+        from education.management.commands.import_content_blocks import (
+            _build_line_to_page_map,
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            page5 = tmp_path / "page-05.txt"
+            page6 = tmp_path / "page-06.txt"
+            page5.write_text("рядок 1\nрядок 2\nрядок 3\n")  # 3 lines
+            page6.write_text("рядок 1\nрядок 2\n")  # 2 lines
+
+            boundaries = _build_line_to_page_map({5: page5, 6: page6})
+
+        self.assertEqual(boundaries, [(0, 5), (3, 6)])
+
+    def test_page_for_line_picks_the_last_boundary_at_or_before(self):
+        from education.management.commands.import_content_blocks import (
+            _page_for_line,
+        )
+
+        boundaries = [(0, 5), (3, 6), (10, 7)]
+
+        self.assertEqual(_page_for_line(boundaries, 0), 5)
+        self.assertEqual(_page_for_line(boundaries, 2), 5)
+        self.assertEqual(_page_for_line(boundaries, 3), 6)
+        self.assertEqual(_page_for_line(boundaries, 9), 6)
+        self.assertEqual(_page_for_line(boundaries, 15), 7)
+
+    def _make_section_1_fixture(self):
+        subject, _ = Subject.objects.get_or_create(code="math", defaults={"name_uk": "Математика"})
+        grade = Grade.objects.create(number=5, subject=subject, name_uk="5 клас")
+        section = Section.objects.create(grade=grade, number=1, name_uk="Розділ 1")
+        paragraph = Paragraph.objects.create(section=section, number=1, name_uk="§ 1")
+        item1 = Item.objects.create(paragraph=paragraph, number=1, content="Перший урок")
+        return paragraph, item1
+
+    def test_vision_ocr_only_replaces_flagged_blocks_up_to_the_limit(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+
+        self._make_section_1_fixture()
+
+        # One clean line (not flagged) and two math-heavy lines (flagged
+        # by needs_vision_ocr) inside a single "Вправи" list, so all three
+        # end up as separate exercise-item previews on the same page.
+        raw_text = (
+            "1. Перший урок\n"
+            "\n"
+            "Вправи\n"
+            "1. Розкажіть, як пройшов ваш день.\n"
+            "2. Обчисліть: 3 + 5 = ?\n"
+            "3. Розв'яжи рівняння x + 2 = 7.\n"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            content_file = tmp_path / "raw.txt"
+            content_file.write_text(raw_text, encoding="utf-8")
+
+            text_dir = tmp_path / "text"
+            text_dir.mkdir()
+            (text_dir / "page-01.txt").write_text(raw_text, encoding="utf-8")
+
+            png_dir = tmp_path / "png"
+            png_dir.mkdir()
+            (png_dir / "page-01.png").write_bytes(b"\x89PNG fake bytes")
+
+            mock_client = mock.Mock()
+            mock_client.generate_from_image.return_value = "ВИПРАВЛЕНО ГЕМІНІ"
+
+            with mock.patch(
+                "scripts.gemini_client.GeminiClient", return_value=mock_client
+            ):
+                out = StringIO()
+                call_command(
+                    "import_content_blocks",
+                    content_file=str(content_file),
+                    grade=5,
+                    section=1,
+                    paragraph=1,
+                    reset=True,
+                    vision_ocr=True,
+                    vision_ocr_limit=1,
+                    pages_dirs=str(png_dir),
+                    pages_text_dirs=str(text_dir),
+                    stdout=out,
+                )
+
+        texts = list(ContentBlock.objects.values_list("text", flat=True))
+        # Exactly one block was corrected (the limit), and it's one of the
+        # two math-flagged ones, not the plain conversational line.
+        self.assertEqual(texts.count("ВИПРАВЛЕНО ГЕМІНІ"), 1)
+        self.assertIn("Розкажіть, як пройшов ваш день.", texts)
+        mock_client.generate_from_image.assert_called_once()
+        # The call was made against the real page image path, not a
+        # placeholder.
+        called_path = mock_client.generate_from_image.call_args[0][0]
+        self.assertTrue(str(called_path).endswith("page-01.png"))
+
+    def test_vision_ocr_budget_exceeded_stops_gracefully_without_crashing(self):
+        import tempfile
+        from pathlib import Path
+        from unittest import mock
+
+        from scripts.gemini_client import GeminiBudgetExceeded
+
+        self._make_section_1_fixture()
+
+        raw_text = (
+            "1. Перший урок\n"
+            "\n"
+            "Вправи\n"
+            "1. Обчисліть: 3 + 5 = ?\n"
+            "2. Розв'яжи рівняння x + 2 = 7.\n"
+        )
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            tmp_path = Path(tmp_dir)
+            content_file = tmp_path / "raw.txt"
+            content_file.write_text(raw_text, encoding="utf-8")
+
+            text_dir = tmp_path / "text"
+            text_dir.mkdir()
+            (text_dir / "page-01.txt").write_text(raw_text, encoding="utf-8")
+
+            png_dir = tmp_path / "png"
+            png_dir.mkdir()
+            (png_dir / "page-01.png").write_bytes(b"\x89PNG fake bytes")
+
+            mock_client = mock.Mock()
+            mock_client.generate_from_image.side_effect = GeminiBudgetExceeded("daily budget hit")
+
+            with mock.patch(
+                "scripts.gemini_client.GeminiClient", return_value=mock_client
+            ):
+                # Should not raise -- a budget cutoff mid-run leaves the
+                # remaining blocks with their original OCR text rather
+                # than crashing the whole import.
+                call_command(
+                    "import_content_blocks",
+                    content_file=str(content_file),
+                    grade=5,
+                    section=1,
+                    paragraph=1,
+                    reset=True,
+                    vision_ocr=True,
+                    pages_dirs=str(png_dir),
+                    pages_text_dirs=str(text_dir),
+                )
+
+        self.assertEqual(ContentBlock.objects.count(), 2)
+        texts = list(ContentBlock.objects.values_list("text", flat=True))
+        self.assertIn("Обчисліть: 3 + 5 = ?", texts)
