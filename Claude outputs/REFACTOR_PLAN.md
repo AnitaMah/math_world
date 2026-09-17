@@ -205,11 +205,30 @@ stop after. Do them in order — later steps assume earlier ones landed.
       Items 1-2 (Items 3-6 correctly skipped — combined.txt's pages
       5-15 don't cover them yet). 3 new tests
       (`ImportContentBlocksCommandTests`), 42/42 total passing.
-- [ ] **Step 23** — Not started (depends on Step 22 landing for §1 first,
-      which is now done — next is repeating this for the rest of the
-      grade-5 PDF once more pages are rendered/OCR'd, per Step 24).
-- [ ] **Step 24** — Not started; only pages 1–46 of the grade-5 PDF are in
-      the project so far.
+- [x] **Step 23** — Rendered + OCR'd pages 16-46 (the rest of §1 -- it
+      turns out §1 spans all 6 numbered lessons/items across the whole
+      1-46 page PDF, not just pages 5-15 as the earlier `combined.txt`
+      fixture covered). `review/section_1_text/combined.txt` now holds
+      all of §1 (pages 5-46, 1870 lines). Ran `import_content_blocks
+      --reset` against the full file: 111 `ContentBlock` rows written,
+      all 6 items (lessons) of §1 covered (up from 45 rows / 2 items).
+      Sanity-checked the item-boundary mapping for items 3-6 by hand
+      before writing for real -- all correctly assigned (e.g. item 3
+      "Відрізок. Довжина відрізка" picks up its own oral/exercise
+      blocks about відрізки/ламані, not bleed from item 2). 42/42 tests
+      still passing.
+      Note: this sandbox's Tesseract install only had `eng`/`osd`
+      language data, not `ukr` -- had to fetch `ukr.traineddata` by hand
+      into a user-writable tessdata dir and pass `TESSDATA_PREFIX` per
+      command. Only relevant here; your own Windows Tesseract install
+      already has the Ukrainian pack (confirmed working back in Step 13).
+- [ ] **Step 24** — The grade-5 PDF in the project (`5-klas-matematika-
+      merzljak-2018-1-46.pdf`) is *only* pages 1-46, but that already
+      turned out to be the entirety of §1 (Розділ 1, "Натуральні числа",
+      6 items). The book obviously continues (§2 onward, and eventually
+      Розділ 2), so more pages of the real PDF are still needed to go
+      any further than §1 -- this is the actual blocker now, not a
+      pipeline gap.
 
 ### Generalizing across textbooks and subjects
 This section didn't play out the way it was originally planned — worth
