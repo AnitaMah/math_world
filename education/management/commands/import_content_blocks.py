@@ -22,6 +22,19 @@ without touching the database -- use this first to sanity-check the
 mapping before writing for real (same discipline as Step 20/21).
 --reset deletes existing ContentBlocks for this paragraph's items first,
 so re-running after fixing a classifier doesn't pile up duplicates.
+
+Step 29: --vision-ocr re-corrects just the blocks math_heuristic.py flags
+as likely to contain mangled math notation, by sending the *source page
+image* (not the OCR text) to Gemini and asking for a clean transcription
+of that one passage. This only ever touches flagged blocks -- most of a
+lesson's text is fine as plain Tesseract OCR, and Gemini's free-tier quota
+is finite, so paying for a vision call on every block would be wasteful
+for no benefit on the ~40% of blocks that are already clean.
+
+Needs --pages-dirs (PNG directories, e.g. "review/section_1,review/section_1_rest")
+and --pages-text-dirs (the matching OCR .txt directories used to build
+--content-file, in the same page order) to work out which page image a
+given block actually came from -- see _build_line_to_page_map below.
 """
 from __future__ import annotations
 
@@ -33,6 +46,9 @@ from django.db import transaction
 
 from education.models import ContentBlock, Item, Paragraph
 from education.parsing.content_classifier import collect_content_block_previews
+from education.parsing.math_heuristic import needs_vision_ocr
+
+PAGE_FILENAME_RE = re.compile(r"page-(\d+)\.(\w+)$")
 
 
 def _find_item_boundaries(raw_lines: list[str], items: list[Item]) -> list[tuple[int, Item]]:
@@ -99,10 +115,70 @@ def _assign_previews_to_items(previews: list[dict], boundaries: list[tuple[int, 
     return assigned
 
 
+def _collect_numbered_files(dirs: list[Path], suffix: str) -> dict[int, Path]:
+    """
+    {page_number: path} for every "page-NN.<suffix>" file across `dirs`.
+    Used for both the PNG dirs (--pages-dirs) and the OCR .txt dirs
+    (--pages-text-dirs) -- same naming convention, different suffix.
+    """
+    mapping: dict[int, Path] = {}
+    for d in dirs:
+        for f in Path(d).glob(f"page-*.{suffix}"):
+            m = PAGE_FILENAME_RE.match(f.name)
+            if m:
+                mapping[int(m.group(1))] = f
+    return mapping
+
+
+def _build_line_to_page_map(text_files: dict[int, Path]) -> list[tuple[int, int]]:
+    """
+    [(first_line_of_page, page_number), ...] sorted by page number,
+    assuming --content-file is a plain concatenation of these page .txt
+    files in ascending page-number order (that's how combined.txt has
+    been built since Step 14 -- confirmed by diffing against a plain
+    `cat` of the page files, not just assumed).
+    """
+    boundaries: list[tuple[int, int]] = []
+    offset = 0
+    for page_num in sorted(text_files):
+        boundaries.append((offset, page_num))
+        offset += len(text_files[page_num].read_text(encoding="utf-8").splitlines())
+    return boundaries
+
+
+def _page_for_line(boundaries: list[tuple[int, int]], line_no: int) -> int:
+    page = boundaries[0][1]
+    for start, num in boundaries:
+        if start <= line_no:
+            page = num
+        else:
+            break
+    return page
+
+
+VISION_OCR_PROMPT_VERSION = "v1"
+
+
+def _vision_ocr_prompt(ocr_text: str) -> str:
+    return (
+        "Це сторінка українського підручника з математики для 5 класу. "
+        "Наступний уривок було отримано за допомогою Tesseract OCR і в ньому "
+        "є помилки -- особливо в математичних записах (сплутані цифри, "
+        "пропущені або зайві символи, побитий інтервал):\n\n"
+        f"{ocr_text}\n\n"
+        "Подивись на зображення сторінки і дай ВИПРАВЛЕНУ транскрипцію "
+        "ЛИШЕ цього уривка (не всієї сторінки), зберігаючи переноси рядків "
+        "і нумерацію завдань. Поверни тільки виправлений текст, без "
+        "жодних пояснень чи коментарів."
+    )
+
+
 class Command(BaseCommand):
     help = (
         "Записує реальні ContentBlock з сирого OCR-тексту, зіставляючи кожен "
-        "блок з відповідним пунктом (Item) за рядком його заголовка (Step 22)."
+        "блок з відповідним пунктом (Item) за рядком його заголовка (Step 22). "
+        "--vision-ocr додатково виправляє математично-важкі блоки через Gemini "
+        "vision (Step 29)."
     )
 
     def add_arguments(self, parser):
@@ -119,6 +195,34 @@ class Command(BaseCommand):
             "--reset",
             action="store_true",
             help="Видалити наявні ContentBlock цих пунктів перед записом",
+        )
+        parser.add_argument(
+            "--vision-ocr",
+            action="store_true",
+            help=(
+                "Виправити текст блоків, позначених math_heuristic.needs_vision_ocr, "
+                "через Gemini vision (Step 29). Потребує --pages-dirs і "
+                "--pages-text-dirs."
+            ),
+        )
+        parser.add_argument(
+            "--pages-dirs",
+            default=None,
+            help="Кома-розділений список директорій з page-NN.png (для --vision-ocr)",
+        )
+        parser.add_argument(
+            "--pages-text-dirs",
+            default=None,
+            help=(
+                "Кома-розділений список директорій з page-NN.txt, у тому ж порядку "
+                "сторінок, що й --content-file (для --vision-ocr)"
+            ),
+        )
+        parser.add_argument(
+            "--vision-ocr-limit",
+            type=int,
+            default=None,
+            help="Обмежити кількість блоків, виправлених через Gemini (для тестування)",
         )
 
     def handle(self, *args, **options):
@@ -165,6 +269,9 @@ class Command(BaseCommand):
         previews = collect_content_block_previews(raw_text)
         assigned = _assign_previews_to_items(previews, boundaries)
 
+        if options["vision_ocr"]:
+            self._apply_vision_ocr(options, assigned)
+
         if options["dry_run"]:
             self.stdout.write(
                 f"Зіставлення {len(assigned)} блок(ів) із {content_path} "
@@ -209,3 +316,68 @@ class Command(BaseCommand):
                 f"({len(found_items)} пункт(и) з {len(items)})."
             )
         )
+
+    def _apply_vision_ocr(self, options, assigned: list[tuple[dict, Item]]) -> None:
+        if not options["pages_dirs"] or not options["pages_text_dirs"]:
+            raise CommandError("--vision-ocr вимагає --pages-dirs і --pages-text-dirs")
+
+        png_dirs = [Path(p.strip()) for p in options["pages_dirs"].split(",")]
+        text_dirs = [Path(p.strip()) for p in options["pages_text_dirs"].split(",")]
+
+        png_files = _collect_numbered_files(png_dirs, "png")
+        text_files = _collect_numbered_files(text_dirs, "txt")
+        line_boundaries = _build_line_to_page_map(text_files)
+
+        # Imported lazily: this command works fine without google-genai
+        # installed as long as --vision-ocr is never passed.
+        from scripts.gemini_client import GeminiBudgetExceeded, GeminiClient
+
+        client = GeminiClient()
+
+        flagged = [
+            (preview, item) for preview, item in assigned if needs_vision_ocr(preview["text"])
+        ]
+        limit = options["vision_ocr_limit"]
+        if limit is not None:
+            flagged = flagged[:limit]
+
+        self.stdout.write(
+            f"ℹ️ {len(flagged)}/{len(assigned)} блок(ів) позначено для Gemini vision OCR."
+        )
+
+        corrected = 0
+        for preview, item in flagged:
+            page_num = _page_for_line(line_boundaries, preview["start_line"])
+            png_path = png_files.get(page_num)
+            if png_path is None:
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"⚠️ Немає зображення для сторінки {page_num} -- пропускаю блок."
+                    )
+                )
+                continue
+
+            try:
+                result = client.generate_from_image(
+                    png_path,
+                    _vision_ocr_prompt(preview["text"]),
+                    prompt_version=VISION_OCR_PROMPT_VERSION,
+                )
+            except GeminiBudgetExceeded:
+                self.stdout.write(
+                    self.style.WARNING(
+                        "⚠️ Вичерпано денний ліміт Gemini -- зупиняюсь, решта блоків "
+                        "залишається з оригінальним OCR-текстом."
+                    )
+                )
+                break
+            except Exception as e:  # noqa: BLE001 -- surface but don't kill the whole run
+                self.stdout.write(
+                    self.style.WARNING(f"⚠️ Gemini-помилка на сторінці {page_num}: {e} -- пропускаю.")
+                )
+                continue
+
+            preview["text"] = result.strip()
+            corrected += 1
+
+        self.stdout.write(f"✅ Виправлено {corrected} блок(ів) через Gemini vision.")

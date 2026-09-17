@@ -271,13 +271,31 @@ above):
       marker phrases like "обчисліть", math symbols, or a high density of
       short garbled digit/symbol tokens). This is the quota gate for the
       next step. Tested in `MathHeuristicTests`.
-- [ ] **("Step 29") Gemini vision OCR re-pass** — `GeminiClient.generate_from_image()`
-      exists and is ready to call, but nothing in the pipeline actually
-      invokes it yet on blocks `math_heuristic.py` flags. This is the
-      real next piece of this sub-project: wire flagged blocks from the
-      OCR/classification pipeline into a `generate_from_image` call and
-      use the result in place of Tesseract's output for just those
-      blocks.
+- [x] **("Step 29") Gemini vision OCR re-pass** — `import_content_blocks
+      --vision-ocr` wires flagged blocks (per `needs_vision_ocr`) into
+      `GeminiClient.generate_from_image()`: for each flagged block, finds
+      the source page PNG via a line-number-to-page map built from the
+      OCR .txt files that made up `--content-file` (`--pages-dirs` /
+      `--pages-text-dirs`), sends the page image + the raw OCR'd passage,
+      and asks Gemini to return a corrected transcription of just that
+      passage. Only flagged blocks pay for a vision call (65/111 for §1
+      -- the rest are already clean plain text, no reason to spend quota
+      on them). `--vision-ocr-limit N` for testing on a small batch first.
+      **Blocked on this sandbox, not the code:** this environment's
+      network policy returns 403 on any request to the Gemini API host,
+      in both the local device shell and the cloud container -- confirmed
+      it's a proxy/allowlist rejection, not an API-key or quota problem
+      (a plain text-only `generate_text()` call fails the same way, and
+      `google-genai` itself installs fine). Needs to be run from your own
+      terminal instead, same as the earlier successful Gemini tests in
+      this project (`manage.py shell` calls worked fine there). Command:
+      `python manage.py import_content_blocks --content-file
+      review/section_1_text/combined.txt --grade 5 --section 1
+      --paragraph 1 --reset --vision-ocr --pages-dirs
+      "review/section_1,review/section_1_rest" --pages-text-dirs
+      "review/section_1_text,review/section_1_rest_text"` (add
+      `--vision-ocr-limit 3 --dry-run` first to sanity-check a few
+      corrections before spending quota on all 65).
 - [ ] **("Step 30")** A `--vision-ocr` flag (mentioned in
       `math_heuristic.py`'s own docstring) to turn this on for a given
       `import_curriculum` run once Step 29 exists.
