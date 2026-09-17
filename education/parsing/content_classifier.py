@@ -129,6 +129,18 @@ EXERCISE_BLOCK_END_MARKERS_RE = [
 # one is matched for now rather than guessing at the others' OCR renderings.
 EXERCISE_ITEM_RE = re.compile(r'^(\d+)\.(["°]?)\s*(.*)$')
 
+# How far an item number is allowed to jump from the previous one and
+# still be trusted as a genuine new item. Real exercise lists in this
+# book number sequentially with no gaps, so a small jump (e.g. a missed
+# item) is plausible, but a huge one is almost always OCR digit confusion
+# (observed in real text: "32." misread as "82.") rather than a real skip
+# forward -- and if left unchecked, that inflated number becomes the new
+# high-water mark and silently swallows every real item after it, since
+# their genuinely smaller numbers never exceed it again. Capping the
+# jump lets the very next real, small number resync as a new item
+# instead of being folded into the misread one's text.
+MAX_ITEM_NUMBER_JUMP = 5
+
 
 @dataclass
 class ExerciseItem:
@@ -178,8 +190,9 @@ def find_exercise_blocks(raw_text: str) -> List[ExerciseBlock]:
                     break
 
                 m = EXERCISE_ITEM_RE.match(stripped)
-                if m and int(m.group(1)) > max_number_seen:
-                    number = int(m.group(1))
+                number = int(m.group(1)) if m else None
+                jump = number - max_number_seen if number is not None else None
+                if m and (current is None or (0 < jump <= MAX_ITEM_NUMBER_JUMP)):
                     max_number_seen = number
                     marker = m.group(2)
                     current = ExerciseItem(
@@ -246,12 +259,15 @@ def find_oral_exercise_blocks(raw_text: str) -> List[OralExerciseBlock]:
     Scans raw OCR'd lesson text for "Розв'язуємо усно" blocks and splits
     each into individual numbered OralExerciseItems.
 
-    Reuses the same increasing-number guard as find_exercise_blocks: a
-    running page header re-using a low number (the same class of OCR
-    bleed-through documented there, e.g. "10 9 1. Натуральні числа") must
-    not be mistaken for a new item, so any match whose number doesn't
-    exceed the highest one seen so far is folded into the current item's
-    text instead of starting a new one.
+    Reuses the same increasing-number guard as find_exercise_blocks (see
+    MAX_ITEM_NUMBER_JUMP): a running page header re-using a low number
+    (the same class of OCR bleed-through documented there, e.g.
+    "10 9 1. Натуральні числа") must not be mistaken for a new item, so
+    any match whose number doesn't exceed the highest one seen so far is
+    folded into the current item's text instead of starting a new one --
+    and a wildly-inflated misread (e.g. "6." for a real "5.") isn't
+    allowed to become the new high-water mark either, so real items right
+    after it can still resync.
     """
     lines = raw_text.splitlines()
     blocks: List[OralExerciseBlock] = []
@@ -271,8 +287,9 @@ def find_oral_exercise_blocks(raw_text: str) -> List[OralExerciseBlock]:
                     break
 
                 m = ORAL_EXERCISE_ITEM_RE.match(stripped)
-                if m and int(m.group(1)) > max_number_seen:
-                    number = int(m.group(1))
+                number = int(m.group(1)) if m else None
+                jump = number - max_number_seen if number is not None else None
+                if m and (current is None or (0 < jump <= MAX_ITEM_NUMBER_JUMP)):
                     max_number_seen = number
                     current = OralExerciseItem(number=number, text=m.group(2).strip())
                     items.append(current)

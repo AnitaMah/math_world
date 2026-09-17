@@ -351,6 +351,46 @@ class ContentClassifierTests(TestCase):
         all_text = " ".join(item.text for item in blocks[0].items)
         self.assertNotIn("Вправи для повторення", all_text)
 
+    # Step 21 finding: verbatim excerpt of §1's second "Вправи" list
+    # (combined.txt lines 213, 293-305) where item 32 is OCR'd as "82.\""
+    # -- a wild misread, not the usual low-number page-header bleed. Left
+    # unguarded, 82 becomes the new high-water mark and every real,
+    # smaller item number after it (33-36) is folded in as noise instead
+    # of starting its own item, silently merging five real exercises into
+    # one.
+    EXERCISE_WILD_MISREAD_EXCERPT = """\
+Вправи
+30. Запишіть найбільше восьмицифрове число та наступне за ним
+і попереднє до нього числа.
+31. Запишіть найменше семицифрове число та наступне за ним
+і попереднє до нього числа.
+82." Двоцифрове число записали два рази поспіль. У скільки разів
+отримане чотирицифрове число більше за дане двоцифрове число?
+33." Трицифрове число записали два рази поспіль. У скільки разів
+отримане шестицифрове число більше за дане трицифрове число?
+34." У книжці пронумеровано сторінки з першої по сто сімдесят дру-
+гу. Скільки цифр було написано під час нумерування сторінок?
+35. Для нумерування сторінок книжки надрукували 2004 цифри.
+Скільки сторінок у цій книжці?
+36." Яких трицифрових чисел більше: тих, усі цифри яких парні,
+"""
+
+    def test_exercise_block_recovers_real_items_after_a_wild_number_misread(self):
+        blocks = find_exercise_blocks(self.EXERCISE_WILD_MISREAD_EXCERPT)
+        numbers = [item.number for item in blocks[0].items]
+        # 33, 34, 35, 36 are real items and must each still get their own
+        # row, even though "82." (the misread "32.") comes right before
+        # them and is numerically far larger than all of them.
+        self.assertEqual(numbers, [30, 31, 33, 34, 35, 36])
+
+    def test_exercise_block_wild_misread_text_is_preserved_not_dropped(self):
+        blocks = find_exercise_blocks(self.EXERCISE_WILD_MISREAD_EXCERPT)
+        by_number = {item.number: item for item in blocks[0].items}
+        # The misread item's own text isn't lost -- since it can't safely
+        # become its own item, it's folded into the item open when it
+        # appeared (31), same treatment as the low-number bleed case.
+        self.assertIn("Двоцифрове число записали два рази поспіль", by_number[31].text)
+
     # Step 17: verbatim excerpt of item 1's "Розв'язуємо усно" (mental-math
     # warm-up) block, real OCR text (review/section_1_text/combined.txt,
     # lines 44-57) -- a plain numbered list with no difficulty markers,
