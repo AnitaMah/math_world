@@ -556,5 +556,3 @@ def collect_content_block_previews(raw_text: str) -> List[dict]:
         preview["order"] = order
 
     return previews
-
-    return blocks

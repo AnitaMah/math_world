@@ -164,29 +164,37 @@ stop after. Do them in order — later steps assume earlier ones landed.
 - [x] **Step 16** — `find_exercise_blocks()`, capturing each item's
       difficulty marker. (This is the function whose regex had the bug
       fixed in Step 1 above.)
-- [ ] **Step 17** — `oral_exercise` ("Розв'язуємо усно") classifier — not
-      started. `content_classifier.py` only implements `review_exercise`
-      and `exercise` so far.
-- [ ] **Step 18** — `wise_owl` ("Задача від Мудрої Сови") classifier —
-      not started.
-- [ ] **Step 19** — `history_aside` ("Коли зроблено уроки") classifier —
-      not started; still expected to be the hardest (spans a page-layout
-      box).
-- [~] **Step 20** — Implemented differently than planned: instead of a
-      `--dry-run` flag on `import_curriculum`, there's a standalone
-      `scripts/classify_content.py` CLI that runs a chosen classifier
-      (`review_exercise` or `exercise`) over a text file and prints the
-      result — same dry-run spirit, separate tool. Decide whether to fold
-      this into `import_curriculum --dry-run` as originally planned, or
-      keep it standalone and extend it as Steps 17–19 land.
-- [ ] **Step 21** — Dry-run output for §1 hasn't been read through by hand
-      end-to-end and reconciled against the real book yet (beyond the
-      regex bug already found via the test suite).
+- [x] **Step 17** — `find_oral_exercise_blocks()` ("Розв'язуємо усно"),
+      tested against real OCR text from `combined.txt`.
+- [x] **Step 18** — `find_wise_owl_blocks()` ("Задача від Мудрої Сови"),
+      stops at the first blank line after content starts (handles a real
+      OCR case where the block bleeds into the next lesson's title with
+      no marker of its own).
+- [x] **Step 19** — `find_history_aside_blocks()` ("Коли зроблено уроки"),
+      tested against a ~140-line verbatim excerpt; ends at the next
+      genuinely numbered line rather than requiring one, unlike every
+      other classifier here.
+- [x] **Step 20** — Folded into `import_curriculum --dry-run`
+      (`--content-file`) as originally planned, via
+      `collect_content_block_previews()`; the standalone
+      `scripts/classify_content.py` CLI is kept alongside it rather than
+      removed. Verified with a real local `manage.py test` run, which
+      also caught a real bug: `find_history_aside_blocks` was missing its
+      `return` statement.
+- [x] **Step 21** — Dry-run output for §1 read through by hand end-to-end
+      and reconciled against the real book — see
+      `Claude outputs/STEP_21_DRY_RUN_REVIEW.md`. Found and fixed a
+      second real bug: the "increasing item number" guard (Step 16) had
+      no ceiling, so a wild OCR misread (`32.` -> `82."`) could become the
+      new high-water mark and silently swallow every real item after it;
+      capped as `MAX_ITEM_NUMBER_JUMP`. One smaller, accepted limitation
+      remains (a genuine duplicate OCR'd number merges 2 items into 1 in
+      one spot) — documented rather than fixed, to avoid new false
+      positives elsewhere for a single item's split.
 - [ ] **Step 22** — Nothing has been written for real to `ContentBlock`
       yet — the table is still empty except whatever was manually typed
       in the admin to validate Step 9. This is the actual next concrete
-      step once Steps 17–19 (or a decision to skip them for now and just
-      import `review_exercise`/`exercise`) are ready.
+      step, now that Steps 17-21 are done for §1.
 - [ ] **Step 23** — Not started (depends on Step 22 landing for §1 first).
 - [ ] **Step 24** — Not started; only pages 1–46 of the grade-5 PDF are in
       the project so far.
