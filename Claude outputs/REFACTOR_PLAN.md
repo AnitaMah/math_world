@@ -191,11 +191,23 @@ stop after. Do them in order — later steps assume earlier ones landed.
       remains (a genuine duplicate OCR'd number merges 2 items into 1 in
       one spot) — documented rather than fixed, to avoid new false
       positives elsewhere for a single item's split.
-- [ ] **Step 22** — Nothing has been written for real to `ContentBlock`
-      yet — the table is still empty except whatever was manually typed
-      in the admin to validate Step 9. This is the actual next concrete
-      step, now that Steps 17-21 are done for §1.
-- [ ] **Step 23** — Not started (depends on Step 22 landing for §1 first).
+- [x] **Step 22** — `education/management/commands/import_content_blocks.py`:
+      writes real `ContentBlock` rows from a `--content-file`, bridging
+      the gap between the classifiers (which only know line numbers) and
+      the DB (where a block must belong to one `Item`) by finding each
+      Item's own title line in the raw text (already known from the TOC
+      import) and using those lines as boundaries — a block is assigned
+      to whichever Item's title line is the last one at or before the
+      block's start_line. Supports `--dry-run` (prints the mapping,
+      writes nothing) and `--reset` (clears old blocks first, so
+      reruns after a classifier fix don't pile up duplicates). Run for
+      real against §1 (grade 5): 45 `ContentBlock` rows written across
+      Items 1-2 (Items 3-6 correctly skipped — combined.txt's pages
+      5-15 don't cover them yet). 3 new tests
+      (`ImportContentBlocksCommandTests`), 42/42 total passing.
+- [ ] **Step 23** — Not started (depends on Step 22 landing for §1 first,
+      which is now done — next is repeating this for the rest of the
+      grade-5 PDF once more pages are rendered/OCR'd, per Step 24).
 - [ ] **Step 24** — Not started; only pages 1–46 of the grade-5 PDF are in
       the project so far.
 

@@ -6,7 +6,7 @@ from django.core.management import call_command
 from django.core.management.base import CommandError
 from django.test import TestCase
 
-from education.models import Grade, Item, Paragraph, Section, Subject
+from education.models import ContentBlock, Grade, Item, Paragraph, Section, Subject
 from education.parsing.content_classifier import (
     find_exercise_blocks,
     find_history_aside_blocks,
@@ -719,3 +719,110 @@ class MathHeuristicTests(TestCase):
         annotated = annotate_blocks(blocks)
         self.assertFalse(annotated[0]["needs_vision_ocr"])
         self.assertTrue(annotated[1]["needs_vision_ocr"])
+
+
+class ImportContentBlocksCommandTests(TestCase):
+    """
+    Step 22: writing real ContentBlock rows, keyed to the correct Item by
+    matching each item's own title line (already known from the TOC
+    import) in the raw OCR text.
+    """
+
+    RAW_TEXT = (
+        "1. Перший урок\n"
+        "\n"
+        "Вправи\n"
+        "1. Перше завдання уроку 1.\n"
+        "2. Друге завдання уроку 1.\n"
+        "\n"
+        "2. Другий урок\n"
+        "\n"
+        "Розв'язуємо усно\n"
+        "1. Перше завдання уроку 2.\n"
+        "2. Друге завдання уроку 2.\n"
+    )
+
+    def setUp(self):
+        subject, _ = Subject.objects.get_or_create(code="math", defaults={"name_uk": "Математика"})
+        grade = Grade.objects.create(number=5, subject=subject, name_uk="5 клас")
+        section = Section.objects.create(grade=grade, number=1, name_uk="Розділ 1")
+        self.paragraph = Paragraph.objects.create(section=section, number=1, name_uk="§ 1")
+        self.item1 = Item.objects.create(paragraph=self.paragraph, number=1, content="Перший урок")
+        self.item2 = Item.objects.create(paragraph=self.paragraph, number=2, content="Другий урок")
+
+    def _write_content_file(self, tmp_path):
+        tmp_path.write_text(self.RAW_TEXT, encoding="utf-8")
+
+    def test_dry_run_does_not_write_to_db(self):
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content_file = Path(tmp_dir) / "raw.txt"
+            self._write_content_file(content_file)
+
+            out = StringIO()
+            call_command(
+                "import_content_blocks",
+                content_file=str(content_file),
+                grade=5,
+                section=1,
+                paragraph=1,
+                dry_run=True,
+                stdout=out,
+            )
+
+        self.assertEqual(ContentBlock.objects.count(), 0)
+        self.assertIn("Пункт 1", out.getvalue())
+        self.assertIn("Пункт 2", out.getvalue())
+
+    def test_write_assigns_blocks_to_the_correct_item(self):
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content_file = Path(tmp_dir) / "raw.txt"
+            self._write_content_file(content_file)
+
+            call_command(
+                "import_content_blocks",
+                content_file=str(content_file),
+                grade=5,
+                section=1,
+                paragraph=1,
+            )
+
+        item1_blocks = ContentBlock.objects.filter(item=self.item1)
+        item2_blocks = ContentBlock.objects.filter(item=self.item2)
+
+        self.assertEqual(item1_blocks.count(), 2)
+        self.assertTrue(all("уроку 1" in b.text for b in item1_blocks))
+        self.assertEqual(item2_blocks.count(), 2)
+        self.assertTrue(all("уроку 2" in b.text for b in item2_blocks))
+
+    def test_reset_clears_previous_blocks_before_rewriting(self):
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            content_file = Path(tmp_dir) / "raw.txt"
+            self._write_content_file(content_file)
+
+            call_command(
+                "import_content_blocks",
+                content_file=str(content_file),
+                grade=5,
+                section=1,
+                paragraph=1,
+            )
+            self.assertEqual(ContentBlock.objects.count(), 4)
+
+            call_command(
+                "import_content_blocks",
+                content_file=str(content_file),
+                grade=5,
+                section=1,
+                paragraph=1,
+                reset=True,
+            )
+            self.assertEqual(ContentBlock.objects.count(), 4)
