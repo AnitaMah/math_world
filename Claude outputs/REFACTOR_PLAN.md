@@ -311,10 +311,17 @@ above):
 - **Step 20's shape:** keep `scripts/classify_content.py` as a standalone
   dry-run CLI, or fold it into `import_curriculum --dry-run` as
   originally planned.
-- **Step 11:** decide whether `item_list`/`mint_overview` are worth
-  updating to read from `ContentBlock` now, or only once Step 22 actually
-  populates real content-block rows (updating the UI before there's real
-  data to show it may not be worth doing yet).
+- [x] **Step 11 (resolved):** `item_detail` view/template already read
+  `item.content_blocks.all()` and grouped by `block_type` (found already
+  wired, uncommitted, alongside the Steps 17-20 work) -- but had zero CSS
+  for any of it (`.content-block-list`, `.difficulty`, `.tp-content`,
+  `.muted`, even `.node.item.detail` itself were all unstyled). Added a
+  full style block to `map_ui.css`: a card per block, a color-coded left
+  border per `block_type` so a lesson's oral warm-ups/exercises/review/
+  wise-owl/history-aside read as visually distinct groups, and a
+  difficulty badge. Smoke-tested against real §1 data (item 3, "Відрізок.
+  Довжина відрізка"): renders at `/items/<id>/` with all 23 of its real
+  ContentBlock rows visible. 42/42 tests still passing.
 - Steps 12–24 still need the rest of the grade-5 textbook PDF eventually
   (only pages 1–46 are in the project); fine to keep pausing at Step 24
   until more pages are available.
