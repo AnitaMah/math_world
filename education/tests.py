@@ -1016,3 +1016,56 @@ class VisionOcrHelperTests(TestCase):
         self.assertEqual(ContentBlock.objects.count(), 2)
         texts = list(ContentBlock.objects.values_list("text", flat=True))
         self.assertIn("Обчисліть: 3 + 5 = ?", texts)
+
+
+class TarasenkovaTocPagesTests(TestCase):
+    """
+    Step 36 prep: data/tarasenkova_toc_pages.py was transcribed by eye
+    from the book's own Зміст (its dotted leaders defeat Tesseract), in
+    a font where "3" and "8" are easy to confuse. The main defense against
+    a transcription mistake is that page numbers must strictly increase
+    all the way through the book -- this test enforces that mechanically,
+    the same cross-check that already caught two real misreads by hand
+    (see the module's own CONFIDENCE NOTE).
+    """
+
+    def test_paragraph_pages_strictly_increase_through_the_whole_book(self):
+        from data.tarasenkova_toc_pages import PARAGRAPH_PAGES
+
+        pages = [p.start_page for p in PARAGRAPH_PAGES]
+        self.assertEqual(
+            pages,
+            sorted(pages),
+            "§ start pages must strictly increase -- a misread digit "
+            "(e.g. '3' read as '8' in this book's Зміст font) breaks this.",
+        )
+        self.assertEqual(len(pages), len(set(pages)), "no two §s share a start page")
+
+    def test_section_start_pages_precede_their_first_paragraph(self):
+        from data.tarasenkova_toc_pages import PARAGRAPH_PAGES, SECTION_START_PAGES
+
+        for section_number, section_page in SECTION_START_PAGES.items():
+            first_paragraph = min(
+                (p for p in PARAGRAPH_PAGES if p.section_number == section_number),
+                key=lambda p: p.paragraph_number,
+            )
+            self.assertLess(section_page, first_paragraph.start_page)
+
+    def test_covers_all_35_paragraphs_across_5_sections(self):
+        from data.tarasenkova_toc_pages import PARAGRAPH_PAGES, SECTION_START_PAGES
+
+        self.assertEqual(len(PARAGRAPH_PAGES), 35)
+        self.assertEqual(set(SECTION_START_PAGES.keys()), {1, 2, 3, 4, 5})
+        self.assertEqual(
+            [p.paragraph_number for p in PARAGRAPH_PAGES], list(range(1, 36))
+        )
+
+    def test_get_paragraph_page_looks_up_by_number(self):
+        from data.tarasenkova_toc_pages import get_paragraph_page
+
+        p18 = get_paragraph_page(18)
+        self.assertEqual(p18.title, "Циліндр. Конус. Куля")
+        self.assertEqual(p18.start_page, 130)
+
+        with self.assertRaises(KeyError):
+            get_paragraph_page(999)

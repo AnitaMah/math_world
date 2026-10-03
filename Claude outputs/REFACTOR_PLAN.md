@@ -234,6 +234,29 @@ stop after. Do them in order — later steps assume earlier ones landed.
 This section didn't play out the way it was originally planned — worth
 rewriting rather than just checking boxes.
 
+- [x] **Step 36 prep (page numbers found)** — grade 6's own Зміст
+      (`review/tarasenkova_toc_back/page-302.png`, `page-303.png`) turns
+      out to list a page number for every §, not just Розділ/§ titles --
+      Tesseract just couldn't read it (the dotted leaders between title
+      and page number defeat its word segmentation on every `--psm`
+      tried). Read the two pages directly as images instead and
+      transcribed `data/tarasenkova_toc_pages.py`: every §'s printed page
+      number, cross-checked by the constraint that they must strictly
+      increase through the whole book -- this caught two real misreads
+      in a font where "3" and "8" are drawn almost identically (§ 18 read
+      as page 180, impossible since § 19 is 136; Розділ 5/§ 30 read as
+      284/285, impossible since § 31 is 241 -- both corrected by
+      re-cropping and zooming, see the module's own CONFIDENCE NOTE).
+      4 new tests enforce the ordering invariant mechanically so a future
+      transcription slip doesn't silently ship.
+      This turns Step 36 itself from "OCR some unknown subset of 305
+      pages" into "render ~2 pages per §, 35 small targeted jobs" --
+      still not done (that's the actual item-title extraction), but no
+      longer blocked on finding where to even look. Untested against the
+      front of the book yet: `PRINTED_TO_PDF_PAGE_OFFSET = 9` was only
+      confirmed at the back (printed page 287 "Відповіді" = PDF page
+      296) -- worth double-checking against, say, § 1's real page before
+      relying on it. 51/51 tests passing.
 - [x] **Multi-textbook generalization (unplanned, done ahead of schedule)**
       — `SubjectProfile` in `subject_profiles.py` was generalized to be
       keyed by *textbook/author*, not by subject or grade number. This
