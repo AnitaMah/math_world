@@ -41,3 +41,8 @@ celerybeat-schedule
 # macOS/Linux
 .DS_Store
 Thumbs.db
+
+pipeline_cache/
+pipeline_out/
+*.traineddata
+.evn
