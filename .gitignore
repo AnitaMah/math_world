@@ -46,3 +46,5 @@ pipeline_cache/
 pipeline_out/
 *.traineddata
 .evn
+review/gemini_cache/
+review/gemini_request_count.json
