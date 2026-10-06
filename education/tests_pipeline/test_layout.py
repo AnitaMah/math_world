@@ -123,3 +123,47 @@ class DocumentTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NoiseAndRegionTests(unittest.TestCase):
+    def test_icon_noise_removed(self):
+        from education.pdf_pipeline.layout import strip_edge_noise
+        ln = Line(words=[Word("2", BBox(77, 0, 90, 20), 21.0), Word("Задача", BBox(161, 0, 230, 20), 96.0),
+                         Word("Сови", BBox(361, 0, 400, 20), 94.0)], page_index=7)
+        self.assertEqual(strip_edge_noise(ln).text, "Задача Сови")
+
+    def test_confident_short_word_kept(self):
+        from education.pdf_pipeline.layout import strip_edge_noise
+        ln = Line(words=[Word("17.", BBox(0, 0, 30, 20), 96.0), Word("У", BBox(40, 0, 50, 20), 96.0)], page_index=1)
+        self.assertEqual(strip_edge_noise(ln).text, "17. У")
+
+    def test_figure_frame_removes_numbers_from_body(self):
+        lines = [line("17. У квадраті суми чисел", 940), line("10 9 13", 960, x=650)]
+        lay = analyze_page(lines, 7, PAGE_H, frames=[BBox(635, 933, 755, 1055)])
+        self.assertEqual([r.kind for r in lay.regions], ["figure"])
+        self.assertEqual(lay.body_text, "17. У квадраті суми чисел")
+        self.assertEqual([ln.text for ln in lay.figure_lines], ["10 9 13"])
+
+    def test_text_frame_is_boxed(self):
+        lines = [line("Зверніть увагу: серед чисел парні діляться", 400, x=80)]
+        lay = analyze_page(lines, 11, PAGE_H, frames=[BBox(66, 368, 900, 460)])
+        self.assertEqual(lay.regions[0].kind, "boxed")
+        self.assertEqual(lay.body_lines[0].zone, "boxed")
+
+    def test_caption_attached(self):
+        lines = [line("Рис. 1", 1070, x=660)]
+        lay = analyze_page(lines, 7, PAGE_H, frames=[BBox(635, 933, 755, 1055)])
+        self.assertEqual(lay.regions[0].caption, "Рис. 1")
+
+    def test_detect_frames_on_synthetic_image(self):
+        import numpy as np
+        import cv2
+        from education.pdf_pipeline.regions import detect_frames
+        img = np.full((1000, 800), 255, np.uint8)
+        cv2.rectangle(img, (100, 200), (500, 400), 0, 2)          # рамка
+        cv2.putText(img, "text", (120, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, 0, 2)
+        cv2.putText(img, "outside", (100, 700), cv2.FONT_HERSHEY_SIMPLEX, 1, 0, 2)
+        frames = detect_frames(img)
+        self.assertEqual(len(frames), 1)
+        self.assertAlmostEqual(frames[0].x0, 100, delta=3)
+        self.assertAlmostEqual(frames[0].y1, 401, delta=3)

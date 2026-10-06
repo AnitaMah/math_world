@@ -10,8 +10,6 @@
 """
 from __future__ import annotations
 
-import hashlib
-import json
 import math
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -21,6 +19,7 @@ from typing import Any
 import cv2
 import numpy as np
 
+from .cache import load_json, save_json, short_hash
 from .datatypes import BBox, PageImage
 
 Image = np.ndarray
@@ -248,8 +247,7 @@ class PreprocessSpec:
         Залежить лише від кроків і параметрів (не від назви): той самий рецепт
         під іншою назвою дасть той самий ключ.
         """
-        payload = json.dumps([[s.name, list(s.params)] for s in self.steps], sort_keys=True)
-        return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12]
+        return short_hash([[s.name, list(s.params)] for s in self.steps])
 
 
 PRESET_RAW = PreprocessSpec("raw", ())
@@ -343,11 +341,11 @@ def preprocess_page(page: PageImage, spec: PreprocessSpec | None = None, force: 
     out = prepared_path(page, spec)
     meta = out.with_suffix(".json")
     if not force and out.exists() and meta.exists():
-        return PreparedPage.from_dict(json.loads(meta.read_text(encoding="utf-8")))
+        return PreparedPage.from_dict(load_json(meta))
 
     img, transform = apply(load_image(page.path), spec)
     save_image(out, img)
     result = PreparedPage(page=page, path=out, spec_name=spec.name,
                           spec_key=spec.cache_key(), transform=transform)
-    meta.write_text(json.dumps(result.to_dict(), ensure_ascii=False, indent=1), encoding="utf-8")
+    save_json(meta, result.to_dict())
     return result

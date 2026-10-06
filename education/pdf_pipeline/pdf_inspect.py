@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import re
 import statistics
 import sys
@@ -22,6 +21,8 @@ from pathlib import Path
 from typing import Any
 
 import pymupdf
+
+from .cache import save_json
 
 LOW_RES_PPI = 120.0          # нижче — сторінка «низької роздільності»
 FULL_PAGE_COVERAGE = 0.9     # картинка займає ≥90% сторінки → це скан
@@ -239,10 +240,7 @@ def inspect_pdf(
 
 def save_inspection(result: PdfInspection, cache_dir: str | Path) -> Path:
     """Зберігає результат у ``<cache_dir>/<sha256>/inspect.json`` і повертає шлях."""
-    out = Path(cache_dir) / result.sha256 / "inspect.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(result.to_dict(), ensure_ascii=False, indent=1), encoding="utf-8")
-    return out
+    return save_json(Path(cache_dir) / result.sha256 / "inspect.json", result.to_dict())
 
 
 # --------------------------------------------------------------------------- CLI

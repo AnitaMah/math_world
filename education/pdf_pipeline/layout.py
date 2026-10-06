@@ -20,13 +20,19 @@ from typing import Any
 
 from rapidfuzz import fuzz
 
-from .datatypes import Line, PageOcr
+from .datatypes import BBox, Line, PageOcr
+from .grids import Grid, find_grids
 from .ocr import words_to_lines
 
 HEADER_BAND = 0.11      # верхні 11% висоти сторінки — смуга колонтитула
 FOOTER_BAND = 0.06      # нижні 6% — смуга нижнього колонтитула / номера
 MAX_BOOK_PAGE = 999
 SAME_HEADER_SCORE = 90  # схожість (0–100), з якої дві назви колонтитула вважаються однією
+
+NOISE_MAX_LEN = 2       # «сміття» від іконок: коротке слово...
+NOISE_MAX_CONF = 40     # ...з низькою впевненістю, на краю рядка
+BOXED_MIN_WORDS = 5     # стільки слів з літерами в рамці → текстова рамка, менше → рисунок
+_CAPTION_RE = re.compile(r"^Рис\.?\s*(\d+)", re.IGNORECASE)
 
 _PAGE_NUMBER_RE = re.compile(r"^\d{1,3}$")
 # OCR читає «§» як «5» або «S»: «51. Натуральні» → «§ 1. Натуральні». Лише для колонтитулів.
@@ -63,6 +69,53 @@ def split_running_header(line: Line) -> tuple[str, int | None]:
     return fix_paragraph_sign(" ".join(words).strip()), number
 
 
+# --------------------------------------------------------------------------- шум і рамки
+
+
+def strip_edge_noise(line: Line, max_len: int = NOISE_MAX_LEN, max_conf: float = NOISE_MAX_CONF) -> Line:
+    """Прибирає короткі слова з низькою впевненістю на краях рядка.
+
+    Іконка Мудрої Сови перед заголовком читається як «2» з conf 21 →
+    «2 Задача від Мудрої Сови». Такі слова майже завжди сміття від картинок.
+    """
+    words = list(line.words)
+
+    def is_noise(w) -> bool:
+        return len(w.text) <= max_len and w.conf < max_conf
+
+    while words and is_noise(words[0]):
+        words.pop(0)
+    while words and is_noise(words[-1]):
+        words.pop()
+    line.words = words
+    return line
+
+
+@dataclass
+class Region:
+    """Рамка на сторінці: ``boxed`` (текст у рамці) або ``figure`` (рисунок/таблиця)."""
+
+    kind: str
+    bbox: BBox
+    caption: str = ""        # «Рис. 1», якщо знайдено підпис
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"kind": self.kind, "bbox": self.bbox.to_dict(), "caption": self.caption}
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Region:
+        return cls(data["kind"], BBox.from_dict(data["bbox"]), data.get("caption", ""))
+
+
+def _inside(line: Line, box: BBox) -> bool:
+    cx, cy = line.bbox.center
+    return box.x0 <= cx <= box.x1 and box.y0 <= cy <= box.y1
+
+
+def _letter_words(lines: Sequence[Line]) -> int:
+    return sum(1 for ln in lines for w in ln.words if sum(ch.isalpha() for ch in w.text) >= 2)
+
+
 # --------------------------------------------------------------------------- розмітка сторінки
 
 
@@ -78,10 +131,16 @@ class PageLayout:
     header_title: str = ""           # назва з колонтитула (без номера сторінки)
     detected_book_page: int | None = None   # номер, прочитаний на самій сторінці
     book_page: int | None = None     # остаточний номер (можливо, виведений із сусідів)
+    regions: list[Region] = field(default_factory=list)
+    figure_lines: list[Line] = field(default_factory=list)   # «текст» усередині рисунків — не в body
 
     @property
     def body_text(self) -> str:
         return "\n".join(line.text for line in self.body_lines)
+
+    def grids(self) -> list[Grid]:
+        """Сітки підпунктів серед рядків тіла (рахуються щоразу — це дешево)."""
+        return find_grids(self.body_lines)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -91,6 +150,8 @@ class PageLayout:
             "footer_lines": [ln.to_dict() for ln in self.footer_lines],
             "header_title": self.header_title,
             "detected_book_page": self.detected_book_page, "book_page": self.book_page,
+            "regions": [r.to_dict() for r in self.regions],
+            "figure_lines": [ln.to_dict() for ln in self.figure_lines],
         }
 
     @classmethod
@@ -102,6 +163,8 @@ class PageLayout:
             footer_lines=[Line.from_dict(x) for x in data.get("footer_lines", [])],
             header_title=data.get("header_title", ""),
             detected_book_page=data.get("detected_book_page"), book_page=data.get("book_page"),
+            regions=[Region.from_dict(x) for x in data.get("regions", [])],
+            figure_lines=[Line.from_dict(x) for x in data.get("figure_lines", [])],
         )
 
 
@@ -111,12 +174,15 @@ def analyze_page(
     page_height: int,
     header_band: float = HEADER_BAND,
     footer_band: float = FOOTER_BAND,
+    frames: Sequence[BBox] = (),
 ) -> PageLayout:
     """Розкладає рядки сторінки на колонтитул / тіло / нижній колонтитул.
 
     Верхня смуга: усе, що в ній, — колонтитул (назва + номер).
     Нижня смуга: колонтитулом вважаємо лише рядок-число (номер сторінки) —
     звичайний текст унизу сторінки (кінець вправи) лишаємо в тілі.
+    ``frames`` — рамки з regions.detect_frames: рядки в рамці-рисунку прибираються
+    з тіла (це числа з таблиці, а не текст), у текстовій рамці — позначаються ``boxed``.
     """
     layout = PageLayout(pdf_page=pdf_page, page_height=page_height)
     top_limit = page_height * header_band
@@ -134,7 +200,21 @@ def analyze_page(
             layout.footer_lines.append(line)
         else:
             line.zone = "body"
-            layout.body_lines.append(line)
+            layout.body_lines.append(strip_edge_noise(line))
+    layout.body_lines = [ln for ln in layout.body_lines if ln.words]
+
+    for frame in frames:
+        if frame.center[1] < top_limit:          # декор у колонтитулі
+            continue
+        inside = [ln for ln in layout.body_lines if _inside(ln, frame)]
+        kind = "boxed" if _letter_words(inside) >= BOXED_MIN_WORDS else "figure"
+        layout.regions.append(Region(kind, frame))
+        for ln in inside:
+            ln.zone = kind
+        if kind == "figure":
+            layout.figure_lines.extend(inside)
+            layout.body_lines = [ln for ln in layout.body_lines if ln not in inside]
+    _attach_captions(layout)
 
     titles: list[str] = []
     for line in layout.header_lines:
@@ -152,9 +232,25 @@ def analyze_page(
     return layout
 
 
-def layout_from_ocr(result: PageOcr, **kwargs: Any) -> PageLayout:
-    """Зручна обгортка: PageOcr → рядки → PageLayout."""
+def _attach_captions(layout: PageLayout) -> None:
+    """Підпис «Рис. N» прив'язується до найближчого за вертикаллю рисунка."""
+    figures = [r for r in layout.regions if r.kind == "figure"]
+    for line in layout.body_lines:
+        m = _CAPTION_RE.match(line.text)
+        if not m or not figures:
+            continue
+        cy = line.bbox.center[1]
+        nearest = min(figures, key=lambda r: min(abs(cy - r.bbox.y0), abs(cy - r.bbox.y1)))
+        nearest.caption = f"Рис. {m.group(1)}"
+
+
+def layout_from_ocr(result: PageOcr, detect_regions: bool = True, **kwargs: Any) -> PageLayout:
+    """Зручна обгортка: PageOcr → рядки → PageLayout (рамки шукаються на картинці сторінки)."""
     lines = words_to_lines(result.words, result.page.pdf_page)
+    if detect_regions and "frames" not in kwargs and result.page.path.exists():
+        from .preprocess import load_image
+        from .regions import detect_frames
+        kwargs["frames"] = detect_frames(load_image(result.page.path))
     return analyze_page(lines, result.page.pdf_page, result.page.height, **kwargs)
 
 
