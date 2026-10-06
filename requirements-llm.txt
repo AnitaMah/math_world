@@ -1,0 +1,9 @@
+# Локальна генерація контенту і картинок (utils/, llm_worker.py,
+# команда generate_item_content). Необов'язково, дуже важке: torch займає кілька ГБ.
+celery
+redis
+requests
+diffusers
+transformers
+accelerate
+torch

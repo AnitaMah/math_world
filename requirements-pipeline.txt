@@ -1,0 +1,7 @@
+pymupdf
+pytesseract
+Pillow
+opencv-python-headless
+numpy
+rapidfuzz
+jsonschema
