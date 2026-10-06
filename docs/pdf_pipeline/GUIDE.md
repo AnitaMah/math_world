@@ -95,8 +95,8 @@ JSON ──[13] import_textbook (Django, idempotent)──► БД ──► vie
 ```
 education/pdf_pipeline/
     __init__.py
-    types.py          # dataclasses: BBox, Word, Line, Zone, Page, нодa дерева
-    inspect.py        # етап 0
+    datatypes.py      # dataclasses: BBox, Word, Line, Zone, Page, нодa дерева
+    pdf_inspect.py    # етап 0
     images.py         # етап 1
     preprocess.py     # етап 2
     ocr/base.py       # Protocol OcrEngine
