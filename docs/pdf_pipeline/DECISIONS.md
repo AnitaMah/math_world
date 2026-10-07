@@ -332,3 +332,18 @@ CER 0.024 (зі старим golden). Тепер CLI використовуют�
   відкатом, ImportRun теж не пишеться; помилка — відкат, `ImportRun(status=failed)` після відкату.
 Реальний імпорт §1 Мерзляка на копії БД: 201 вправа, 315 підпунктів, 27 відповідей, 93 рисунки,
 5.6 с; повторний — 5.4 с, 0 змін.
+
+## 2026-10-07 — management-команди (фаза 20)
+- `parse_textbook` — тонка обгортка над `run_pipeline` (PDF за замовчуванням — `pdf_name` профілю);
+  `PipelineError` → `CommandError` (ненульовий код виходу). Fake OCR у тестах — через атрибут
+  `Command.engine_factory`.
+- `import_textbook --json [--dry-run] [--reset]` — таблиця created/updated/deleted/unchanged/kept_manual.
+- `textbook_status` — вправи, % needs_review, ручні правки, звірка з відповідями, останній імпорт.
+- **Цикл ручної перевірки:** `export_review_queue` → CSV (UTF-8 з BOM, щоб Excel бачив кирилицю) →
+  людина заповнює `new_text` або `reviewed=1` → `import_review_fixes` (є `--dry-run`).
+  Виправлене стає `text_source=manual`, `needs_review=False`; для обчислювальних підпунктів вираз
+  і обчислена відповідь перераховуються. Наступний `import_textbook` ручне не перезаписує.
+- **`data/grade_sources.py` більше не потрібен:** ніде не імпортується; «що є для якого класу»
+  тепер — профілі пайплайна (`pdf_name`, `toc_path`, автор, рік) + модель `Textbook` і
+  `textbook_status`. Файл видаляємо (`git rm`). `data/tarasenkova_toc_pages.py` лишаємо
+  (сторінки § перевіряються тестами в `education/tests.py`), але зсув виправлено на 0.

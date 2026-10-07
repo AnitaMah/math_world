@@ -56,14 +56,11 @@ SECTION_START_PAGES = {
     5: 234,  # Розділ 5. Вирази і рівняння
 }
 
-# Where the back matter actually landed, cross-referenced against this
-# PDF's real page index (review/tarasenkova_toc_back/page-NNN.png):
-# printed page 287 ("Відповіді") is at PDF page 296, so printed page
-# numbers run about 9 pages behind this PDF's own page index (unnumbered
-# front matter/cover pages). NOT yet confirmed against the front of the
-# book (only checked at the back) -- verify before relying on it to
-# render a specific §'s start page.
-PRINTED_TO_PDF_PAGE_OFFSET = 9
+# Printed page number == PDF page number throughout this PDF (verified in
+# pipeline phase 13: the running header on PDF page 296 shows "296", and
+# "Відповіді" starts on PDF page 287). The earlier claim of a +9 offset was
+# wrong -- see docs/pdf_pipeline/DECISIONS.md.
+PRINTED_TO_PDF_PAGE_OFFSET = 0
 
 PARAGRAPH_PAGES = [
     ParagraphPage(1, 1, "Дільники і кратні натурального числа. Прості числа", 5),

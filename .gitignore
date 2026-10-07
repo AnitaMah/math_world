@@ -48,3 +48,5 @@ pipeline_out/
 .evn
 review/gemini_cache/
 review/gemini_request_count.json
+/db.*.sqlite3
+/review/review_queue*.csv
