@@ -64,7 +64,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=Path("pipeline_out/layout_debug"))
     args = parser.parse_args(argv)
 
-    cfg = PipelineConfig.from_env()
+    cfg = PipelineConfig.from_env_file()
     engine = TesseractEngine(cfg)
     pages = get_page_images(args.pdf, parse_page_range(args.pages), cfg)
     results = [ocr_page(preprocess_page(p), engine) for p in pages]

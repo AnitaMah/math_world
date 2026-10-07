@@ -113,6 +113,7 @@ class Word:
     line_no: int = 0
     word_no: int = 0
     raw_text: str | None = None  # текст до нормалізації (фаза 7); None — не змінювався
+    flags: tuple[str, ...] = ()  # позначки для перевірки, напр. "suspect_operator"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -124,6 +125,7 @@ class Word:
             "line_no": self.line_no,
             "word_no": self.word_no,
             "raw_text": self.raw_text,
+            "flags": list(self.flags),
         }
 
     @classmethod
@@ -137,6 +139,7 @@ class Word:
             line_no=data.get("line_no", 0),
             word_no=data.get("word_no", 0),
             raw_text=data.get("raw_text"),
+            flags=tuple(data.get("flags", ())),
         )
 
 

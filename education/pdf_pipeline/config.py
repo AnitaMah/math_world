@@ -13,6 +13,28 @@ ENV_TESSDATA_DIR = "TESSDATA_PREFIX_BEST"
 ENV_CACHE_DIR = "PIPELINE_CACHE_DIR"
 
 
+def read_env_file(path: str | Path = ".env") -> dict[str, str]:
+    """Читає файл .env (рядки ``КЛЮЧ=значення``) у словник. Немає файлу — порожній словник.
+
+    Коментарі (#) і порожні рядки пропускаються, лапки навколо значення знімаються.
+    Власний мінімальний парсер, щоб пайплайн не залежав від Django/decouple.
+    """
+    path = Path(path)
+    if not path.is_file():
+        return {}
+    values: dict[str, str] = {}
+    for raw in path.read_text(encoding="utf-8-sig").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
+            value = value[1:-1]
+        values[key.strip()] = value
+    return values
+
+
 def _get(environ: Mapping[str, str], name: str) -> str | None:
     """Повертає значення змінної без пробілів по краях або None, якщо її немає чи вона порожня."""
     value = environ.get(name)
@@ -61,3 +83,12 @@ class PipelineConfig:
             tessdata_dir=tessdata_dir,
             cache_dir=cache_dir,
         )
+
+    @classmethod
+    def from_env_file(cls, path: str | Path = ".env") -> PipelineConfig:
+        """Як from_env, але спершу читає .env; справжні змінні середовища мають пріоритет.
+
+        Використовується в командах для терміналу (bench, layout_debug...), бо
+        `python -m ...` сам .env не читає — без цього підхоплювалися б не ті моделі.
+        """
+        return cls.from_env({**read_env_file(path), **os.environ})

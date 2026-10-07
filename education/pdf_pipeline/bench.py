@@ -60,9 +60,21 @@ def cer(hypothesis: str, reference: str) -> float:
     return Levenshtein.distance(hyp, ref) / len(ref)
 
 
-def page_text(result: PageOcr) -> str:
-    """Текст сторінки з OCR: рядки згори вниз."""
-    return "\n".join(line.text for line in words_to_lines(result.words, result.page.pdf_page))
+def page_text(result: PageOcr, body_only: bool = True, normalize: bool = False) -> str:
+    """Текст сторінки з OCR: рядки згори вниз.
+
+    body_only — без колонтитула, номера сторінки і «тексту» з рисунків (як у golden).
+    normalize — пропустити через normalize.py (латиниця→кирилиця, переноси, тире).
+    """
+    if body_only:
+        from .layout import layout_from_ocr
+        lines = layout_from_ocr(result).body_lines
+    else:
+        lines = words_to_lines(result.words, result.page.pdf_page)
+    if normalize:
+        from .normalize import normalize_lines
+        lines, _ = normalize_lines(lines)
+    return "\n".join(line.text for line in lines)
 
 
 # --------------------------------------------------------------------------- конфігурації
@@ -73,6 +85,7 @@ class BenchConfig:
     name: str
     preset: PreprocessSpec
     params: OcrParams
+    normalize: bool = False
 
 
 CONFIGS: dict[str, BenchConfig] = {c.name: c for c in [
@@ -82,6 +95,7 @@ CONFIGS: dict[str, BenchConfig] = {c.name: c for c in [
     BenchConfig("default_psm3", PRESETS["default"], OcrParams(psm=3)),
     BenchConfig("default_psm6_ukr", PRESETS["default"], OcrParams(lang="ukr", psm=6)),
     BenchConfig("lowres_psm6", PRESETS["lowres"], OcrParams(psm=6)),
+    BenchConfig("default_psm4_norm", PRESETS["default"], OcrParams(psm=4), normalize=True),
 ]}
 
 
@@ -122,7 +136,7 @@ def run_bench(goldens: Sequence[GoldenPage], configs: Sequence[BenchConfig],
             result = ocr_page(prepared, engine, conf.params)
             confs = [w.conf for w in result.words]
             rows.append(BenchRow(
-                config=conf.name, golden=g.name, cer=cer(page_text(result), g.text),
+                config=conf.name, golden=g.name, cer=cer(page_text(result, normalize=conf.normalize), g.text),
                 words=len(result.words), mean_conf=statistics.fmean(confs) if confs else 0.0,
                 seconds=result.duration_ms / 1000,
             ))
@@ -157,7 +171,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if unknown:
         parser.error(f"невідомі конфігурації: {unknown}")
 
-    cfg = PipelineConfig.from_env()
+    cfg = PipelineConfig.from_env_file()
     engine = TesseractEngine(cfg)
     rows = run_bench(load_manifest(args.manifest), [CONFIGS[c] for c in args.configs.split(",")], cfg, engine)
     table = format_table(rows, engine.name)
