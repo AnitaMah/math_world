@@ -36,6 +36,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# Новий інтерфейс (мапа-архіпелаг, docs/frontend/PLAN.md). Поки нові сторінки не
+# готові, старі живуть поруч; NEW_UI=0 у .env повертає старий вигляд. Прапорець
+# прибираємо у фазі 18 плану, коли старого UI вже не буде.
+NEW_UI = str(config("NEW_UI", default="1")).strip().lower() in ("1", "true", "yes", "on")
+
 
 # Application definition
 
@@ -72,6 +77,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'education.context.ui_flags',
             ],
         },
     },
