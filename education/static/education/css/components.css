@@ -1,0 +1,131 @@
+/* Базові компоненти нового UI (фаза 4): кнопки, чіпи, теги, статуси, картки, прогрес,
+   зірки, рядки-пояснення. Лише токени. Колір острова — через --acc (клас .isl-N на предку). */
+
+/* --- Кнопки ------------------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
+  min-height: 48px; padding: 14px;
+  border: 1px solid transparent; border-radius: var(--r-lg);
+  font: var(--fw-bold) var(--fs-15)/1.2 var(--font-display);
+  text-align: center; text-decoration: none;
+  cursor: pointer;
+  transition: filter var(--dur-fast), transform var(--dur-fast);
+}
+.btn--block { display: flex; width: 100%; }
+.btn--primary { background: var(--acc); color: var(--ink); }
+.btn--secondary {
+  background: transparent; color: var(--text-2); border-color: var(--line-btn);
+  font: var(--fw-heavy) var(--fs-14)/1.2 var(--font-body);
+}
+.btn--muted { background: var(--muted-bg); color: var(--muted-2); }
+.btn--ok { background: var(--ok); color: var(--ink); }
+.btn--bad { background: var(--bad); color: var(--ink); }
+.btn--info { background: var(--info-bg); color: var(--text); }   /* «Пройти ще раз» */
+
+.btn:hover { filter: brightness(1.08); }
+.btn:active { transform: translateY(1px); }
+a.btn:hover { color: inherit; }
+.btn--primary:hover, .btn--ok:hover, .btn--bad:hover { color: var(--ink); }
+.btn[disabled], .btn[aria-disabled="true"] { cursor: not-allowed; filter: none; transform: none; }
+
+.btn--sm {
+  min-height: 36px; padding: 8px 16px; border-radius: var(--r-pill);
+  font: var(--fw-heavy) var(--fs-14)/1.2 var(--font-body);
+}
+.btn-icon {
+  display: inline-grid; place-items: center;
+  width: 44px; height: 44px; padding: 0;
+  background: var(--card-2); color: var(--text-2);
+  border: 1px solid var(--line-3); border-radius: var(--r-md);
+  cursor: pointer;
+}
+.btn-icon:hover { color: var(--text); border-color: var(--line-strong); }
+
+/* --- Чіпи, теги, статуси ------------------------------------------------------- */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: var(--r-pill);
+  background: var(--card-2); border: 1px solid var(--line-2);
+  font-size: var(--fs-15); font-weight: var(--fw-heavy); white-space: nowrap;
+}
+.chip__sub { color: var(--muted-2); font-weight: var(--fw-bold); }
+
+.tag {
+  display: inline-block; padding: 3px 9px; border-radius: var(--r-xs);
+  background: var(--card-3); border: 1px solid var(--line-tag); color: var(--text-2);
+  font-size: var(--fs-12); font-weight: var(--fw-bold);
+}
+
+.sec-chip {
+  display: inline-flex; align-items: center; gap: var(--sp-2);
+  padding: 5px 12px 5px 6px; border-radius: var(--r-pill);
+  background: var(--surface); border: 1px solid var(--line-3);
+  font-size: var(--fs-13); font-weight: var(--fw-heavy); white-space: nowrap;
+}
+.sec-chip__badge {
+  padding: 2px 8px; border-radius: var(--r-pill);
+  background: var(--acc); color: var(--ink);
+  font: var(--fw-bold) 11px/1.4 var(--font-display);
+}
+
+.status {
+  display: inline-block; padding: 3px 10px; border-radius: var(--r-pill);
+  font-size: var(--fs-12); font-weight: var(--fw-heavy); white-space: nowrap;
+}
+.status--done { background: var(--ok-bg); color: var(--ok); }
+.status--current { background: var(--text); color: var(--ink); }
+.status--open { background: var(--info-bg); color: var(--info); }
+.status--locked, .status--soon { background: var(--neutral-bg); color: var(--muted); }
+
+/* --- Картки -------------------------------------------------------------------- */
+.card {
+  background: var(--card); border: 1px solid var(--line-card);
+  border-radius: var(--r-xl); padding: 14px 16px;
+}
+.card--dashed { border: 1px dashed var(--line-strong); }
+.card--float { background: var(--surface); border-color: var(--line-3); }
+.empty-note {
+  background: var(--card); border: 1px dashed var(--line-strong); border-radius: 14px;
+  padding: var(--sp-3) 14px; color: var(--muted);
+  font-size: var(--fs-14); font-weight: var(--fw-bold);
+}
+
+/* --- Прогрес (шаблон _progress.html) -------------------------------------------- */
+.progress {
+  height: 10px; background: var(--line-2);
+  border-radius: var(--r-pill); overflow: hidden;
+}
+.progress__fill {
+  height: 100%; width: var(--p, 0%);
+  background: var(--acc); border-radius: inherit;
+  transition: width var(--dur) ease;
+}
+.progress--md { height: 8px; }
+.progress--sm { height: 6px; }
+
+/* --- Зірки (шаблон _stars.html) ------------------------------------------------- */
+.stars { display: inline-flex; align-items: center; gap: 1px; }
+.stars--gap { gap: 4px; }
+.star--on { color: var(--star); }
+.star--off { color: var(--star-off); }
+/* Під вузлом на суші: темне обведення, щоб зірка читалася на будь-якому кольорі острова */
+.stars--outline .star { stroke: var(--bg); stroke-width: 1.5px; paint-order: stroke; }
+
+/* --- Рядки-пояснення ------------------------------------------------------------ */
+.feature-row { display: flex; align-items: center; gap: var(--sp-3); }
+.feature-row__icon {
+  flex-shrink: 0; width: 36px; height: 36px; border-radius: var(--r-sm);
+  display: grid; place-items: center;
+}
+.feature-row__icon--auto { background: var(--auto-bg); color: var(--isl-1-acc); }
+.feature-row__icon--ai { background: var(--ai-bg); color: var(--points); }
+.feature-row__title { font-size: var(--fs-15); font-weight: var(--fw-heavy); }
+.feature-row__sub { font-size: var(--fs-13); color: var(--muted-2); }
+
+.score-row { display: flex; flex-direction: column; gap: var(--sp-1); }
+.score-row__head {
+  display: flex; justify-content: space-between; gap: var(--sp-3);
+  font-size: var(--fs-13); font-weight: var(--fw-bold);
+}
+.score-row__label { color: var(--text-2); min-width: 0; }
+.score-row__score { color: var(--muted-2); white-space: nowrap; }

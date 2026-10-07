@@ -71,4 +71,6 @@ def ui_kit(request):
     """`/ui/kit/` — вітрина базових стилів і компонентів нового UI (росте з кожною фазою)."""
     _debug_only()
     from .templatetags.ui import ICONS
-    return render(request, "education/ui_kit.html", {"icons": sorted(ICONS)})
+    sec_chips = [(1, "I", "Натуральні числа"), (2, "I", "Додавання і віднімання"), (3, "I", "Множення і ділення"),
+                 (4, "II", "Звичайні дроби"), (5, "II", "Десяткові дроби")]
+    return render(request, "education/ui_kit.html", {"icons": sorted(ICONS), "sec_chips": sec_chips})

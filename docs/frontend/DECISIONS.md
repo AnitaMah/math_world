@@ -253,3 +253,23 @@ https://claude.ai/code/artifact/04922b47-8945-4f84-9af4-447cfffc4c4e
 - **Знахідка про екранування:** рядки, написані прямо в шаблоні
   (`label="<b>"`), Django вважає безпечними й не екранує; значення зі змінних
   (`label=lesson.title`) `format_html` екранує. Тест перевіряє саме змінну.
+
+## 2026-10-08 — базові компоненти (фаза 4, кроки FE-0163…0199)
+`css/components.css` (підключено глобально в `base.html` після `base.css`):
+- **Кнопки** `.btn` + `--primary` (колір острова `--acc`), `--info` («Пройти ще раз»),
+  `--secondary`, `--muted` (неактивна дія), `--ok`/`--bad` (гра), `--block`, `--sm`;
+  `.btn-icon` 44×44. Неактивна: `disabled` для `<button>`, `aria-disabled="true"` — коли
+  треба лишити її у фокусі (напр. пояснити, чому урок закрито).
+- **Чіпи** `.chip`/`.chip__sub`, **теги** `.tag`, **чіп параграфа** `.sec-chip`,
+  **статуси** `.status--done|current|open|locked|soon`.
+- **Картки** `.card`, `--dashed`, `--float`, `.empty-note`.
+- **Прогрес** — include `_progress.html` (`value`, `max`, `label`, `size=""|md|sm`):
+  `role="progressbar"`, ширина через `--p`, `max=0` → 0 % (урок без завдань).
+- **Зірки** — include `_stars.html` (`count`, `size`, `outline`): `aria-label="2 з 3 зірок"`,
+  `outline` — темне обведення для зірок під вузлом на суші.
+- **Рядки панелі** `.feature-row` (+ `__icon--auto|ai`) і `.score-row`.
+- **Нові токени** замість «сирих» кольорів із плану: `--line-card`, `--line-tag`,
+  `--line-btn`, `--muted-bg`, `--auto-bg`, `--ai-bg`.
+- Перевірено (Playwright): фокус з клавіатури — біла рамка 3 px на всіх 16 фокусованих
+  елементах `/ui/kit/`; `disabled` пропускається. Фіксовану ширину мають лише
+  іконки, `.btn-icon` і квадрат `.feature-row__icon` — усе інше тягнеться за вмістом.

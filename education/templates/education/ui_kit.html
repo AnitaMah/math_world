@@ -48,6 +48,112 @@
     </p>
   </section>
 
+  <section class="stack stack--gap-3" aria-labelledby="kit-buttons">
+    <h2 class="label-caps" id="kit-buttons">Кнопки</h2>
+    <div class="kit-grid">
+      <div class="stack stack--gap-2 isl-1">
+        <a class="btn btn--primary" href="#">Продовжити</a>
+        <a class="btn btn--info" href="#">Пройти ще раз</a>
+        <a class="btn btn--secondary" href="#">Читати теорію уроку</a>
+        <button class="btn btn--muted" type="button" aria-disabled="true">Спершу пройди урок 9</button>
+      </div>
+      <div class="stack stack--gap-2 isl-2">
+        <a class="btn btn--primary" href="#">Почати урок</a>
+        <button class="btn btn--ok" type="button">Далі</button>
+        <button class="btn btn--bad" type="button">Перевірити</button>
+        <button class="btn btn--muted" type="button" disabled>Скоро</button>
+      </div>
+    </div>
+    <div class="row row--gap-3 row--wrap">
+      <a class="btn btn--sm btn--secondary" href="#">Увійти</a>
+      <button class="btn-icon" type="button" aria-label="Усі острови">{% icon "map" size=20 %}</button>
+      <button class="btn-icon" type="button" aria-label="Вийти з уроку">{% icon "close" size=20 %}</button>
+      <span class="isl-3 row row--gap-2"><a class="btn btn--primary" href="#">{% icon "play" size=18 %} Грати</a></span>
+    </div>
+  </section>
+
+  <section class="stack stack--gap-3" aria-labelledby="kit-chips">
+    <h2 class="label-caps" id="kit-chips">Чіпи, теги, статуси</h2>
+    <div class="row row--gap-2 row--wrap">
+      <span class="chip" title="Зірки">{% icon "star" size=18 %}23 <span class="chip__sub">/ 114</span></span>
+      <span class="chip" title="Бали">{% icon "bolt" size=18 %}161 балів</span>
+      <span class="chip" title="Серія днів">{% icon "flame" size=18 %}4 дні</span>
+    </div>
+    <div class="row row--gap-2 row--wrap">
+      <span class="tag">Теорія</span><span class="tag">Перевір себе</span><span class="tag">Розв’язуємо усно</span>
+      <span class="tag">Вправи</span><span class="tag">Повторення</span><span class="tag">Задача Мудрої Сови</span>
+      <span class="tag">Коли зроблено уроки</span>
+    </div>
+    <div class="row row--gap-2 row--wrap">
+      {% for n, roman, name in sec_chips %}
+      <span class="sec-chip isl-{{ n }}"><span class="sec-chip__badge">{{ roman }} · §{{ n }}</span>{{ name }}</span>
+      {% endfor %}
+    </div>
+    <div class="row row--gap-2 row--wrap">
+      <span class="status status--done">Пройдено</span>
+      <span class="status status--current">Ти тут</span>
+      <span class="status status--open">Відкрито</span>
+      <span class="status status--locked">Закрито</span>
+      <span class="status status--soon">У хмарах</span>
+    </div>
+  </section>
+
+  <section class="stack stack--gap-3" aria-labelledby="kit-cards">
+    <h2 class="label-caps" id="kit-cards">Картки, прогрес, зірки</h2>
+    <div class="kit-grid">
+      <div class="card stack stack--gap-3 isl-2">
+        <div class="row" style="justify-content: space-between">
+          {% include "education/_stars.html" with count=1 size=30 %}
+          <span class="muted" style="font-size: var(--fs-13); font-weight: var(--fw-bold)">Розв’язано 6 з 17</span>
+        </div>
+        {% include "education/_progress.html" with value=6 max=17 label="Розв’язано 6 з 17" %}
+        <p class="muted-2" style="font-size: var(--fs-12); font-weight: var(--fw-bold)">★ — 30 % завдань · ★★ — 70 % · ★★★ — усі</p>
+      </div>
+      <div class="stack stack--gap-3">
+        <div class="card--dashed card"><strong>Мапа будується</strong><p class="muted">Розділи вже на мапі, стежки з уроками з’являться після імпорту.</p></div>
+        <p class="empty-note">Вправи цього уроку ще не імпортовано з підручника.</p>
+        <div class="card card--float">.card--float — картка поверх мапи</div>
+      </div>
+    </div>
+    <div class="row row--gap-6 row--wrap kit-stars-demo">
+      {% include "education/_stars.html" with count=3 size=14 outline=True %}
+      {% include "education/_stars.html" with count=2 size=20 %}
+      {% include "education/_stars.html" with count=1 size=22 %}
+      {% include "education/_stars.html" with count=0 size=30 %}
+    </div>
+    <div class="stack stack--gap-2 isl-1">
+      {% include "education/_progress.html" with value=8 max=18 size="sm" label="8 з 18 зірок" %}
+      {% include "education/_progress.html" with value=6 max=17 size="md" label="6 з 17" %}
+      {% include "education/_progress.html" with value=0 max=0 label="Завдань немає" %}
+    </div>
+  </section>
+
+  <section class="stack stack--gap-3" aria-labelledby="kit-rows">
+    <h2 class="label-caps" id="kit-rows">Рядки панелі уроку</h2>
+    <div class="kit-grid">
+      <div class="stack stack--gap-3">
+        <div class="feature-row">
+          <span class="feature-row__icon feature-row__icon--auto">{% icon "check" size=20 %}</span>
+          <div><div class="feature-row__title">15 вправ з автоперевіркою</div><div class="feature-row__sub">Відповідь звіряється з книгою</div></div>
+        </div>
+        <div class="feature-row">
+          <span class="feature-row__icon feature-row__icon--ai">{% icon "sparkle" size=20 %}</span>
+          <div><div class="feature-row__title">3 текстові задачі з ШІ</div><div class="feature-row__sub">Пишеш розв’язок — ШІ дає підказку, бали ×2</div></div>
+        </div>
+      </div>
+      <div class="stack stack--gap-2">
+        <p class="label-caps">Острови 5 класу</p>
+        {% for n, roman, name in sec_chips %}
+        <div class="score-row isl-{{ n }}">
+          <div class="score-row__head"><span class="score-row__label">{{ roman }} · §{{ n }} {{ name }}</span><span class="score-row__score">{% cycle "8 / 18 ★" "3 / 27 ★" "0 / 27 ★" "0 / 15 ★" "0 / 27 ★" %}</span></div>
+          {% cycle 8 3 0 0 0 as got silent %}{% cycle 18 27 27 15 27 as total silent %}
+          {% include "education/_progress.html" with value=got max=total size="sm" %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
   <section class="stack stack--gap-3" aria-labelledby="kit-layout">
     <h2 class="label-caps" id="kit-layout">Розкладка: .stack і .row</h2>
     <div class="row row--gap-2 row--wrap">

@@ -66,3 +66,6 @@
 .kit-icon { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); padding: var(--sp-4) var(--sp-2);
   background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--r-xl); color: var(--text); }
 .kit-icon__row { display: flex; align-items: center; gap: var(--sp-2); color: var(--text-2); }
+.kit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-6); align-items: start; }
+.row--gap-6 { gap: var(--sp-6); }
+.kit-stars-demo { padding: var(--sp-3); background: var(--isl-2-land); border-radius: var(--r-md); }

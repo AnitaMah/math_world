@@ -1,0 +1,5 @@
+{# Зірки уроку (з 3). Параметри: count (0–3), size (px, 14 за замовчуванням), outline (під вузлом). #}
+{# {% include "education/_stars.html" with count=2 size=20 %} #}
+<span class="stars{% if outline %} stars--outline{% endif %}{% if size >= 20 %} stars--gap{% endif %}" role="img" aria-label="{{ count|default:0 }} з 3 зірок">
+  {% for i in "123" %}<svg class="icon star {% if forloop.counter <= count %}star--on{% else %}star--off{% endif %}" width="{{ size|default:14 }}" height="{{ size|default:14 }}" aria-hidden="true" focusable="false"><use href="#i-star"/></svg>{% endfor %}
+</span>
