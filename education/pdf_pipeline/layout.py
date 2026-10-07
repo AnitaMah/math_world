@@ -257,19 +257,29 @@ def layout_from_ocr(result: PageOcr, detect_regions: bool = True, **kwargs: Any)
 # --------------------------------------------------------------------------- рівень документа
 
 
-def infer_book_pages(detected: Mapping[int, int | None]) -> dict[int, int | None]:
-    """Номер у книзі = номер у PDF + зсув. Зсув — найчастіший серед прочитаних номерів.
+def infer_book_pages(detected: Mapping[int, int | None], window: int = 8) -> dict[int, int | None]:
+    """Номер у книзі = номер у PDF + зсув. Зсув — найчастіший серед **сусідніх** сторінок.
 
     Так виправляються сторінки, де OCR не прочитав номер або прочитав неправильно
-    (3 ↔ 8): номер, що не збігається з загальним зсувом, замінюється обчисленим.
+    (3 ↔ 8). Зсув рахуємо в «вікні» ±window сторінок, а не по всій книзі: у
+    Тарасенковій на початку зсув 0, а в кінці 9 (десь посередині вставлені
+    ненумеровані сторінки) — один спільний зсув зламав би половину книги.
     """
-    offsets = Counter(book - pdf for pdf, book in detected.items() if book is not None)
-    if not offsets:
-        return dict(detected)
-    offset, votes = offsets.most_common(1)[0]
-    if votes < 2 and len(detected) > 2:      # один-єдиний номер — замало, щоб узагальнювати
-        return dict(detected)
-    return {pdf: pdf + offset for pdf in detected}
+    pages = sorted(detected)
+    result: dict[int, int | None] = {}
+    for pdf in pages:
+        offsets = Counter(
+            book - other for other in pages
+            if abs(other - pdf) <= window and (book := detected[other]) is not None
+        )
+        if not offsets:
+            result[pdf] = detected[pdf]
+            continue
+        offset, votes = offsets.most_common(1)[0]
+        own = detected[pdf]
+        # Один-єдиний голос (лише сама сторінка) — довіряємо прочитаному, нічого не вигадуємо.
+        result[pdf] = own if votes < 2 and own is not None else (pdf + offset if votes >= 2 else own)
+    return result
 
 
 @dataclass

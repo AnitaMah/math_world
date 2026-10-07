@@ -167,3 +167,17 @@ class NoiseAndRegionTests(unittest.TestCase):
         self.assertEqual(len(frames), 1)
         self.assertAlmostEqual(frames[0].x0, 100, delta=3)
         self.assertAlmostEqual(frames[0].y1, 401, delta=3)
+
+
+class OffsetChangeTests(unittest.TestCase):
+    def test_offset_changes_inside_book(self):
+        # Сторінки 1–20: номер = PDF; з 21-ї вставлено 9 ненумерованих → номер = PDF − 9.
+        detected = {p: p for p in range(1, 21)}
+        detected.update({p: p - 9 for p in range(30, 50)})
+        detected[10] = None
+        detected[40] = 36          # помилка OCR (3 ↔ 8: має бути 31)
+        fixed = infer_book_pages(detected)
+        self.assertEqual(fixed[10], 10)
+        self.assertEqual(fixed[40], 31)
+        self.assertEqual(fixed[5], 5)
+        self.assertEqual(fixed[45], 36)
