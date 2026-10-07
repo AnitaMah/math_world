@@ -1,6 +1,7 @@
 """OCR через Tesseract (pytesseract): слова з координатами і впевненістю."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import numpy as np
@@ -25,6 +26,11 @@ class TesseractEngine:
         self.timeout = timeout
         if cfg.tesseract_cmd:
             pytesseract.pytesseract.tesseract_cmd = cfg.tesseract_cmd
+        if cfg.tessdata_dir:
+            # Не «--tessdata-dir "..."» у config: на Windows pytesseract розбирає config через
+            # shlex.split(posix=False), лапки лишаються частиною шляху → «"C:/tessdata_best"/ukr...»
+            # не знаходиться. Змінну середовища успадковує кожен виклик tesseract (і процеси-воркери).
+            os.environ["TESSDATA_PREFIX"] = str(cfg.tessdata_dir)
         try:
             self.version = str(pytesseract.get_tesseract_version())
         except (pytesseract.TesseractNotFoundError, OSError) as exc:
@@ -42,8 +48,6 @@ class TesseractEngine:
     def build_config(self, params: OcrParams) -> str:
         """Рядок параметрів командного рядка Tesseract."""
         parts = [f"--oem {params.oem}", f"--psm {params.psm}", "-c preserve_interword_spaces=1"]
-        if self.cfg.tessdata_dir:
-            parts.append(f'--tessdata-dir "{self.cfg.tessdata_dir.as_posix()}"')
         parts += [f"-c {key}={value}" for key, value in params.extra]
         return " ".join(parts)
 

@@ -125,7 +125,7 @@ class TesseractConfigTests(unittest.TestCase):
         config = engine.build_config(OcrParams(psm=4, extra=(("tessedit_do_invert", "0"),)))
         self.assertIn("--psm 4", config)
         self.assertIn("--oem 1", config)
-        self.assertIn('--tessdata-dir "C:/tessdata_best"', config)
+        self.assertNotIn("tessdata", config)          # шлях іде через TESSDATA_PREFIX (лапки ламали Windows)
         self.assertIn("-c tessedit_do_invert=0", config)
 
 
@@ -153,8 +153,7 @@ def _tesseract_with_ukr():
     except TesseractNotAvailable:
         return None
     import pytesseract
-    config = f'--tessdata-dir "{engine.cfg.tessdata_dir.as_posix()}"' if engine.cfg.tessdata_dir else ""
-    return engine if "ukr" in pytesseract.get_languages(config=config) else None
+    return engine if "ukr" in pytesseract.get_languages() else None
 
 
 @unittest.skipUnless(MERZLYAK_PDF.exists() and _tesseract_with_ukr(), "немає Tesseract з ukr або PDF")

@@ -37,8 +37,24 @@ _PARAGRAPH_PREFIX_RE = re.compile(r"^\W*(?:§|5|9|S|\$)?\s*(?P<num>\d{1,2})\s*\.
 _ITEM_PREFIX_RE = re.compile(r"^\W*(?P<num>\d{1,2})\s*\.\s*")
 # Початок вправи без крапки або зі зламаним значком: «82 Скільки», «4 Яке число», «4, Назвіть», «67" Точка»
 _LOOSE_EXERCISE_RE = re.compile(r"^(?P<num>\d{1,4})(?P<junk>[,.\"”'°•·*]{0,3})\s+(?P<rest>[А-ЯІЇЄҐA-Z].*)$")
+# Номер вправи, де цифру OCR прочитав як літеру: «о. Біля школи» (5.), «З. Назвіть» (3.).
+# Тут крапка обов'язкова — інакше «о Біля…» посеред тексту теж стало б вправою.
+_DIGIT_LOOKALIKES = {"о": "05", "О": "05", "o": "05", "O": "05", "б": "6", "З": "3", "з": "3",
+                     "В": "8", "S": "5", "s": "5", "l": "1", "I": "1", "|": "1", "т": "7"}
+_LETTER_NUMBER_RE = re.compile(
+    r"^(?P<num>[\d" + "".join(re.escape(c) for c in _DIGIT_LOOKALIKES) + r"]{1,4})"
+    r"(?P<junk>[,.\"”'°•·*]{1,3})\s+(?P<rest>[А-ЯІЇЄҐA-Z].*)$")
 # Цифри, які OCR плутає між собою у цьому шрифті
 _CONFUSABLE_DIGITS = {"3": "8", "8": "3", "5": "6", "6": "5", "1": "7", "7": "1", "0": "8"}
+
+
+def letter_number_candidates(raw: str) -> set[int]:
+    """«о» → {0, 5}, «1о» → {10, 15}: усі числа, які могли бути на місці літер-двійників."""
+    options = [""]
+    for ch in raw:
+        digits = ch if ch.isdigit() else _DIGIT_LOOKALIKES.get(ch, "")
+        options = [o + d for o in options for d in digits]
+    return {int(o) for o in options if o}
 
 
 def number_fixable(raw: str, expected: int) -> bool:
@@ -243,12 +259,24 @@ class StructureParser:
             level = self.profile.difficulty_marks.get(junk, "unknown") if junk else self.profile.default_difficulty
             num = int(raw)
         else:
+            # Остання спроба: цифра номера прочитана як літера («о. Біля школи» = 5.).
+            # Приймаємо лише якщо один з варіантів — саме очікуваний номер.
+            lm = _LETTER_NUMBER_RE.match(text)
+            if lm and not lm.group("num").isdigit() and expected in letter_number_candidates(lm.group("num")):
+                junk = lm.group("junk").strip(",.")
+                level = self.profile.difficulty_marks.get(junk, "unknown") if junk else self.profile.default_difficulty
+                return expected, level, lm.group("rest"), True
             return None
 
         if num == expected:
             return num, level, rest, False
         if number_fixable(raw, expected):
             return expected, level if parsed else "unknown", rest, True
+        # Попередню вправу OCR загубив зовсім, а ця ще й з помилкою («357» = 35 після 33):
+        # без цього одна втрачена вправа тягне за собою наступну.
+        for ahead in (expected + 1, expected + 2):
+            if raw != str(ahead) and number_fixable(raw, ahead):
+                return ahead, level if parsed else "unknown", rest, True
         if parsed and self._number_plausible(num, expected):
             return num, level, rest, False
         return None

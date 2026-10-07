@@ -5,7 +5,7 @@ from education.pdf_pipeline.datatypes import BBox, Line, Word
 from education.pdf_pipeline.layout import PageLayout
 from education.pdf_pipeline.profiles import get_profile
 from education.pdf_pipeline.profiles.base import TocEntry
-from education.pdf_pipeline.structure import StructureParser, number_fixable, outline, parse_structure
+from education.pdf_pipeline.structure import StructureParser, letter_number_candidates, number_fixable, outline, parse_structure
 
 M5 = get_profile("math_merzlyak_5")
 T6 = get_profile("math_tarasenkova_6")
@@ -51,6 +51,14 @@ class NumberFixableTests(unittest.TestCase):
         self.assertTrue(number_fixable("178", 78))
         self.assertFalse(number_fixable("45", 12))
         self.assertFalse(number_fixable("2", 12))
+
+
+class LetterNumberTests(unittest.TestCase):
+    def test_candidates(self):
+        self.assertEqual(letter_number_candidates("о"), {0, 5})
+        self.assertEqual(letter_number_candidates("1о"), {10, 15})
+        self.assertEqual(letter_number_candidates("З"), {3})
+        self.assertEqual(letter_number_candidates("ж"), set())
 
 
 class MerzlyakMiniBookTests(unittest.TestCase):

@@ -151,6 +151,23 @@ class ExerciseStartRegressions(unittest.TestCase):
         self.assertEqual(exercises(r)[-1].number, "32")
         self.assertTrue(exercises(r)[-1].data["number_fixed"])
 
+    def test_tess5_letter_instead_of_digit(self):
+        # Tesseract 5.5.3 best: «5. Біля школи» → «о. Біля школи»
+        rows = [f"{n}. Текст" for n in range(1, 5)] + ["о. Біля школи ростуть каштани.", "6. Далі"]
+        r = parse_m5(page(5, *LESSON_START, ("Вправи", 23), *rows))
+        self.assertEqual([e.number for e in exercises(r)], ["1", "2", "3", "4", "5", "6"])
+        self.assertIn("Біля школи", exercises(r)[4].text)
+
+    def test_tess5_letter_without_dot_is_text(self):
+        r = parse_m5(page(5, *LESSON_START, ("Вправи", 23), "1. Текст", "о Біля школи", "2. Далі"))
+        self.assertEqual([e.number for e in exercises(r)], ["1", "2"])
+
+    def test_tess5_lost_exercise_then_misread_next(self):
+        # №34 OCR загубив, №35 прочитано як «357» (значок ° → 7)
+        rows = [f"{n}. Текст" for n in range(1, 34)] + ["рядок без номера", "357 Для нумерування сторінок", "36. Далі"]
+        r = parse_m5(page(5, *LESSON_START, ("Вправи", 23), *rows))
+        self.assertEqual([e.number for e in exercises(r)][-2:], ["35", "36"])
+
     def test_0619_duplicate_number_both_kept(self):
         root = Node("textbook")
         block = root.add(Node("block", data={"block_type": "exercise"}))

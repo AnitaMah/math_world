@@ -225,8 +225,12 @@ def crop_figure(image: np.ndarray, box: BBox, pad: int = PAD, bottom_limit: int 
     return image[max(box.y0 - pad, 0):y1, max(box.x0 - pad, 0):min(box.x1 + pad, w)].copy()
 
 
-def extract_page_figures(image: np.ndarray, layout: PageLayout, out_dir: Path | None = None) -> list[Figure]:
-    """Усі рисунки сторінки з номерами; якщо out_dir — вирізає і зберігає PNG."""
+def extract_page_figures(image: np.ndarray, layout: PageLayout, out_dir: Path | None = None,
+                         overwrite: bool = True) -> list[Figure]:
+    """Усі рисунки сторінки з номерами; якщо out_dir — вирізає і зберігає PNG.
+
+    overwrite=False — наявний PNG не перезаписуємо (повторний прогін оркестратора: запис
+    PNG був найдовшою частиною етапу structure)."""
     heights = [ln.height for ln in layout.body_lines if ln.words]
     text_height = int(np.median(heights)) if heights else 18
     regions = find_figure_regions(image, layout, text_height)
@@ -254,6 +258,8 @@ def extract_page_figures(image: np.ndarray, layout: PageLayout, out_dir: Path | 
         pad = max(PAD, int(text_height * 0.9))
         for fig in figures:
             fig.path = Path(out_dir) / f"{fig.figure_id}.png"
+            if not overwrite and fig.path.exists():
+                continue
             limit = fig.caption_bbox.y0 - 2 if fig.caption_bbox and fig.caption_bbox.y0 > fig.bbox.y1 else None
             save_image(fig.path, crop_figure(image, fig.bbox, pad, limit))
     return figures
@@ -324,7 +330,7 @@ def attach_figures(root: Node, figures: Sequence[Figure], page_window: int = 4) 
 
 
 def extract_all_figures(layouts: Iterable[PageLayout], page_images: Mapping[int, Path],
-                        out_dir: Path | None = None) -> list[Figure]:
+                        out_dir: Path | None = None, overwrite: bool = True) -> list[Figure]:
     """Рисунки з усіх сторінок."""
     from .preprocess import load_image
     figures: list[Figure] = []
@@ -332,5 +338,5 @@ def extract_all_figures(layouts: Iterable[PageLayout], page_images: Mapping[int,
         path = page_images.get(layout.pdf_page)
         if path is None:
             continue
-        figures += extract_page_figures(load_image(path), layout, out_dir)
+        figures += extract_page_figures(load_image(path), layout, out_dir, overwrite)
     return figures

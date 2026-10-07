@@ -140,15 +140,16 @@ def inspect_page(page: pymupdf.Page, pdf_page: int) -> PageInspection:
 
     max_ppi: float | None = None
     coverage = 0.0
-    for img in images:
-        xref, px_width = img[0], img[2]
-        for shown in page.get_image_rects(xref):   # де картинка намальована на сторінці
-            if shown.width <= 0:
-                continue
-            ppi = px_width / (shown.width / 72.0)   # 72 pt = 1 дюйм
-            area_share = (shown.width * shown.height) / page_area
-            if area_share > coverage:
-                coverage, max_ppi = area_share, ppi
+    # get_image_info() без hashes: один прохід по сторінці. get_image_rects(xref) рахує
+    # хеші всіх картинок на кожен виклик — на Windows це хвилини на 46 сторінок.
+    for info in page.get_image_info():
+        shown = pymupdf.Rect(info["bbox"])           # де картинка намальована на сторінці
+        if shown.width <= 0 or not info.get("width"):
+            continue
+        ppi = info["width"] / (shown.width / 72.0)   # 72 pt = 1 дюйм
+        area_share = (shown.width * shown.height) / page_area
+        if area_share > coverage:
+            coverage, max_ppi = area_share, ppi
 
     text = page.get_text()
     return PageInspection(
