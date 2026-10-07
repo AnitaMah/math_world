@@ -131,6 +131,7 @@ class TextbookProfile:
     difficulty_marks: dict[str, str]   # значок → рівень з DIFFICULTY_LEVELS
     default_difficulty: str | None     # рівень вправи без значка
     homework_marker: str | None = None  # "colored_number" | "margin_icon" | None
+    difficulty_from_image: bool = False  # значок складності шукати на картинці (OCR його губить)
 
     toc_path: str | None = None
     skip_pages: frozenset[int] = frozenset()      # обкладинка, передмова, зміст…

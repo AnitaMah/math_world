@@ -41,6 +41,7 @@ PROFILE = TextbookProfile(
     },
     default_difficulty=None,             # без значка (вправи для повторення) — рівень не вказано
     homework_marker="colored_number",    # номер, надрукований кольором (зелений «10.•»)
+    difficulty_from_image=True,          # ◦ OCR губить зовсім, • читає як «"» — визначаємо за пікселями
     toc_path="data/5_class_ukr.txt",
     skip_pages=frozenset({1, 2, 3, 4}),  # обкладинка, титул, «Від авторів», «Умовні позначення»
     notes=(
