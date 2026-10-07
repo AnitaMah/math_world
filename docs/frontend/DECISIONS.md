@@ -46,3 +46,68 @@ https://claude.ai/artifact/U16ywZt8gpP1joXc2cBk8S
 https://claude.ai/code/artifact/04922b47-8945-4f84-9af4-447cfffc4c4e
 
 Чому: щоб кожен крок можна було звірити з конкретним артбордом.
+
+## 2026-10-07 — інвентаризація старого фронтенду (кроки FE-0009…0016)
+Стан на коміт `61ac230`. Усе нижче або переписується, або видаляється у фазі 18.
+
+**Шаблони** (`education/templates/`, 12 файлів):
+
+| Шаблон | Роль | Хто рендерить |
+| --- | --- | --- |
+| `education/grade_list.html` | Список класів + стара мапа | `grade_list` (`/`, `/grades/`) |
+| `education/section_list.html` | Розділи класу + стара мапа | `section_list` |
+| `education/paragraph_list.html` | Параграфи розділу + стара мапа | `paragraph_list` |
+| `education/item_list.html` | Пункти § картками з ▶, «Підсумок параграфа», стара мапа | `item_list` |
+| `education/item_detail.html` | Пункт: блоки уроку, «▶ Грати урок» | `item_detail` |
+| `education/_lesson_blocks.html` | Блоки уроку і вправи (include) | `item_list`, `item_detail` |
+| `education/_map_partial.html` | PNG-мапа + SVG-кружечки, «← Back», «Reset progress» | include у 4 списках |
+| `education/mint_overview.html` | Старий огляд — **жоден view його не рендерить** (мертвий файл) | — |
+| `education/play.html` | Екран гри (одне завдання на екран) | `play_lesson` |
+| `registration/_auth_base.html` | Основа входу/реєстрації, вбудований `<style>`, бере `play.css` | — |
+| `registration/login.html` | Вхід, `form.as_p` | `django.contrib.auth` |
+| `registration/signup.html` | Реєстрація, `form.as_p` | `signup` |
+
+**Статичні файли** (`education/static/education/`):
+`map.js` (3.7 КБ, стара мапа), `map_data_uk.json` (1.3 КБ, статичні вузли),
+`css/map_ui.css` (8.3 КБ, списки — **уже темна тема**), `css/play.css` (4.8 КБ, гра),
+`js/play.js` (8.3 КБ, гра). Картинка мапи лежить у `education/img/5_class_map.png` (2.5 МБ).
+
+**Знахідка: картинка мапи на сайті не відображається.** `_map_partial.html` бере
+`{% static 'education/img/5_class_map.png' %}`, а файл лежить у `education/img/`,
+не в `education/static/education/img/`. На всіх сторінках списків замість мапи —
+зламана іконка з alt «Карта» (див. `before/home-desktop.png`). Не виправляємо —
+стара мапа все одно йде під заміну.
+
+**URL, що рендерять HTML** (`math_world/urls.py`):
+
+| URL | View | Контекст шаблону |
+| --- | --- | --- |
+| `/`, `/grades/` | `grade_list` | `grades[{id, number, name, subject}]`, `content.grade_title/grade_lead` + базовий* |
+| `/grades/<grade_id>/sections/` | `section_list` | `grade`, `grade_id`, `sections[{id, number, name}]`, `content` + базовий* |
+| `/sections/<section_id>/paragraphs/` | `paragraph_list` | `section`, `section_id`, `grade_id`, `paragraphs[…]`, `content` + базовий* |
+| `/paragraphs/<paragraph_id>/items/` | `item_list` | `paragraph`, `paragraph_id`, `section_id`, `grade_id`, `items[{id, number, title, exercises, stars}]`, `blocks`, `media_url` + базовий* |
+| `/items/<item_id>/` | `item_detail` | `paragraph`, `paragraph_id`, `section_id`, `grade_id`, `item{id, number, details}`, `tp`, `blocks`, `media_url` + базовий* |
+| `/play/item/<pk>/`, `/play/paragraph/<pk>/` | `play_lesson` | `title`, `back_url`, `api_url` |
+| `/accounts/login/` | Django `LoginView` | `form`, `next` |
+| `/accounts/signup/` | `signup` | `form` |
+
+\* базовий контекст (`_base_context`): `lang`, `current_lang_label`, `other_lang_label`,
+`toggle_query`, `map_data` (читає `map_data_uk.json` на кожному запиті), `show_links`.
+
+**Емодзі й символи-іконки** (замінити на SVG, фаза 3):
+- `play.html`: `✕` (вихід), `🔥` (серія), `⭐` (бали)
+- `play.js`: `✓`/`✗` (відгук), `⭐` у балах завдання і в похвалі, `★` у фіналі
+- `item_detail.html`, `item_list.html`: `▶ Грати урок`, `←` у «Назад»; `★` — зірки пункту
+- `map.js`: `← Back`
+- Англійські написи в українському UI: «← Back», «Reset progress» (`_map_partial.html`, `map.js`)
+
+**Inline-стилі `style="…"`**: `_map_partial.html` (3), `mint_overview.html` (2),
+`login.html` і `signup.html` (по 1, ширина кнопки); вбудований `<style>` — у `_auth_base.html`.
+
+**Мова (`?lang=`)**: `_lang()` і `_base_context()` у `views.py`; перемикач
+«Українська · Deutsch» у 5 шаблонах списків/пункту; `item.content_de`, `get_name(lang)`.
+Гра, API, вхід — лише українською. Рішення щодо німецької — крок фази 0.5.
+
+**Знімки «до»** — `docs/frontend/before/` (8 сторінок × 1440×900 і 390×844, повна
+висота сторінки): `home`, `sections`, `paragraphs`, `items`, `item`, `play`, `login`, `signup`.
+Знято на локальній копії БД з даними §1 (пункти 117–122).
