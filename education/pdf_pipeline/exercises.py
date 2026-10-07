@@ -23,7 +23,8 @@ from .grids import Cell, find_grids, split_cells
 from .layout import PageLayout
 from .profiles import TextbookProfile
 
-_FIGURE_REF_RE = re.compile(r"(?:рис|мал|puc)\.?\s*(\d+)", re.IGNORECASE)
+# «(рис. 15)», «на рисунку 15», «мал. 3», «на малюнку 3»; OCR: «puc.»
+_FIGURE_REF_RE = re.compile(r"(?:рис(?:ун\w*)?|мал(?:юн\w*)?|puc)\.?\s*(\d+)", re.IGNORECASE)
 
 # Дієслово-завдання → тип задачі. Порядок важливий: перше знайдене перемагає.
 TASK_VERBS: tuple[tuple[str, tuple[str, ...]], ...] = (
