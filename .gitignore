@@ -50,3 +50,6 @@ review/gemini_cache/
 review/gemini_request_count.json
 /db.*.sqlite3
 /review/review_queue*.csv
+
+# Claude (Cowork) outputs — not project code
+/Claude outputs/
