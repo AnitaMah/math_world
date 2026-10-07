@@ -35,8 +35,35 @@ class Grade(models.Model):
         return f"{self.number} клас – {self.name_uk}"
 
 
+class Textbook(models.Model):
+    """Один конкретний підручник (PDF), з якого імпортовано розділи/уроки/вправи.
+
+    pdf_sha256 — унікальний «паспорт» файлу: той самий PDF не імпортується двічі
+    як різні книжки, а повторний імпорт оновлює наявну (фаза 19).
+    """
+    subject = models.ForeignKey(Subject, on_delete=models.PROTECT, related_name="textbooks")
+    grade = models.ForeignKey(Grade, on_delete=models.PROTECT, related_name="textbooks")
+    profile_code = models.CharField(max_length=50)            # math_merzlyak_5, math_tarasenkova_6
+    title = models.CharField(max_length=255)
+    author = models.CharField(max_length=255, blank=True)
+    year = models.PositiveIntegerField(null=True, blank=True)
+    pdf_name = models.CharField(max_length=255, blank=True)
+    pdf_sha256 = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["grade__number", "title"]
+
+    def __str__(self):
+        author = f" ({self.author})" if self.author else ""
+        return f"{self.title}{author}"
+
+
 class Section(models.Model):
     grade = models.ForeignKey(Grade, on_delete=models.CASCADE)
+    # null — розділи, створені старим імпортом до появи Textbook
+    textbook = models.ForeignKey(Textbook, on_delete=models.CASCADE, null=True, blank=True,
+                                 related_name="sections")
     number = models.IntegerField()
     name_uk = models.CharField(max_length=200)
     name_de = models.CharField(max_length=200, blank=True, null=True)
@@ -95,52 +122,266 @@ class Item(models.Model):
         return f"Завдання {self.number} ({self.paragraph})"
 
 
-class ContentBlock(models.Model):
+# Спільні для пайплайна і БД переліки. Мають збігатися з education/pdf_pipeline/schema.py
+# (тест education.tests.ChoicesMatchPipelineTests це перевіряє).
+DIFFICULTY_CHOICES = [
+    ("preparatory", "Підготовчий (′)"),
+    ("medium", "Середній (°)"),
+    ("sufficient", "Достатній (•)"),
+    ("high", "Високий (••, *)"),
+    ("olympiad", "Олімпіадний"),
+    ("unknown", "Невідомий значок"),
+]
+
+TEXT_SOURCE_CHOICES = [
+    ("ocr", "OCR"),
+    ("vision", "Vision-LLM"),
+    ("manual", "Вручну"),
+]
+
+ANSWER_CHECK_CHOICES = [
+    ("unchecked", "Не перевірено"),
+    ("verified", "Збігається з книгою"),
+    ("mismatch", "Не збігається з книгою"),
+]
+
+
+class SourceMixin(models.Model):
+    """Звідки в PDF узявся запис: сторінка і прямокутник [x0, y0, x1, y1] на картинці сторінки."""
+
+    source_page = models.PositiveIntegerField(null=True, blank=True)
+    source_bbox = models.JSONField(null=True, blank=True)
+    needs_review = models.BooleanField(default=False, db_index=True)
+    text_source = models.CharField(max_length=10, choices=TEXT_SOURCE_CHOICES, default="ocr")
+
+    class Meta:
+        abstract = True
+
+
+class ContentBlock(SourceMixin):
     """
-    One piece of a lesson's real content: a theory paragraph, a self-check
-    question, an oral warm-up exercise, a written exercise (with its
-    difficulty marker), a review exercise, the "Задача від Мудрої Сови"
-    problem, or a "Коли зроблено уроки" historical aside. A lesson repeats
-    each of these a variable number of times (0 asides, 8 exercises, ...),
-    which is why this is a separate table keyed to Item rather than more
-    flat fields on Item -- see Section 2 of the refactor plan for the
-    reasoning. Empty for now: this step only adds the table, no parsing
-    writes to it yet (see Steps 12+).
+    Один шматок змісту уроку: теорія, рубрика, блок вправ тощо. Урок — це пункт (Item)
+    у Мерзляка або параграф у Тарасенкової, тому блок належить або пункту, або параграфу
+    (рівно одному — див. constraint). Блоки рівня параграфа в Мерзляка — «Перевірте себе»,
+    «Головне в параграфі».
     """
 
     BLOCK_TYPE_CHOICES = [
         ("theory", "Теорія"),
         ("self_check", "Самоперевірка (❓)"),
         ("oral_exercise", "Розв'язуємо усно"),
-        ("exercise", "Вправа"),
-        ("review_exercise", "Вправа для повторення"),
+        ("exercise", "Вправи"),
+        ("review_exercise", "Вправи для повторення"),
         ("wise_owl", "Задача від Мудрої Сови"),
         ("history_aside", "Коли зроблено уроки"),
+        ("self_test", "Перевірте себе"),
+        ("summary", "Головне в параграфі"),
+        ("applied_exercise", "Застосуйте на практиці"),
+        ("worked_example", "Розв'язана задача"),
+        ("rule", "Запам'ятайте"),
+        ("note", "Зверніть увагу"),
+        ("extra_reading", "Дізнайтеся більше"),
     ]
+    DIFFICULTY_CHOICES = DIFFICULTY_CHOICES
 
-    # Difficulty markers used by "Вправи" exercises in this textbook:
-    # ° (basic), plain/no mark (standard), ·· (advanced), * (olympiad/club).
-    DIFFICULTY_CHOICES = [
-        ("basic", "° початковий"),
-        ("standard", "стандартний"),
-        ("advanced", "·· високий"),
-        ("olympiad", "* гурток/факультатив"),
-    ]
-
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="content_blocks")
-    block_type = models.CharField(max_length=20, choices=BLOCK_TYPE_CHOICES)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="content_blocks",
+                             null=True, blank=True)
+    paragraph = models.ForeignKey(Paragraph, on_delete=models.CASCADE, related_name="content_blocks",
+                                  null=True, blank=True)
+    block_type = models.CharField(max_length=20, choices=BLOCK_TYPE_CHOICES, db_index=True)
     order = models.PositiveIntegerField(default=0)
-    text = models.TextField()
-    difficulty = models.CharField(
-        max_length=20, choices=DIFFICULTY_CHOICES, blank=True, null=True
-    )
+    title = models.CharField(max_length=255, blank=True)
+    text = models.TextField(blank=True)
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, blank=True, null=True)
     image_path = models.CharField(max_length=255, blank=True, null=True)
+    conf = models.FloatField(null=True, blank=True)
+    figures = models.ManyToManyField("Figure", blank=True, related_name="content_blocks")
 
     class Meta:
-        ordering = ["item", "order"]
+        ordering = ["item", "paragraph", "order"]
+        constraints = [
+            models.CheckConstraint(
+                condition=(models.Q(item__isnull=False, paragraph__isnull=True)
+                       | models.Q(item__isnull=True, paragraph__isnull=False)),
+                name="contentblock_item_xor_paragraph",
+            ),
+        ]
+
+    @property
+    def lesson(self):
+        return self.item or self.paragraph
 
     def __str__(self):
-        return f"{self.get_block_type_display()} для {self.item} (#{self.order})"
+        return f"{self.get_block_type_display()} для {self.lesson} (#{self.order})"
+
+
+class Exercise(SourceMixin):
+    """Вправа підручника. Номер — як у книзі; письмові вправи нумеруються наскрізно в межах
+    підручника, усні — заново в кожному пункті (тому унікальність не накладаємо, див. DECISIONS)."""
+
+    textbook = models.ForeignKey(Textbook, on_delete=models.CASCADE, related_name="exercises")
+    block = models.ForeignKey(ContentBlock, on_delete=models.CASCADE, related_name="exercises")
+    number = models.PositiveIntegerField()
+    order = models.PositiveIntegerField(default=0)
+    difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, blank=True, null=True)
+    difficulty_ocr = models.CharField(max_length=20, blank=True)
+    homework = models.BooleanField(default=False)
+    condition = models.TextField(blank=True)
+    condition_tail = models.TextField(blank=True)
+    task_verb = models.CharField(max_length=30, blank=True)
+    answer_kind = models.CharField(max_length=30, blank=True)
+    is_word_problem = models.BooleanField(default=False)
+    auto_checkable = models.BooleanField(default=False)
+    has_fractions = models.BooleanField(default=False)
+    answer_check = models.CharField(max_length=10, choices=ANSWER_CHECK_CHOICES, default="unchecked")
+    ocr_text = models.TextField(blank=True)
+    flags = models.JSONField(default=list, blank=True)
+    figures = models.ManyToManyField("Figure", blank=True, related_name="exercises")
+
+    class Meta:
+        ordering = ["block", "order"]
+        indexes = [models.Index(fields=["textbook", "number"])]
+
+    @property
+    def is_oral(self):
+        return self.block.block_type == "oral_exercise"
+
+    def __str__(self):
+        return f"№{self.number}" + (" (усна)" if self.is_oral else "")
+
+
+class SubExercise(models.Model):
+    """Підпункт вправи «1) 238 + 435»."""
+
+    EXPR_STATUS_CHOICES = [
+        ("ok", "Вираз коректний"),
+        ("suspect", "Підозрілий"),
+        ("malformed", "Зламаний"),
+        ("not_expression", "Не вираз"),
+    ]
+
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name="subexercises")
+    number = models.CharField(max_length=5)                 # «1», «12», «а»
+    order = models.PositiveIntegerField(default=0)
+    text = models.TextField()
+    expr = models.CharField(max_length=255, blank=True)
+    expr_status = models.CharField(max_length=20, choices=EXPR_STATUS_CHOICES, blank=True)
+    expr_issues = models.JSONField(default=list, blank=True)
+    answer_check = models.CharField(max_length=10, choices=ANSWER_CHECK_CHOICES, default="unchecked")
+    needs_review = models.BooleanField(default=False, db_index=True)
+    text_source = models.CharField(max_length=10, choices=TEXT_SOURCE_CHOICES, default="ocr")
+    ocr_text = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["exercise", "order"]
+
+    @property
+    def expr_well_formed(self):
+        return self.expr_status == "ok"
+
+    def __str__(self):
+        return f"{self.exercise} {self.number})"
+
+
+def parse_answer_number(text):
+    """Числове значення відповіді для порівняння/перевірки гравця, або None.
+
+    «-3,5» → Decimal('-3.5'); «− 76» → Decimal('-76'); «3/4» → Decimal('0.75');
+    «2 1/3» → Decimal('2.333333'); «так», «12; 16» → None.
+    """
+    import re
+    from decimal import Decimal, InvalidOperation
+    from fractions import Fraction
+
+    if text is None:
+        return None
+    value = str(text).strip().rstrip(".;").replace("−", "-").replace("–", "-").replace(" ", " ")
+    value = re.sub(r"^-\s+", "-", value)
+    m = re.fullmatch(r"(-?)(\d+)\s+(\d+)/(\d+)", value)            # мішане число
+    try:
+        if m:
+            sign = -1 if m.group(1) else 1
+            frac = Fraction(int(m.group(2))) + Fraction(int(m.group(3)), int(m.group(4)))
+            return (Decimal(sign * frac.numerator) / Decimal(frac.denominator)).quantize(Decimal("0.000001"))
+        if re.fullmatch(r"-?\d+/\d+", value):
+            frac = Fraction(value)
+            return (Decimal(frac.numerator) / Decimal(frac.denominator)).quantize(Decimal("0.000001"))
+        if re.fullmatch(r"-?\d+(?:[.,]\d+)?", value):
+            return Decimal(value.replace(",", "."))
+    except (InvalidOperation, ZeroDivisionError, ValueError):
+        return None
+    return None
+
+
+class Answer(models.Model):
+    """Відповідь до вправи або підпункту: з розділу «Відповіді» книги чи обчислена пайплайном."""
+
+    KIND_CHOICES = [("book", "З книги"), ("computed", "Обчислено")]
+
+    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE, related_name="answers")
+    subexercise = models.ForeignKey(SubExercise, on_delete=models.CASCADE, null=True, blank=True,
+                                    related_name="answers")
+    kind = models.CharField(max_length=10, choices=KIND_CHOICES)
+    text = models.CharField(max_length=500)
+    value_numeric = models.DecimalField(max_digits=24, decimal_places=6, null=True, blank=True)
+
+    class Meta:
+        ordering = ["exercise", "subexercise", "kind"]
+        constraints = [
+            models.UniqueConstraint(fields=["exercise", "subexercise", "kind"], name="answer_unique_per_kind"),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.value_numeric is None:
+            self.value_numeric = parse_answer_number(self.text)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        target = self.subexercise or self.exercise
+        return f"{target}: {self.text} ({self.kind})"
+
+
+class Figure(models.Model):
+    """Рисунок, вирізаний пайплайном зі сторінки. figure_id — стабільний id з JSON (p006_y300)."""
+
+    textbook = models.ForeignKey(Textbook, on_delete=models.CASCADE, related_name="figures")
+    figure_id = models.CharField(max_length=50)
+    number = models.CharField(max_length=10, blank=True)
+    caption = models.CharField(max_length=255, blank=True)
+    image = models.ImageField(upload_to="textbook_figures/", null=True, blank=True)
+    source_page = models.PositiveIntegerField(null=True, blank=True)
+    source_bbox = models.JSONField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["textbook", "source_page", "figure_id"]
+        constraints = [models.UniqueConstraint(fields=["textbook", "figure_id"], name="figure_unique_id")]
+
+    def __str__(self):
+        return f"Рис. {self.number}" if self.number else self.figure_id
+
+
+class ImportRun(models.Model):
+    """Журнал імпорту textbook.json у базу (фаза 19): що, коли і з яким результатом."""
+
+    STATUS_CHOICES = [("running", "Триває"), ("success", "Успішно"), ("failed", "Помилка")]
+
+    textbook = models.ForeignKey(Textbook, on_delete=models.SET_NULL, null=True, blank=True,
+                                 related_name="import_runs")
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    json_path = models.CharField(max_length=500, blank=True)
+    json_sha256 = models.CharField(max_length=64)
+    pipeline_version = models.CharField(max_length=20, blank=True)
+    schema_version = models.PositiveIntegerField(null=True, blank=True)
+    stats = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="running")
+    message = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-started_at"]
+
+    def __str__(self):
+        return f"Імпорт {self.started_at:%Y-%m-%d %H:%M} — {self.get_status_display()}"
 
 
 class TheoryPractice(models.Model):
