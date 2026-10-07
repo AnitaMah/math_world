@@ -234,3 +234,22 @@ https://claude.ai/code/artifact/04922b47-8945-4f84-9af4-447cfffc4c4e
   підпис успадковував Unbounded від `h2` (знайдено на знімку).
 - `tools/frontend/shots.spec.js` знімає список сторінок: `/`, `/ui/tokens/`, `/ui/kit/`,
   і чекає `document.fonts.ready` перед знімком.
+
+## 2026-10-08 — іконки (фаза 3, кроки FE-0137…0161)
+- **Спрайт** `templates/education/_icons.html` (підключається один раз у `base.html`):
+  17 символів — заливні `star bolt flame play boat logo`, контурні `lock map chart user
+  check sparkle close chevron-down/left/right book`. Шляхи — з артбордів Main/Mobile;
+  товщина контурних ліній 2.2–2.4 px (шеврони 2.6), як у макеті.
+- **Тег** `{% load ui %}{% icon "star" size=18 %}` (`education/templatetags/ui.py`):
+  декоративна іконка — `aria-hidden="true"`; з `label="…"` — `role="img"` + `<title>`
+  (для іконок без тексту поруч: замок на вузлі, хрестик виходу); `class="…"` додає
+  модифікатор. Невідома назва — `TemplateSyntaxError` (помилка видна одразу, а не
+  порожнє місце на сторінці). Список назв `ICONS` тест звіряє зі спрайтом.
+- **Колір** — `currentColor`. За замовчуванням `star` жовта, `bolt` фіолетова,
+  `flame` помаранчева (`.icon--star/--bolt/--flame`); `.icon--off` — порожня зірка,
+  `.icon--muted`, `.icon--acc` — колір острова.
+- **Логотип багатоколірний**: кольори всередині символу — `style="fill: var(--…)"`,
+  тобто теж із токенів.
+- **Знахідка про екранування:** рядки, написані прямо в шаблоні
+  (`label="<b>"`), Django вважає безпечними й не екранує; значення зі змінних
+  (`label=lesson.title`) `format_html` екранує. Тест перевіряє саме змінну.

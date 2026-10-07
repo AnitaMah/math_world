@@ -70,4 +70,5 @@ def ui_tokens(request):
 def ui_kit(request):
     """`/ui/kit/` — вітрина базових стилів і компонентів нового UI (росте з кожною фазою)."""
     _debug_only()
-    return render(request, "education/ui_kit.html")
+    from .templatetags.ui import ICONS
+    return render(request, "education/ui_kit.html", {"icons": sorted(ICONS)})

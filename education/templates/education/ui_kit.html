@@ -1,5 +1,5 @@
 {% extends "education/base.html" %}
-{% load static %}
+{% load static ui %}
 {% block title %}UI-кіт{% endblock %}
 {% block styles %}<link rel="stylesheet" href="{% static 'education/css/ui-dev.css' %}">{% endblock %}
 {% block body_class %}ui-kit{% endblock %}
@@ -26,6 +26,26 @@
     <p class="label-caps">Острови 5 класу</p>
     <p>Перевірка кирилиці: ґанок, єнот, Їжак, і, апостроф — м’яч, сім’я, «лапки», тире — №5.</p>
     <p class="display">Ґанок, Єнот, Їжак, м’яч, сім’я, №5</p>
+  </section>
+
+  <section class="stack stack--gap-3" aria-labelledby="kit-icons">
+    <h2 class="label-caps" id="kit-icons">Іконки — {% templatetag openblock %} icon "назва" size=… {% templatetag closeblock %}</h2>
+    <ul class="kit-icons">
+      {% for name in icons %}
+      <li class="kit-icon">
+        <span class="kit-icon__big">{% icon name size=32 %}</span>
+        <span class="kit-icon__row">{% icon name size=24 %}{% icon name size=18 %}{% icon name size=14 %}</span>
+        <code>{{ name }}</code>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="row row--gap-3 row--wrap muted">
+      <span class="row row--gap-2">{% icon "star" size=20 %}{% icon "star" size=20 %}{% icon "star" size=20 class="icon--off" %} зірки уроку</span>
+      <span class="row row--gap-2">{% icon "bolt" size=20 %} 56 балів</span>
+      <span class="row row--gap-2">{% icon "flame" size=20 %} 4 дні</span>
+      <span class="row row--gap-2 isl-2">{% icon "check" size=20 class="icon--acc" %} колір острова</span>
+      <span class="row row--gap-2">{% icon "lock" size=20 label="Урок закрито" class="icon--muted" %} з підписом для скрінрідера</span>
+    </p>
   </section>
 
   <section class="stack stack--gap-3" aria-labelledby="kit-layout">
