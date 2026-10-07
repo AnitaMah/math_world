@@ -93,3 +93,9 @@ def profile_page(request):
         "stub_text": "Скоро тут будуть налаштування і нагороди за серію днів.",
         "show_account": True,
     })
+
+
+def ui_api(request):
+    """`/ui/api/` — відповіді API-клієнта й normalizeMap() (реальний бекенд або ?mock=1)."""
+    _debug_only()
+    return render(request, "education/ui_api.html")

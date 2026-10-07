@@ -69,3 +69,4 @@
 .kit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-6); align-items: start; }
 .row--gap-6 { gap: var(--sp-6); }
 .kit-stars-demo { padding: var(--sp-3); background: var(--isl-2-land); border-radius: var(--r-md); }
+.ui-dev__pre { margin: 0; max-height: 420px; overflow: auto; font-size: var(--fs-12); color: var(--text-2); white-space: pre-wrap; }

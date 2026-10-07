@@ -277,3 +277,43 @@ class TopbarAndNavTests(TestCase):
         self.assertContains(guest, "Зареєструватися")
         self.client.force_login(User.objects.create_user("olia", password="pw-12345678"))
         self.assertContains(self.client.get("/profile/"), "olia")
+
+
+class MockContractTests(SimpleTestCase):
+    """Моки фронтенду = контракт із бекендом (фаза 6): tools/frontend/check_mocks.py."""
+
+    def test_mocks_match_contract(self):
+        import importlib.util
+        from pathlib import Path
+        path = Path(__file__).resolve().parents[1] / "tools" / "frontend" / "check_mocks.py"
+        spec = importlib.util.spec_from_file_location("check_mocks", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.assertEqual(module.check_all(), [])
+
+    def test_checker_catches_broken_lesson(self):
+        import importlib.util
+        from pathlib import Path
+        path = Path(__file__).resolve().parents[1] / "tools" / "frontend" / "check_mocks.py"
+        spec = importlib.util.spec_from_file_location("check_mocks", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        broken = {"grade": 5, "subject": "math", "textbook": None, "current": None, "sections": [
+            {"id": 1, "number": 1, "title": "Р", "paragraphs": [{"id": 1, "number": 1, "title": "§", "items": [
+                {"id": 1, "number": 1, "title": "У", "state": "done", "stars": 4, "solved": 0, "total": 0,
+                 "tasks": {"auto": 0, "ai": 0}, "blocks": ["magic"], "map": {"x": None, "y": None}}]}]}]}
+        errors = " | ".join(module.check_grade_map(broken, "test"))
+        self.assertIn("stars поза 0–3", errors)
+        self.assertIn("має бути `soon`", errors)
+        self.assertIn("невідомі blocks", errors)
+
+
+class UiApiPageTests(TestCase):
+    @override_settings(DEBUG=True)
+    def test_available_in_debug(self):
+        response = self.client.get("/ui/api/")
+        self.assertContains(response, "education/js/ui-api.js")
+
+    @override_settings(DEBUG=False)
+    def test_hidden_without_debug(self):
+        self.assertEqual(self.client.get("/ui/api/").status_code, 404)

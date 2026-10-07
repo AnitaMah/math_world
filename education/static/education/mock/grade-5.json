@@ -1,0 +1,792 @@
+{
+  "grade": 5,
+  "subject": "math",
+  "textbook": {
+    "author": "Мерзляк А. Г., Полонський В. Б., Якір М. С.",
+    "year": 2018
+  },
+  "current": {
+    "kind": "item",
+    "id": 120
+  },
+  "sections": [
+    {
+      "id": 8,
+      "number": 1,
+      "title": "Розділ I. Натуральні числа і дії з ними",
+      "paragraphs": [
+        {
+          "id": 49,
+          "number": 1,
+          "title": "§ 1. Натуральні числа",
+          "items": [
+            {
+              "id": 117,
+              "number": 1,
+              "title": "Ряд натуральних чисел",
+              "state": "done",
+              "stars": 3,
+              "solved": 18,
+              "total": 18,
+              "tasks": {
+                "auto": 15,
+                "ai": 3
+              },
+              "blocks": [
+                "theory",
+                "self_check",
+                "oral_exercise",
+                "exercise",
+                "review_exercise",
+                "wise_owl"
+              ],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 118,
+              "number": 2,
+              "title": "Цифри. Десятковий запис натуральних чисел",
+              "state": "done",
+              "stars": 2,
+              "solved": 10,
+              "total": 13,
+              "tasks": {
+                "auto": 10,
+                "ai": 3
+              },
+              "blocks": [
+                "theory",
+                "self_check",
+                "oral_exercise",
+                "exercise",
+                "review_exercise",
+                "wise_owl",
+                "history_aside"
+              ],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 119,
+              "number": 3,
+              "title": "Відрізок. Довжина відрізка",
+              "state": "done",
+              "stars": 3,
+              "solved": 28,
+              "total": 28,
+              "tasks": {
+                "auto": 25,
+                "ai": 3
+              },
+              "blocks": [
+                "theory",
+                "self_check",
+                "oral_exercise",
+                "exercise",
+                "review_exercise",
+                "wise_owl",
+                "history_aside"
+              ],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 120,
+              "number": 4,
+              "title": "Площина. Пряма. Промінь",
+              "state": "current",
+              "stars": 0,
+              "solved": 4,
+              "total": 17,
+              "tasks": {
+                "auto": 14,
+                "ai": 3
+              },
+              "blocks": [
+                "theory",
+                "self_check",
+                "oral_exercise",
+                "exercise",
+                "review_exercise",
+                "wise_owl",
+                "history_aside"
+              ],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 121,
+              "number": 5,
+              "title": "Шкала. Координатний промінь",
+              "state": "locked",
+              "stars": 0,
+              "solved": 0,
+              "total": 12,
+              "tasks": {
+                "auto": 9,
+                "ai": 3
+              },
+              "blocks": [
+                "theory",
+                "self_check",
+                "oral_exercise",
+                "exercise",
+                "review_exercise",
+                "wise_owl"
+              ],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 122,
+              "number": 6,
+              "title": "Порівняння натуральних чисел",
+              "state": "locked",
+              "stars": 0,
+              "solved": 0,
+              "total": 12,
+              "tasks": {
+                "auto": 9,
+                "ai": 3
+              },
+              "blocks": [
+                "theory",
+                "self_check",
+                "oral_exercise",
+                "exercise",
+                "review_exercise",
+                "wise_owl"
+              ],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            }
+          ]
+        },
+        {
+          "id": 50,
+          "number": 2,
+          "title": "§ 2. Додавання і віднімання натуральних чисел",
+          "items": [
+            {
+              "id": 123,
+              "number": 7,
+              "title": "Додавання натуральних чисел. Властивості додавання",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 124,
+              "number": 8,
+              "title": "Віднімання натуральних чисел",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 125,
+              "number": 9,
+              "title": "Числові і буквені вирази. Формули",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 126,
+              "number": 10,
+              "title": "Рівняння",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 127,
+              "number": 11,
+              "title": "Кут. Позначення кутів",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 128,
+              "number": 12,
+              "title": "Види кутів. Вимірювання кутів",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 129,
+              "number": 13,
+              "title": "Многокутники. Рівні фігури",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 130,
+              "number": 14,
+              "title": "Трикутник і його види",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 131,
+              "number": 15,
+              "title": "Прямокутник",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            }
+          ]
+        },
+        {
+          "id": 51,
+          "number": 3,
+          "title": "§ 3. Множення і ділення натуральних чисел",
+          "items": [
+            {
+              "id": 132,
+              "number": 16,
+              "title": "Множення. Переставна властивість множення",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 133,
+              "number": 17,
+              "title": "Сполучна і розподільна властивості множення",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 134,
+              "number": 18,
+              "title": "Ділення",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 135,
+              "number": 19,
+              "title": "Ділення з остачею",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 136,
+              "number": 20,
+              "title": "Степінь числа",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 137,
+              "number": 21,
+              "title": "Площа. Площа прямокутника",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 138,
+              "number": 22,
+              "title": "Прямокутний паралелепіпед. Піраміда",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 139,
+              "number": 23,
+              "title": "Об’єм прямокутного паралелепіпеда",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 140,
+              "number": 24,
+              "title": "Комбінаторні задачі",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "number": 2,
+      "title": "Розділ II. Дробові числа і дії з ними",
+      "paragraphs": [
+        {
+          "id": 52,
+          "number": 4,
+          "title": "§ 4. Звичайні дроби",
+          "items": [
+            {
+              "id": 141,
+              "number": 25,
+              "title": "Уявлення про звичайні дроби",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 142,
+              "number": 26,
+              "title": "Правильні і неправильні дроби. Порівняння дробів",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 143,
+              "number": 27,
+              "title": "Додавання і віднімання дробів з однаковими знаменниками",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 144,
+              "number": 28,
+              "title": "Дроби і ділення натуральних чисел",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 145,
+              "number": 29,
+              "title": "Мішані числа",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            }
+          ]
+        },
+        {
+          "id": 53,
+          "number": 5,
+          "title": "§ 5. Десяткові дроби",
+          "items": [
+            {
+              "id": 146,
+              "number": 30,
+              "title": "Уявлення про десяткові дроби",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 147,
+              "number": 31,
+              "title": "Порівняння десяткових дробів",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 148,
+              "number": 32,
+              "title": "Округлення чисел",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 149,
+              "number": 33,
+              "title": "Додавання і віднімання десяткових дробів",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 150,
+              "number": 34,
+              "title": "Множення десяткових дробів",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 151,
+              "number": 35,
+              "title": "Ділення десяткових дробів",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 152,
+              "number": 36,
+              "title": "Середнє арифметичне. Середнє значення величини",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 153,
+              "number": 37,
+              "title": "Відсотки. Знаходження відсотків від числа",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            },
+            {
+              "id": 154,
+              "number": 38,
+              "title": "Знаходження числа за його відсотками",
+              "state": "soon",
+              "stars": 0,
+              "solved": 0,
+              "total": 0,
+              "tasks": {
+                "auto": 0,
+                "ai": 0
+              },
+              "blocks": [],
+              "map": {
+                "x": null,
+                "y": null
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

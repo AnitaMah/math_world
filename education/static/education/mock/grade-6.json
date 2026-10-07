@@ -1,0 +1,711 @@
+{
+  "grade": 6,
+  "subject": "math",
+  "textbook": {
+    "author": "Тарасенкова Н. А.",
+    "year": null
+  },
+  "current": null,
+  "sections": [
+    {
+      "id": 10,
+      "number": 1,
+      "title": "Розділ 1. Подільність натуральних чисел",
+      "paragraphs": [
+        {
+          "id": 54,
+          "number": 1,
+          "title": "§ 1. Дільники і кратні натурального числа",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 55,
+          "number": 2,
+          "title": "§ 2. Ознаки подільності на 2, 10, 5",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 56,
+          "number": 3,
+          "title": "§ 3. Ознаки подільності на 9, 3",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 57,
+          "number": 4,
+          "title": "§ 4. Розкладання чисел на множники. Найбільший спільний дільник",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 58,
+          "number": 5,
+          "title": "§ 5. Найменше спільне кратне",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "number": 2,
+      "title": "Розділ 2. Звичайні дроби та дії з ними",
+      "paragraphs": [
+        {
+          "id": 59,
+          "number": 6,
+          "title": "§ 6. Основна властивість дробу. Скорочення дробу",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 60,
+          "number": 7,
+          "title": "§ 7. Зведення дробів до спільного знаменника. Порівняння дробів",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 61,
+          "number": 8,
+          "title": "§ 8. Додавання і віднімання дробів",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 62,
+          "number": 9,
+          "title": "§ 9. Множення дробів. Знаходження дробу від числа",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 63,
+          "number": 10,
+          "title": "§ 10. Ділення дробів. Знаходження числа за його дробом",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 64,
+          "number": 11,
+          "title": "§ 11. Перетворення звичайного дробу в десятковий. Десяткові наближення звичайного дробу",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "number": 3,
+      "title": "Розділ 3. Відношення і пропорції",
+      "paragraphs": [
+        {
+          "id": 65,
+          "number": 12,
+          "title": "§ 12. Відношення та його властивості",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 66,
+          "number": 13,
+          "title": "§ 13. Пропорція та її властивості",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 67,
+          "number": 14,
+          "title": "§ 14. Пряма та обернена пропорційні залежності",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 68,
+          "number": 15,
+          "title": "§ 15. Поділ числа в даному відношенні. Масштаб",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 69,
+          "number": 16,
+          "title": "§ 16. Коло і круг. Круговий сектор",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 70,
+          "number": 17,
+          "title": "§ 17. Діаграми",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 71,
+          "number": 18,
+          "title": "§ 18. Циліндр. Конус. Куля",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 72,
+          "number": 19,
+          "title": "§ 19. Відсоткові розрахунки",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 73,
+          "number": 20,
+          "title": "§ 20. Ймовірність випадкової події",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "number": 4,
+      "title": "Розділ 4. Раціональні числа та дії з ними",
+      "paragraphs": [
+        {
+          "id": 74,
+          "number": 21,
+          "title": "§ 21. Додатні та від'ємні числа. Число нуль",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 75,
+          "number": 22,
+          "title": "§ 22. Координатна пряма",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 76,
+          "number": 23,
+          "title": "§ 23. Модуль числа",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 77,
+          "number": 24,
+          "title": "§ 24. Цілі числа. Раціональні числа",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 78,
+          "number": 25,
+          "title": "§ 25. Порівняння раціональних чисел",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 79,
+          "number": 26,
+          "title": "§ 26. Додавання раціональних чисел",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 80,
+          "number": 27,
+          "title": "§ 27. Віднімання раціональних чисел",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 81,
+          "number": 28,
+          "title": "§ 28. Множення раціональних чисел",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 82,
+          "number": 29,
+          "title": "§ 29. Ділення раціональних чисел",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "number": 5,
+      "title": "Розділ 5. Вирази і рівняння",
+      "paragraphs": [
+        {
+          "id": 83,
+          "number": 30,
+          "title": "§ 30. Вирази та їх спрощення",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 84,
+          "number": 31,
+          "title": "§ 31. Рівняння. Основні властивості рівнянь",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 85,
+          "number": 32,
+          "title": "§ 32. Застосування рівнянь до розв'язування задач",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 86,
+          "number": 33,
+          "title": "§ 33. Перпендикулярні та паралельні прямі",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 87,
+          "number": 34,
+          "title": "§ 34. Координатна площина",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        },
+        {
+          "id": 88,
+          "number": 35,
+          "title": "§ 35. Графіки залежностей між величинами",
+          "state": "soon",
+          "stars": 0,
+          "solved": 0,
+          "total": 0,
+          "tasks": {
+            "auto": 0,
+            "ai": 0
+          },
+          "blocks": [],
+          "map": {
+            "x": null,
+            "y": null
+          },
+          "items": []
+        }
+      ]
+    }
+  ]
+}

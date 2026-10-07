@@ -1,0 +1,30 @@
+[
+  {
+    "number": 5,
+    "subject": "math",
+    "author": "Мерзляк А. Г., Полонський В. Б., Якір М. С.",
+    "year": 2018,
+    "sections": 2,
+    "lessons": 38,
+    "playable_lessons": 6,
+    "stars": 8,
+    "max_stars": 114,
+    "current": {
+      "kind": "item",
+      "id": 120,
+      "number": 4
+    }
+  },
+  {
+    "number": 6,
+    "subject": "math",
+    "author": "Тарасенкова Н. А.",
+    "year": null,
+    "sections": 5,
+    "lessons": 35,
+    "playable_lessons": 0,
+    "stars": 0,
+    "max_stars": 105,
+    "current": null
+  }
+]

@@ -1,0 +1,18 @@
+{% extends "education/base.html" %}
+{% load static %}
+{% block title %}API{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'education/css/ui-dev.css' %}">{% endblock %}
+{% block content %}
+<div class="page stack">
+  <header class="stack stack--gap-2">
+    <p class="label-caps">Службова сторінка · лише DEBUG</p>
+    <h1>API-клієнт і моки</h1>
+    <p class="muted">Що отримує мапа після <code>normalizeMap()</code>. Режим зараз:
+      <strong id="mode"></strong>. Перемкнути:
+      <a href="?">реальний API</a> · <a href="?mock=1">?mock=1</a> · <a href="?mock=demo">?mock=demo</a> ·
+      <a href="?mock=states">?mock=states</a> · <a href="?mock=1&amp;mock_user=1">гравець з акаунтом</a></p>
+  </header>
+  <div id="out" class="stack stack--gap-4" aria-live="polite"><p class="muted">Завантаження…</p></div>
+</div>
+{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'education/js/ui-api.js' %}"></script>{% endblock %}

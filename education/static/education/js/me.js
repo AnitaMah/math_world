@@ -2,6 +2,7 @@
 // Інші модулі (гра) оновлюють чіпи без перезавантаження:
 //   document.dispatchEvent(new CustomEvent("me:updated", { detail: { points: 60, streak: 5 } }))
 import { plural } from "./ui.js";
+import { api } from "./api.js";
 
 const DAYS = ["день", "дні", "днів"];
 
@@ -19,20 +20,16 @@ export function fill(me) {
 }
 
 export async function loadMe() {
-  // TODO(FE-фаза-6): брати через js/api.js (моки/реальний API), а не fetch напряму
-  try {
-    const response = await fetch("/api/me/", { credentials: "same-origin" });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const me = await response.json();
-    if (!("stars" in me)) {
-      console.warn("[me] /api/me/ ще не віддає `stars` (контракт з бекендом) — чіп зірок показує «—».");
-    }
-    fill(me);
-    return me;
-  } catch (error) {
-    console.warn("[me] не вдалося завантажити /api/me/:", error);
+  const { ok, data } = await api.me();   // реальний /api/me/ або мок (?mock=1)
+  if (!ok) {
+    console.warn("[me] не вдалося завантажити дані гравця:", data);
     return null;
   }
+  if (!("stars" in data)) {
+    console.warn("[me] /api/me/ ще не віддає `stars` (контракт з бекендом) — чіп зірок показує «—».");
+  }
+  fill(data);
+  return data;
 }
 
 document.addEventListener("me:updated", (event) => fill(event.detail || {}));

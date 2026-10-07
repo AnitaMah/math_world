@@ -300,3 +300,32 @@ https://claude.ai/code/artifact/04922b47-8945-4f84-9af4-447cfffc4c4e
   «Скоро тут буде…», «На мапу»; у «Профілі» вже працює вхід / реєстрація / вихід.
 - Нові токени: `--tabs-bg`, `--tabs-border` (контейнер вкладок класів).
 - Тести сторінок на `base.html` тепер `TestCase`, бо верхня панель читає класи з БД.
+
+## 2026-10-08 — моки й API-клієнт (фаза 6, кроки FE-0238…0279)
+- **Моки** `education/static/education/mock/` (README там же): `me.guest|user.json`, `grades.json`,
+  `grade-5.json` (реальний стан БД), `grade-5.demo.json` (1–9 пройдено, 10 поточний),
+  `grade-5.states.json` (усі 5 станів у кожному §), `grade-6.json` (урок = §).
+  **Генеруються з `db.sqlite3`** скриптом `tools/frontend/make_mocks.py` — назви, id,
+  кількість вправ (авто / ШІ ≤ 3) і типи блоків справжні; прогрес вигаданий.
+- **Перевірка контракту** `tools/frontend/check_mocks.py` (у тестах Django —
+  `MockContractTests`): обов’язкові поля, типи, `state` ∈ 5 станів, `stars` 0–3,
+  `total = auto + ai`, `solved ≤ total`, «урок без завдань — завжди `soon`», відомі `blocks`.
+  Перевірка одразу знайшла помилку в демо-моках (пройдені уроки з 0 завдань) —
+  урокам 7–38 у `demo`/`states` дано умовні 12 + 2 завдання.
+- **`js/api.js`** — єдиний клієнт: `getJSON`/`postJSON` (CSRF, мережеві помилки →
+  `{ok:false, status:0}`), `api.me/grades/gradeMap/play/check/solution`.
+  Режим моків: `?mock=1|demo|states` або `localStorage.mw_mock` (у `try/catch`),
+  `?mock_user=1` — гравець з акаунтом. `me.js` тепер ходить через `api.me()`.
+- **Фолбеки під теперішній бекенд**: `deriveState` (без `state`: 0 завдань → `soon`,
+  поточний → `current`, зірки → `done`, інакше `open`; `locked` фронтенд не вигадує —
+  це правило бекенду), `deriveTasks` (без `tasks`: `exercises` як авто, `approx: true`).
+  Перевірено на реальному API: 5 клас → 6 уроків `open`, 32 `soon`.
+- **`normalizeMap()`** → `{sections, paragraphs, lessons}` з індексами, римськими цифрами,
+  короткими назвами без «§ 1.» і кольором острова `isl = paraIdx % 5 + 1`; параграф без
+  `items` (Тарасенкова) → один урок `kind: "paragraph"`.
+- **`/ui/api/`** (лише DEBUG) — відповіді всіх `api.*` і підсумок `normalizeMap()` для
+  реального API та кожного моку.
+- Тести: JS — 13 (`npm test`, `node:test`), Django — +4 (`tests_ui.py`: 38).
+- **Для бекенд-чату:** `/api/grades/` поки 404; `/api/grades/<n>/map/` працює, але без
+  `state`, `tasks`, `blocks`, `solved`, `total`, `current`, `textbook` (фронт тимчасово
+  обчислює їх сам).

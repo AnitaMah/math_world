@@ -26,6 +26,7 @@ urlpatterns = [
     # Службові сторінки нового UI (лише DEBUG, інакше 404)
     path("ui/tokens/", views_ui.ui_tokens, name="ui_tokens"),
     path("ui/kit/", views_ui.ui_kit, name="ui_kit"),
+    path("ui/api/", views_ui.ui_api, name="ui_api"),
 ]
 
 if settings.DEBUG:
