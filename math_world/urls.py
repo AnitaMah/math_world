@@ -4,6 +4,7 @@ from django.contrib import admin
 from django.urls import include, path
 
 from education import views as education_views
+from education import views_ui
 
 
 urlpatterns = [
@@ -19,6 +20,8 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("api/", include("education.api_urls")),
     path("admin/", admin.site.urls),
+    # Службові сторінки нового UI (лише DEBUG, інакше 404)
+    path("ui/tokens/", views_ui.ui_tokens, name="ui_tokens"),
 ]
 
 if settings.DEBUG:

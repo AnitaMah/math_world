@@ -1,0 +1,121 @@
+{% load static %}<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Токени · Математичний світ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;700&family=Nunito:wght@500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'education/css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'education/css/ui-dev.css' %}">
+</head>
+<body class="ui-dev">
+<main class="ui-dev__page">
+  <header class="ui-dev__head">
+    <h1>Дизайн-токени</h1>
+    <p>Службова сторінка (лише DEBUG). Значення читаються з <code>tokens.css</code> у браузері; звіряйте з <code>docs/frontend/design/Kit.png</code>.</p>
+  </header>
+
+  {% for title, tokens in groups %}
+  <section class="ui-dev__section">
+    <h2>{{ title }}</h2>
+    <div class="ui-dev__grid">
+      {% for name, note in tokens %}
+      <figure class="swatch">
+        <div class="swatch__chip" style="--sw: var({{ name }})"></div>
+        <figcaption>
+          <code>{{ name }}</code>
+          <span class="swatch__value" data-token="{{ name }}"></span>
+          {% if note %}<span class="swatch__note">{{ note }}</span>{% endif %}
+        </figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+
+  <section class="ui-dev__section">
+    <h2>Острови (як на артборді Kit)</h2>
+    <div class="ui-dev__islands">
+      {% for n in islands %}
+      <figure class="island-pair isl-{{ n }}">
+        <div class="island-pair__land"><span class="island-pair__node">{{ n }}</span></div>
+        <figcaption>
+          <strong>§{{ n }}</strong> <code>.isl-{{ n }}</code>
+          <span class="swatch__value" data-token="--isl-{{ n }}-acc"></span>
+          <span class="swatch__value" data-token="--isl-{{ n }}-land"></span>
+        </figcaption>
+      </figure>
+      {% endfor %}
+    </div>
+    <p class="ui-dev__hint">Параграф N → <code>.isl-((N − 1) % 5 + 1)</code>: §6 знову бірюзовий.</p>
+  </section>
+
+  <section class="ui-dev__section">
+    <h2>Стани вузла</h2>
+    <div class="ui-dev__nodes isl-2">
+      <div><span class="node-demo node-demo--done">8</span><small>пройдено</small></div>
+      <div><span class="node-demo node-demo--current">10</span><small>ти тут</small></div>
+      <div><span class="node-demo node-demo--open">11</span><small>відкрито</small></div>
+      <div><span class="node-demo node-demo--locked" aria-label="закрито">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      </span><small>закрито</small></div>
+      <div><span class="node-demo node-demo--soon">27</span><small>у хмарах</small></div>
+    </div>
+  </section>
+
+  <section class="ui-dev__section">
+    <h2>Контраст тексту</h2>
+    <table class="ui-dev__table">
+      <thead><tr><th>Текст</th><th>Фон</th><th>Зразок</th><th>Контраст</th><th>Мінімум</th></tr></thead>
+      <tbody>
+      {% for fg, bg, min in pairs %}
+        <tr data-fg="{{ fg }}" data-bg="{{ bg }}" data-min="{{ min|stringformat:'s' }}">
+          <td><code>{{ fg }}</code></td><td><code>{{ bg }}</code></td>
+          <td><span class="contrast-sample" style="--fg: var({{ fg }}); --bg-s: var({{ bg }})">Урок 4 · 8 / 18</span></td>
+          <td class="contrast-ratio">—</td><td>{{ min|stringformat:'s' }}:1</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="ui-dev__section">
+    <h2>Шрифти</h2>
+    <div class="ui-dev__type">
+      {% for px in font_scale %}
+      <div class="type-row">
+        <code>--fs-{{ px }}</code>
+        <span class="type-row__display" style="--fs: var(--fs-{{ px }})">Математичний світ 123</span>
+        <span class="type-row__body" style="--fs: var(--fs-{{ px }})">Знайди значення виразу 3 254 + 1 746</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="ui-dev__hint">Ліворуч — Unbounded 700 (заголовки, цифри), праворуч — Nunito 600 (текст). Перевірте «ґ є і ї ’»: <span class="type-row__display" style="--fs: var(--fs-20)">ґ є і ї ’</span> <span class="type-row__body" style="--fs: var(--fs-20)">ґ є і ї ’</span></p>
+  </section>
+
+  <section class="ui-dev__section">
+    <h2>Відступи й радіуси</h2>
+    <div class="ui-dev__scale">
+      <div class="spacing" style="--s: var(--sp-1)"><code>--sp-1</code></div>
+      <div class="spacing" style="--s: var(--sp-2)"><code>--sp-2</code></div>
+      <div class="spacing" style="--s: var(--sp-3)"><code>--sp-3</code></div>
+      <div class="spacing" style="--s: var(--sp-4)"><code>--sp-4</code></div>
+      <div class="spacing" style="--s: var(--sp-6)"><code>--sp-6</code></div>
+      <div class="spacing" style="--s: var(--sp-8)"><code>--sp-8</code></div>
+      <div class="spacing" style="--s: var(--sp-12)"><code>--sp-12</code></div>
+    </div>
+    <div class="ui-dev__radii">
+      <div class="radius" style="--r: var(--r-xs)"><code>--r-xs</code></div>
+      <div class="radius" style="--r: var(--r-md)"><code>--r-md</code></div>
+      <div class="radius" style="--r: var(--r-lg)"><code>--r-lg</code></div>
+      <div class="radius" style="--r: var(--r-xl)"><code>--r-xl</code></div>
+      <div class="radius" style="--r: var(--r-2xl)"><code>--r-2xl</code></div>
+      <div class="radius" style="--r: var(--r-pill)"><code>--r-pill</code></div>
+    </div>
+  </section>
+</main>
+<script type="module" src="{% static 'education/js/ui-tokens.js' %}"></script>
+</body>
+</html>
