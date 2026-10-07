@@ -1,1 +1,37 @@
-{# Верхня панель (фаза 5): логотип, вибір класу, зірки/бали/серія, вхід. Поки — заглушка. #}
+{% load ui %}{# Верхня панель (фаза 5). Рендерить тег {% topbar %} з templatetags/ui.py. #}
+<header class="topbar">
+  <a class="topbar__brand" href="{% url 'home' %}">
+    {% icon "logo" size=34 %}<span class="topbar__name">Математичний світ</span>
+  </a>
+
+  {% if grades %}
+  <nav class="topbar__grades" aria-label="Клас">
+    {% for g in grades %}{# TODO(FE-фаза-8): href → /grades/<n>/ (мапа класу) #}
+      <a class="btn btn--sm topbar__grade{% if g.active %} is-active{% endif %}" href="{% url 'home' %}#grade-{{ g.number }}"{% if g.active %} aria-current="page"{% endif %}>{{ g.label }}</a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+  <a class="chip topbar__grade-pick" href="{% url 'home' %}">
+    {% if current_grade %}{{ current_grade }} клас{% else %}Клас{% endif %}{% icon "chevron-down" size=14 %}
+  </a>
+
+  <span class="topbar__spacer"></span>
+
+  <div class="topbar__stats">
+    <span class="chip topbar__chip" title="Зірки">{% icon "star" size=18 %}<span data-me="stars">—</span><span class="chip__sub topbar__long"> / <span data-me="max_stars">114</span></span></span>
+    <span class="chip topbar__chip" title="Бали">{% icon "bolt" size=18 %}<span data-me="points">—</span><span class="topbar__long"> балів</span></span>
+    <span class="chip topbar__chip" title="Серія днів">{% icon "flame" size=18 %}<span data-me="streak">—</span><span class="topbar__long"> <span data-me="streak_word">днів</span></span></span>
+  </div>
+
+  {% if user.is_authenticated %}
+  <div class="topbar__account">
+    <span class="chip">{% icon "user" size=18 %}{{ user.get_username }}</span>
+    <form method="post" action="{% url 'logout' %}">
+      {% csrf_token %}
+      <button class="btn btn--sm btn--secondary" type="submit">Вийти</button>
+    </form>
+  </div>
+  {% else %}
+  <a class="btn btn--sm btn--secondary topbar__login" href="{% url 'login' %}?next={{ next_path|urlencode }}">Увійти</a>
+  {% endif %}
+</header>

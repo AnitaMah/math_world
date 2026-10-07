@@ -20,6 +20,9 @@ urlpatterns = [
     path("accounts/", include("django.contrib.auth.urls")),
     path("api/", include("education.api_urls")),
     path("admin/", admin.site.urls),
+    # Новий UI: вкладки нижньої навігації (поки заглушки)
+    path("progress/", views_ui.progress_page, name="progress"),
+    path("profile/", views_ui.profile_page, name="profile"),
     # Службові сторінки нового UI (лише DEBUG, інакше 404)
     path("ui/tokens/", views_ui.ui_tokens, name="ui_tokens"),
     path("ui/kit/", views_ui.ui_kit, name="ui_kit"),

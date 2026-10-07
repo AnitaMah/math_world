@@ -74,3 +74,22 @@ def ui_kit(request):
     sec_chips = [(1, "I", "Натуральні числа"), (2, "I", "Додавання і віднімання"), (3, "I", "Множення і ділення"),
                  (4, "II", "Звичайні дроби"), (5, "II", "Десяткові дроби")]
     return render(request, "education/ui_kit.html", {"icons": sorted(ICONS), "sec_chips": sec_chips})
+
+
+def progress_page(request):
+    """`/progress/` — заглушка вкладки «Прогрес» (рішення 2026-10-08; повний екран — беклог)."""
+    return render(request, "education/stub_page.html", {
+        "stub_icon": "chart",
+        "stub_title": "Прогрес",
+        "stub_text": "Скоро тут буде твій прогрес: зірки за кожен острів і бали за тиждень.",
+    })
+
+
+def profile_page(request):
+    """`/profile/` — заглушка вкладки «Профіль»: ім’я і вхід/вихід уже працюють."""
+    return render(request, "education/stub_page.html", {
+        "stub_icon": "user",
+        "stub_title": "Профіль",
+        "stub_text": "Скоро тут будуть налаштування і нагороди за серію днів.",
+        "show_account": True,
+    })

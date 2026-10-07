@@ -1,4 +1,4 @@
-{% load static %}<!doctype html>
+{% load static ui %}<!doctype html>
 <html lang="uk">
 <head>
   <meta charset="utf-8">
@@ -11,15 +11,17 @@
   <link rel="stylesheet" href="{% static 'education/css/tokens.css' %}">
   <link rel="stylesheet" href="{% static 'education/css/base.css' %}">
   <link rel="stylesheet" href="{% static 'education/css/components.css' %}">
+  <link rel="stylesheet" href="{% static 'education/css/layout.css' %}">
   {% block styles %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main">Перейти до вмісту</a>
   {% include "education/_icons.html" %}
-  {% block topbar %}{% include "education/_topbar.html" %}{% endblock %}
+  {% block topbar %}{% topbar %}{% endblock %}
   <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
-  {% block bottom_nav %}{% endblock %}
+  {% block bottom_nav %}{% include "education/_bottom_nav.html" %}{% endblock %}
   <div hidden>{% csrf_token %}</div>
+  <script type="module" src="{% static 'education/js/me.js' %}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

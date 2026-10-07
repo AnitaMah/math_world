@@ -5,6 +5,7 @@
   "description": "Playwright-знімки екранів для порівняння з дизайном",
   "type": "commonjs",
   "scripts": {
+    "test": "node --test \"tests/**/*.test.mjs\"",
     "shots": "playwright test"
   },
   "devDependencies": {

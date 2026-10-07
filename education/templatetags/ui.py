@@ -34,3 +34,39 @@ def icon(name, size=20, label="", **attrs):
         '<svg class="{}" width="{}" height="{}" aria-hidden="true" focusable="false"><use href="#i-{}"/></svg>',
         css, size, size, name,
     )
+
+
+def _short_author(textbook):
+    """«Мерзляк А. Г., Полонський В. Б., …» → «Мерзляк» (перше прізвище)."""
+    author = (getattr(textbook, "author", "") or "").strip()
+    return author.split(",")[0].split()[0] if author else ""
+
+
+@register.inclusion_tag("education/_topbar.html", takes_context=True)
+def topbar(context):
+    """Верхня панель: класи предмета (вкладки), чіпи гравця (заповнює js/me.js), вхід/ім’я.
+
+    Поточний клас — змінна контексту ``current_grade`` (номер), її задає view сторінки мапи.
+    """
+    from education.models import Grade
+
+    request = context.get("request")
+    current = context.get("current_grade")
+    grades = []
+    for g in (Grade.objects.filter(subject__code="math").order_by("number")
+              .prefetch_related("textbooks")):
+        author = next((_short_author(t) for t in g.textbooks.all() if t.author), "")
+        grades.append({
+            "number": g.number,
+            "label": f"{g.number} клас" + (f" · {author}" if author else ""),
+            "active": current is not None and int(current) == g.number,
+        })
+    user = getattr(request, "user", None)
+    return {
+        "grades": grades,
+        "current_grade": current,
+        "user": user,
+        "request": request,
+        "csrf_token": context.get("csrf_token"),
+        "next_path": request.get_full_path() if request else "/",
+    }

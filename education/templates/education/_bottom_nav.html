@@ -1,0 +1,14 @@
+{% load ui %}{# Нижня навігація телефону (фаза 5). Активний пункт — за іменем поточного URL. #}
+{% with name=request.resolver_match.url_name %}
+<nav class="bottom-nav" aria-label="Навігація">
+  <a class="bottom-nav__item{% if name != 'progress' and name != 'profile' %} is-active{% endif %}" href="{% url 'home' %}"{% if name != 'progress' and name != 'profile' %} aria-current="page"{% endif %}>
+    {% icon "map" size=22 %}<span>Мапа</span>
+  </a>
+  <a class="bottom-nav__item{% if name == 'progress' %} is-active{% endif %}" href="{% url 'progress' %}"{% if name == 'progress' %} aria-current="page"{% endif %}>
+    {% icon "chart" size=22 %}<span>Прогрес</span>
+  </a>
+  <a class="bottom-nav__item{% if name == 'profile' %} is-active{% endif %}" href="{% url 'profile' %}"{% if name == 'profile' %} aria-current="page"{% endif %}>
+    {% icon "user" size=22 %}<span>Профіль</span>
+  </a>
+</nav>
+{% endwith %}

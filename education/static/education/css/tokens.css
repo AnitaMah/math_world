@@ -21,6 +21,8 @@
   --line-card: #1f2a40;     /* рамка .card */
   --line-tag: #243049;      /* рамка .tag */
   --line-btn: #2a3550;      /* рамка .btn--secondary */
+  --tabs-bg: #121b2c;       /* контейнер вкладок класів у верхній панелі */
+  --tabs-border: #1f2a3e;
 
   /* --- Текст (контраст — docs/frontend/DECISIONS.md) ------------------------ */
   --text: #eef1f6;          /* 16.5:1 на --bg */

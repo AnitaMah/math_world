@@ -1,0 +1,25 @@
+{% extends "education/base.html" %}
+{% load ui %}
+{% block title %}{{ stub_title }}{% endblock %}
+{% block content %}
+<div class="page stub">
+  <div class="card stub__card stack stack--gap-4">
+    <span class="stub__icon">{% icon stub_icon size=32 %}</span>
+    <h1>{{ stub_title }}</h1>
+    {% if show_account %}
+      {% if user.is_authenticated %}
+        <p class="stub__name">{% icon "user" size=18 %}{{ user.get_username }}</p>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}
+          <button class="btn btn--secondary btn--block" type="submit">Вийти</button>
+        </form>
+      {% else %}
+        <p class="muted">Ти граєш як гість. Увійди, щоб зірки й бали не загубилися — прогрес гостя перейде в акаунт.</p>
+        <a class="btn btn--primary btn--block" href="{% url 'login' %}?next={{ request.path|urlencode }}">Увійти</a>
+        <a class="btn btn--secondary btn--block" href="{% url 'signup' %}">Зареєструватися</a>
+      {% endif %}
+    {% endif %}
+    <p class="muted">{{ stub_text }}</p>
+    <a class="btn btn--secondary btn--block" href="{% url 'home' %}">{% icon "map" size=18 %}На мапу</a>
+  </div>
+</div>
+{% endblock %}
