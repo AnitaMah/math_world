@@ -91,8 +91,20 @@ def _is_math_neighbor(text: str | None) -> bool:
     return _is_numberish(text) or (text or "") in {"+", "-", "−", "—", "–", "=", ":", "·", "×", "<", ">"}
 
 
+_VOWELS = set("аеєиіїоуюяАЕЄИІЇОУЮЯ")
+_IOTATED = {"е": "є", "і": "ї", "Е": "Є", "І": "Ї"}
+
+
 def _map_latin(word: str) -> str:
-    return "".join(LATIN_TO_CYR.get(ch, ch) for ch in word)
+    """Латинські двійники → кирилиця. Латинські «e»/«i» не розрізняють «е/є» та «і/ї»;
+    після голосної в українському слові майже завжди «є»/«ї» («cBoei» → «своєї»)."""
+    out: list[str] = []
+    for ch in word:
+        cyr = LATIN_TO_CYR.get(ch, ch)
+        if ch != cyr and cyr in _IOTATED and out and out[-1] in _VOWELS:
+            cyr = _IOTATED[cyr]
+        out.append(cyr)
+    return "".join(out)
 
 
 # --------------------------------------------------------------------------- правила

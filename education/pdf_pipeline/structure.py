@@ -376,8 +376,38 @@ class StructureParser:
         """Мерзляк: після теорії йдуть питання «1. Як називають…» без заголовка."""
         return bool(re.match(r"^\W{0,2}1\s*\.\s+[А-ЯІЇЄҐ]", text)) and bool(self.block and self.block.text)
 
+    def _two_line_heading(self, pl: PageLine, nxt: PageLine | None) -> bool:
+        """Заголовок § / пункту, перенесений на два рядки («2. ЦИФРИ. Десятковий запис» +
+        «натуральних чисел»). Пробуємо лише якщо перший рядок сам по собі не заголовок,
+        а склеєний — так, і обидва рядки на одній сторінці."""
+        if nxt is None or nxt.layout is not pl.layout or not _ITEM_PREFIX_RE.match(pl.text):
+            return False
+        if self._match_paragraph(pl.text) or self._match_item(pl.text):
+            return False
+        joined = f"{pl.text} {nxt.text}"
+        entry = self._match_paragraph(joined)
+        opener = self._open_paragraph
+        if entry is None:
+            entry, opener = self._match_item(joined), self._open_item
+        if entry is None:
+            return False
+        opener(entry, pl)
+        lesson = self.paragraph if opener == self._open_paragraph else self.item
+        if lesson is not None:
+            lesson.data["ocr_title"] = joined
+            lesson.source = _extend_bbox(lesson.source, nxt)
+        return True
+
     def parse(self, layouts: Iterable[PageLayout]) -> ParseResult:
-        for pl in iter_body_lines(layouts, self.profile.skip_pages):
+        lines = list(iter_body_lines(layouts, self.profile.skip_pages))
+        skip_next = False
+        for i, pl in enumerate(lines):
+            if skip_next:
+                skip_next = False
+                continue
+            if self._two_line_heading(pl, lines[i + 1] if i + 1 < len(lines) else None):
+                skip_next = True
+                continue
             self.feed(pl)
         self._check_invariants()
         return ParseResult(self.root, self.issues, self.skipped_noise)
