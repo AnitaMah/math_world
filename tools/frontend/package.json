@@ -1,0 +1,13 @@
+{
+  "name": "math-world-frontend-tools",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright-знімки екранів для порівняння з дизайном",
+  "type": "commonjs",
+  "scripts": {
+    "shots": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.0"
+  }
+}

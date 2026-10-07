@@ -53,3 +53,8 @@ review/gemini_request_count.json
 
 # Claude (Cowork) outputs — not project code
 /Claude outputs/
+
+# Frontend tools
+tools/frontend/node_modules/
+tools/frontend/shots/
+tools/frontend/test-results/
