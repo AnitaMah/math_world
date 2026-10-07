@@ -1,0 +1,51 @@
+{# Блоки уроку (пункт або §) у порядку книги. Вправи — з номером, складністю, підпунктами сіткою, #}
+{# рисунками і прихованою відповіддю (для вчителя). Очікує: blocks (див. views._blocks_context). #}
+{% for b in blocks %}
+  {% with block=b.obj %}
+  <section class="content-block content-block--{{ block.block_type }}{% if block.needs_review %} needs-review{% endif %}">
+    <h3>{{ block.get_block_type_display }}</h3>
+    {% if block.text %}<div class="content-block-text">{{ block.text|linebreaksbr }}</div>{% endif %}
+    {% for fig in b.figures %}
+      {% if fig.image %}<figure class="figure"><img src="{{ fig.image.url }}" alt="{{ fig }}" loading="lazy"><figcaption>{{ fig }}</figcaption></figure>{% endif %}
+    {% endfor %}
+
+    {% if b.exercises %}
+    <ol class="exercise-list">
+      {% for e in b.exercises %}
+      {% with ex=e.obj %}
+      <li class="exercise{% if ex.needs_review %} needs-review{% endif %}" id="ex-{{ ex.id }}">
+        <div class="exercise-head">
+          <span class="exercise-number">{{ ex.number }}.</span>
+          {% if ex.difficulty %}<span class="difficulty difficulty--{{ ex.difficulty }}">{{ ex.get_difficulty_display }}</span>{% endif %}
+          {% if ex.homework %}<span class="badge badge--homework">домашнє</span>{% endif %}
+          {% if ex.needs_review %}<span class="badge badge--review">перевірити</span>{% endif %}
+        </div>
+        <div class="exercise-condition">{{ ex.condition|linebreaksbr }}</div>
+        {% if e.subs %}
+        <ol class="subexercise-grid">
+          {% for s in e.subs %}
+            <li class="subexercise{% if s.obj.needs_review %} needs-review{% endif %}"><span class="sub-label">{{ s.obj.number }})</span> {{ s.obj.text }}</li>
+          {% endfor %}
+        </ol>
+        {% endif %}
+        {% if ex.condition_tail %}<div class="exercise-condition">{{ ex.condition_tail|linebreaksbr }}</div>{% endif %}
+        {% for fig in e.figures %}
+          {% if fig.image %}<figure class="figure"><img src="{{ fig.image.url }}" alt="{{ fig }}" loading="lazy"><figcaption>{{ fig }}</figcaption></figure>{% endif %}
+        {% endfor %}
+        {% if e.has_answers %}
+        <details class="exercise-answer">
+          <summary>Відповідь</summary>
+          {% if e.answer.book %}<p>Книга: {{ e.answer.book }}</p>{% endif %}
+          {% for s in e.subs %}{% if s.answer %}
+            <p>{{ s.obj.number }}) {{ s.answer }}{% if s.computed_other %} <em>(обчислено {{ s.computed_other }} — не збігається)</em>{% endif %}</p>
+          {% endif %}{% endfor %}
+        </details>
+        {% endif %}
+      </li>
+      {% endwith %}
+      {% endfor %}
+    </ol>
+    {% endif %}
+  </section>
+  {% endwith %}
+{% endfor %}

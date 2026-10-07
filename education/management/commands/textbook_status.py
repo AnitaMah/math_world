@@ -24,6 +24,13 @@ class Command(BaseCommand):
                 total=Count("id"), review=Count("id", filter=Q(needs_review=True)),
                 verified=Count("id", filter=Q(answer_check="verified")),
                 mismatch=Count("id", filter=Q(answer_check="mismatch")))
+            mism = (SubExercise.objects.filter(exercise__textbook=tb, answer_check="mismatch")
+                    .values("exercise__block__item__paragraph__number", "exercise__block__paragraph__number")
+                    .annotate(n=Count("id")))
+            by_par = {}
+            for row in mism:
+                par = row["exercise__block__item__paragraph__number"] or row["exercise__block__paragraph__number"]
+                by_par[par] = by_par.get(par, 0) + row["n"]
             run = tb.import_runs.first()
             pct = 100 * ex["review"] / ex["total"] if ex["total"] else 0
             self.stdout.write(self.style.MIGRATE_HEADING(f"#{tb.pk} {tb} — {tb.grade.number} клас [{tb.profile_code}]"))
@@ -31,6 +38,9 @@ class Command(BaseCommand):
                               f"виправлено вручну: {ex['manual']}")
             self.stdout.write(f"  підпунктів: {subs['total']}, на перевірку: {subs['review']}, "
                               f"відповідь збіглась: {subs['verified']}, не збіглась: {subs['mismatch']}")
+            if by_par:
+                self.stdout.write("  розбіжності з відповідями книги: "
+                                  + ", ".join(f"§{p}: {n}" for p, n in sorted(by_par.items(), key=lambda kv: kv[0] or 0)))
             if run:
                 self.stdout.write(f"  останній імпорт: {run.started_at:%Y-%m-%d %H:%M} — {run.get_status_display()}"
                                   + (f" ({run.message[:80]})" if run.status == "failed" else ""))

@@ -1,0 +1,8 @@
+{% extends "registration/_auth_base.html" %}
+{% block title %}Реєстрація{% endblock %}
+{% block content %}
+<h1>Реєстрація</h1>
+<p class="hint">Прогрес, який ти набрав як гість, збережеться в новому акаунті.</p>
+<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn--primary" type="submit" style="width:100%">Створити акаунт</button></form>
+<p>Вже є акаунт? <a href="{% url 'login' %}">Увійти</a></p>
+{% endblock %}

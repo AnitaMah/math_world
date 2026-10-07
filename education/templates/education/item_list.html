@@ -21,17 +21,37 @@
         </div>
     </div>
 
-    <ul class="card-list">
+    <ul class="card-list lesson-list">
         {% for item in items %}
-            <li class="card">
-                <a href="{% url 'item_detail' item.id %}?lang={{ lang }}">
-                    {{ item.number }}. {{ item.details.0 }}
+            <li class="card lesson-card">
+                <a class="lesson-link" href="{% url 'item_detail' item.id %}?lang={{ lang }}">
+                    <span class="lesson-number">{{ item.number }}</span>
+                    <span class="lesson-title">{{ item.title }}</span>
+                    <span class="lesson-meta">
+                        {% if item.exercises %}вправ: {{ item.exercises }}{% else %}вправ ще немає{% endif %}
+                        {% if item.stars %} · <span class="stars">{% for _ in "123"|make_list|slice:item.stars %}★{% endfor %}</span>{% endif %}
+                    </span>
                 </a>
+                {% if item.exercises %}<a class="play-mini" href="{% url 'play_item' item.id %}" aria-label="Грати урок {{ item.number }}">▶</a>{% endif %}
             </li>
         {% empty %}
-            <li class="muted">Пунктів поки немає.</li>
+            {% if not blocks %}<li class="muted">Пунктів поки немає.</li>{% endif %}
         {% endfor %}
     </ul>
+
+    {% if blocks %}
+        {% if items %}
+            {# Мерзляк: «Перевірте себе» / «Головне» — у кінці параграфа, згорнуто #}
+            <details class="paragraph-extra">
+                <summary>Підсумок параграфа: {% for b in blocks %}{{ b.obj.get_block_type_display }}{% if not forloop.last %}, {% endif %}{% endfor %}</summary>
+                <div class="node item detail">{% include 'education/_lesson_blocks.html' %}</div>
+            </details>
+        {% else %}
+            {# Тарасенкова: урок = § — блоки і є зміст уроку #}
+            <a class="button play-cta" href="{% url 'play_paragraph' paragraph_id %}">▶ Грати урок</a>
+            <div class="node item detail">{% include 'education/_lesson_blocks.html' %}</div>
+        {% endif %}
+    {% endif %}
 
     {% include 'education/_map_partial.html' %}
     <a class="button back" href="{% url 'paragraph_list' section_id %}?lang={{ lang }}">← {{ content.back }}</a>

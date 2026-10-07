@@ -1,5 +1,8 @@
 # education/admin.py
-from django.contrib import admin
+from django.contrib import admin, messages
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404
+from django.urls import path, reverse
 from django.utils.html import format_html
 
 from .models import (
@@ -109,14 +112,76 @@ class AnswerInline(admin.TabularInline):
     readonly_fields = ("value_numeric",)
 
 
+@admin.action(description="Позначити перевіреним (needs_review=False, text_source=manual)")
+def mark_reviewed(modeladmin, request, queryset):
+    n = queryset.update(needs_review=False, text_source="manual")
+    modeladmin.message_user(request, f"Позначено перевіреними: {n}", messages.SUCCESS)
+
+
 @admin.register(Exercise)
 class ExerciseAdmin(admin.ModelAdmin):
     list_display = ("number", "textbook", "block", "difficulty", "homework", "answer_check", "needs_review",
-                    "source_page")
-    list_filter = ("textbook", "needs_review", "difficulty", "answer_check", "homework", "block__block_type")
-    search_fields = ("condition", "=number")
+                    "source_page", "text_source")
+    list_filter = ("textbook", "needs_review", "difficulty", "answer_check", "homework", "text_source",
+                   "block__block_type", ("block__item__paragraph", admin.RelatedOnlyFieldListFilter))
+    search_fields = ("=number", "condition")
+    list_select_related = ("textbook", "block")
     filter_horizontal = ("figures",)
+    readonly_fields = ("page_crop", "ocr_text", "flags")
+    fields = ("page_crop", "textbook", "block", "number", "order", "difficulty", "difficulty_ocr", "homework",
+              "condition", "condition_tail", "task_verb", "answer_kind", "is_word_problem", "auto_checkable",
+              "has_fractions", "answer_check", "needs_review", "text_source", "ocr_text", "flags",
+              "source_page", "source_bbox", "figures")
     inlines = [SubExerciseInline, AnswerInline]
+    actions = [mark_reviewed]
+
+    def get_urls(self):
+        return [path("<int:pk>/crop.png", self.admin_site.admin_view(self.crop_view), name="education_exercise_crop"),
+                *super().get_urls()]
+
+    def crop_view(self, request, pk):
+        from .services import page_crop_png
+        ex = get_object_or_404(Exercise.objects.select_related("textbook"), pk=pk)
+        if not ex.source_page:
+            raise Http404("У вправи немає сторінки")
+        png = page_crop_png(ex.textbook, ex.source_page, ex.source_bbox)
+        if png is None:
+            raise Http404("Немає ні кешу сторінок, ні PDF")
+        return HttpResponse(png, content_type="image/png")
+
+    @admin.display(description="Сторінка PDF")
+    def page_crop(self, obj):
+        if not obj.pk or not obj.source_page:
+            return "—"
+        url = reverse("admin:education_exercise_crop", args=[obj.pk])
+        return format_html('<img src="{}" style="max-width:720px;border:1px solid #ccc" alt="стор. {}">'
+                           '<div>стор. {}</div>', url, obj.source_page, obj.source_page)
+
+    def save_formset(self, request, form, formset, change):
+        """Правка підпункту в адмінці = ручна правка (імпорт її не перезапише)."""
+        instances = formset.save(commit=False)
+        for inst in instances:
+            if isinstance(inst, SubExercise) and inst.pk and formset.has_changed():
+                inst.text_source = "manual"
+            inst.save()
+        for obj in formset.deleted_objects:
+            obj.delete()
+        formset.save_m2m()
+
+    def save_model(self, request, obj, form, change):
+        content_fields = {"condition", "condition_tail", "difficulty", "number"}
+        if change and content_fields & set(form.changed_data):
+            obj.text_source = "manual"
+        super().save_model(request, obj, form, change)
+
+
+@admin.register(SubExercise)
+class SubExerciseAdmin(admin.ModelAdmin):
+    list_display = ("__str__", "text", "expr_status", "answer_check", "needs_review", "text_source")
+    list_filter = ("needs_review", "expr_status", "answer_check", "exercise__textbook")
+    search_fields = ("text", "=exercise__number")
+    list_select_related = ("exercise",)
+    actions = [mark_reviewed]
 
 
 def _thumb(figure, size=80):

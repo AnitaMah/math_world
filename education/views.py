@@ -5,6 +5,7 @@ from django.conf import settings
 from django.shortcuts import render, get_object_or_404
 
 from .models import Grade, Section, Paragraph, Item, TheoryPractice
+from .services import answers_by_target, lesson_blocks, playable_counts
 
 
 # -------------------------
@@ -117,10 +118,47 @@ def paragraph_list(request, section_id):
 #   📝 СПИСОК ЗАВДАНЬ
 # -------------------------
 
+def _blocks_context(lesson):
+    """Блоки уроку для шаблону _lesson_blocks.html: вправи з підпунктами, відповіді, рисунки."""
+    blocks = []
+    for block in lesson_blocks(lesson):
+        exercises = []
+        for ex in block.exercises.all():
+            answers = answers_by_target(ex)
+            exercises.append({
+                "obj": ex,
+                "subs": [_sub_context(s, answers.get(s.pk, {})) for s in ex.subexercises.all()],
+                "answer": answers.get(None, {}),
+                "has_answers": bool(answers),
+                "figures": list(ex.figures.all()),
+            })
+        # Заголовок блоку — це рядок-маркер рубрики з OCR («Вправи», «Завдання ме 1 «Перевірте себе»…»):
+        # він дублює назву типу і часто з помилками, тож показуємо лише назву типу.
+        blocks.append({"obj": block, "exercises": exercises, "figures": list(block.figures.all())})
+    return blocks
+
+
+def _sub_context(sub, answer):
+    shown = answer.get("book") or answer.get("computed") or ""
+    other = answer.get("computed") if answer.get("book") and sub.answer_check == "mismatch" else ""
+    return {"obj": sub, "answer": shown, "computed_other": other}
+
+
+def _item_title(item, lang):
+    """Назва пункту — перший рядок змісту («2. Цифри. Десятковий запис…»), а не перше речення:
+    details_list ріже за крапкою, і «Цифри. Десятковий запис» ставало «Цифри.»."""
+    text = item.content_de if lang == "de" and item.content_de else item.content
+    return (text or "").strip().splitlines()[0].strip() if (text or "").strip() else ""
+
+
 def item_list(request, paragraph_id):
     lang = _lang(request)
-    paragraph = get_object_or_404(Paragraph, pk=paragraph_id)
-    items = Item.objects.filter(paragraph=paragraph).order_by("number")
+    paragraph = get_object_or_404(Paragraph.objects.select_related("section"), pk=paragraph_id)
+    items = list(Item.objects.filter(paragraph=paragraph).order_by("number"))
+    counts = playable_counts(items)
+    from .game import get_player
+    player = get_player(request, create=False)
+    stars = dict(player.progress.filter(item__in=items).values_list("item_id", "stars")) if player else {}
 
     context = _base_context(
         request,
@@ -129,10 +167,14 @@ def item_list(request, paragraph_id):
         section_id=paragraph.section_id,
         grade_id=paragraph.section.grade_id,
         items=[
-            {"id": i.id, "number": i.number, "details": i.details_list(lang)}
+            {"id": i.id, "number": i.number, "title": _item_title(i, lang), "exercises": counts.get(i.id, 0),
+             "stars": stars.get(i.id, 0)}
             for i in items
         ],
+        # Урок = § (Тарасенкова) або блоки рівня § («Перевірте себе» у Мерзляка)
+        blocks=_blocks_context(paragraph),
         content={"items": "Завдання", "back": "Назад"},
+        media_url=settings.MEDIA_URL,
     )
     return render(request, "education/item_list.html", context)
 
@@ -143,17 +185,10 @@ def item_list(request, paragraph_id):
 
 def item_detail(request, item_id):
     lang = _lang(request)
-    item = get_object_or_404(Item, pk=item_id)
+    item = get_object_or_404(Item.objects.select_related("paragraph__section"), pk=item_id)
     paragraph = item.paragraph
 
-    try:
-        tp = TheoryPractice.objects.get(item=item)
-    except TheoryPractice.DoesNotExist:
-        tp = None
-
-    blocks_by_type = {}
-    for block in item.content_blocks.all():
-        blocks_by_type.setdefault(block.block_type, []).append(block)
+    tp = TheoryPractice.objects.filter(item=item).first()
 
     context = _base_context(
         request,
@@ -167,8 +202,38 @@ def item_detail(request, item_id):
             "details": item.details_list(lang),
         },
         tp=tp,
-        blocks_by_type=blocks_by_type,
+        blocks=_blocks_context(item),
         media_url=settings.MEDIA_URL,
         content={"items": "Деталі завдання", "back": "Назад"},
     )
     return render(request, "education/item_detail.html", context)
+
+
+# -------------------------
+#   🎮 ГРА: УРОК ЯК ПОСЛІДОВНІСТЬ ЗАВДАНЬ
+# -------------------------
+
+def play_lesson(request, kind, pk):
+    from django.urls import reverse
+    lesson = get_object_or_404(Item if kind == "item" else Paragraph, pk=pk)
+    if kind == "item":
+        title, back = _item_title(lesson, "uk"), reverse("item_detail", args=[lesson.pk])
+        api_url = reverse("api_play_item", args=[lesson.pk])
+    else:
+        title, back = lesson.name_uk, reverse("item_list", args=[lesson.pk])
+        api_url = reverse("api_play_paragraph", args=[lesson.pk])
+    return render(request, "education/play.html", {"title": title, "back_url": back, "api_url": api_url})
+
+
+def signup(request):
+    """Реєстрація: прогрес гостя з цієї сесії переноситься в новий акаунт (сигнал user_logged_in)."""
+    from django.contrib.auth import login
+    from django.contrib.auth.forms import UserCreationForm
+    from django.shortcuts import redirect
+
+    form = UserCreationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        login(request, user)
+        return redirect(request.GET.get("next") or "home")
+    return render(request, "registration/signup.html", {"form": form})

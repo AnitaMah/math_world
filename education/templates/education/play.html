@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  {% load static %}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ title }} · гра</title>
+  <link rel="stylesheet" href="{% static 'education/css/play.css' %}">
+</head>
+<body>
+<main class="play" id="play" data-api="{{ api_url }}" data-back="{{ back_url }}">
+  <header class="play-top">
+    <a class="play-close" href="{{ back_url }}" aria-label="Вийти з уроку">✕</a>
+    <div class="play-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="play-progress-fill" id="progressFill"></div>
+    </div>
+    <div class="play-chips">
+      <span class="chip chip--streak" title="Днів поспіль">🔥 <b id="streak">0</b></span>
+      <span class="chip chip--points" title="Бали">⭐ <b id="points">0</b></span>
+    </div>
+  </header>
+
+  <section class="play-stage" id="stage" aria-live="polite">
+    <p class="play-loading">Завантаження…</p>
+  </section>
+
+  <footer class="play-bottom" id="bottom">
+    <div class="feedback" id="feedback" hidden>
+      <div class="feedback-icon" id="feedbackIcon"></div>
+      <div>
+        <p class="feedback-title" id="feedbackTitle"></p>
+        <p class="feedback-text" id="feedbackText"></p>
+      </div>
+    </div>
+    <button class="btn btn--primary" id="mainBtn" disabled>Перевірити</button>
+    <button class="btn btn--ghost" id="skipBtn">Пропустити</button>
+  </footer>
+</main>
+{% csrf_token %}
+<script src="{% static 'education/js/play.js' %}"></script>
+</body>
+</html>

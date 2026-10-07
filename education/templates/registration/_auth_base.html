@@ -1,0 +1,8 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>{% load static %}<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Вхід{% endblock %}</title><link rel="stylesheet" href="{% static 'education/css/play.css' %}">
+<style>.auth{max-width:420px;margin:12vh auto;padding:0 16px}.auth form p{display:flex;flex-direction:column;gap:4px;margin:0 0 12px}
+.auth input{background:var(--card);color:var(--text);border:2px solid var(--line);border-radius:12px;padding:10px;font:inherit}
+.auth .helptext,.auth ul{font-size:13px;color:var(--muted)}.auth .errorlist{color:var(--bad)}.auth a{color:var(--accent-2)}</style></head>
+<body><main class="auth">{% block content %}{% endblock %}</main></body></html>
