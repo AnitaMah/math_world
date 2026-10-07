@@ -1,0 +1,48 @@
+{% extends "education/base.html" %}
+{% load static %}
+{% block title %}UI-кіт{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'education/css/ui-dev.css' %}">{% endblock %}
+{% block body_class %}ui-kit{% endblock %}
+{% block content %}
+<div class="page stack">
+  <header class="stack stack--gap-2">
+    <p class="label-caps">Службова сторінка · лише DEBUG</p>
+    <h1>UI-кіт «Математичного світу»</h1>
+    <p class="muted">Базові стилі нового інтерфейсу. Кожна фаза плану додає сюди свої компоненти
+      (іконки — фаза 3, кнопки й картки — фаза 4, верхня панель — фаза 5). Токени — на
+      <a href="{% url 'ui_tokens' %}">сторінці токенів</a>.</p>
+  </header>
+
+  <section class="stack stack--gap-3" aria-labelledby="kit-type">
+    <h2 class="label-caps" id="kit-type">Типографіка</h2>
+    <h1>Заголовок h1 — Рівняння</h1>
+    <h2>Заголовок h2 — Натуральні числа</h2>
+    <h3>Заголовок h3 — Задача від Мудрої Сови</h3>
+    <p class="display kit-numerals">0123456789 · ½ · 3 254 + 1 746</p>
+    <p>Звичайний абзац (Nunito 600, 15 px). Щоб додати два натуральні числа, можна скористатися
+      <a href="#">переставною властивістю</a>: від перестановки доданків сума не змінюється.</p>
+    <p class="muted">Приглушений текст <code>.muted</code> — пояснення під заголовком.</p>
+    <p class="muted-2">Підпис <code>.muted-2</code> — «Урок 4 з 38 · 8 / 18 ★».</p>
+    <p class="label-caps">Острови 5 класу</p>
+    <p>Перевірка кирилиці: ґанок, єнот, Їжак, і, апостроф — м’яч, сім’я, «лапки», тире — №5.</p>
+    <p class="display">Ґанок, Єнот, Їжак, м’яч, сім’я, №5</p>
+  </section>
+
+  <section class="stack stack--gap-3" aria-labelledby="kit-layout">
+    <h2 class="label-caps" id="kit-layout">Розкладка: .stack і .row</h2>
+    <div class="row row--gap-2 row--wrap">
+      <span class="kit-box">.row</span><span class="kit-box">--gap-2</span><span class="kit-box">елемент</span>
+    </div>
+    <div class="stack stack--gap-2">
+      <span class="kit-box">.stack</span><span class="kit-box">--gap-2</span>
+    </div>
+  </section>
+
+  <section class="stack stack--gap-3" aria-labelledby="kit-a11y">
+    <h2 class="label-caps" id="kit-a11y">Доступність</h2>
+    <p>Натисніть Tab на початку сторінки — з’явиться «Перейти до вмісту». Фокус з клавіатури — біла рамка:
+      <a href="#">посилання</a> · <button type="button" class="kit-box">кнопка</button></p>
+    <p><span class="visually-hidden">Цей текст чує лише скрінрідер.</span>Поруч схований текст <code>.visually-hidden</code>.</p>
+  </section>
+</div>
+{% endblock %}

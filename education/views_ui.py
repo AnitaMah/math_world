@@ -65,3 +65,9 @@ def ui_tokens(request):
         "islands": range(1, 6),
         "font_scale": FONT_SCALE,
     })
+
+
+def ui_kit(request):
+    """`/ui/kit/` — вітрина базових стилів і компонентів нового UI (росте з кожною фазою)."""
+    _debug_only()
+    return render(request, "education/ui_kit.html")

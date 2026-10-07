@@ -1,0 +1,24 @@
+{% load static %}<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1220">
+  <title>{% block title %}Мапа{% endblock %} · Математичний світ</title>
+  <link rel="preload" href="{% static 'education/fonts/unbounded-cyrillic-700-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{% static 'education/fonts/nunito-cyrillic-600-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{% static 'education/css/fonts.css' %}">
+  <link rel="stylesheet" href="{% static 'education/css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'education/css/base.css' %}">
+  {% block styles %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main">Перейти до вмісту</a>
+  {% include "education/_icons.html" %}
+  {% block topbar %}{% include "education/_topbar.html" %}{% endblock %}
+  <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
+  {% block bottom_nav %}{% endblock %}
+  <div hidden>{% csrf_token %}</div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

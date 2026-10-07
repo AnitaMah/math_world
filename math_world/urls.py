@@ -22,6 +22,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # Службові сторінки нового UI (лише DEBUG, інакше 404)
     path("ui/tokens/", views_ui.ui_tokens, name="ui_tokens"),
+    path("ui/kit/", views_ui.ui_kit, name="ui_kit"),
 ]
 
 if settings.DEBUG:

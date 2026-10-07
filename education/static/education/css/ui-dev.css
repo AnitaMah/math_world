@@ -56,3 +56,9 @@
   .type-row { grid-template-columns: 1fr; gap: 2px; }
   .ui-dev__table { display: block; overflow-x: auto; }
 }
+
+/* /ui/kit/ */
+.ui-kit .page.stack { gap: var(--sp-10); }
+.kit-box { display: inline-block; padding: var(--sp-2) var(--sp-3); border: 1px dashed var(--line-strong);
+  border-radius: var(--r-xs); background: var(--card); color: var(--text-2); font-size: var(--fs-13); }
+.kit-numerals { font-size: var(--fs-32); }

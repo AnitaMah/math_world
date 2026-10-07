@@ -208,3 +208,29 @@ https://claude.ai/code/artifact/04922b47-8945-4f84-9af4-447cfffc4c4e
 **Знахідка:** українська локаль Django виводить числа з комою (`4.5` → `4,5`).
 Число, яке читає JS (атрибути `data-*`), виводимо через `|stringformat:'s'`
 (або `{% localize off %}`), інакше `Number("4,5")` дає `NaN`.
+
+## 2026-10-08 — базовий шаблон і типографіка (фаза 2, кроки FE-0099…0135)
+- **Шрифти — локально**, без Google Fonts: `education/static/education/fonts/`
+  (Unbounded 500/700, Nunito 500/600/700/800; набори cyrillic + latin; 12 файлів woff2,
+  разом 163 КБ; @fontsource 5.3.0, ліцензія SIL OFL 1.1 — `LICENSE-*.txt` поруч).
+  `@font-face` — у `css/fonts.css` з `unicode-range`, тож браузер вантажить лише
+  потрібні набори. Два найважливіші файли (Unbounded 700 і Nunito 600 кирилиця)
+  — `<link rel="preload">` у `base.html`.
+  Чому: працює офлайн і в мережах, де Google заблоковано (як у моїй хмарній
+  оболонці); жодних сторонніх запитів з дитячого сайту.
+- Кирилицю перевірено: «ґ є і ї ’ №» у обох шрифтах (знімок `/ui/kit/`).
+- **`base.html`**: `lang="uk"`, `viewport-fit=cover`, `theme-color`, заголовок
+  «… · Математичний світ», CSS у порядку `fonts → tokens → base → {% block styles %}`,
+  skip link першим елементом, SVG-спрайт, `{% block topbar %}` (за замовчуванням
+  `_topbar.html`), `<main id="main">`, `{% block bottom_nav %}`, прихований
+  `{% csrf_token %}` для JS, `{% block scripts %}`. `_icons.html` і `_topbar.html` —
+  поки заглушки (фази 3 і 5).
+- **Нові токени**: `--link`, `--link-hover`, `--focus` (кольори посилань і фокусу
+  були «сирими» в плані).
+- **`/ui/kit/`** — як і `/ui/tokens/`: маршрут є завжди, view віддає 404 без DEBUG
+  (так це можна перевірити тестом через `override_settings`, на відміну від
+  `if settings.DEBUG:` в `urls.py`).
+- **`.label-caps` задає `font-family: var(--font-body)`**: інакше на `<h2 class="label-caps">`
+  підпис успадковував Unbounded від `h2` (знайдено на знімку).
+- `tools/frontend/shots.spec.js` знімає список сторінок: `/`, `/ui/tokens/`, `/ui/kit/`,
+  і чекає `document.fonts.ready` перед знімком.
