@@ -465,16 +465,24 @@ export function layoutGrade(map, options = {}) {
 
 /** Один параграф (острів-ділянка) для екрана телефону: вузли «змійкою» згори вниз. */
 export function layoutParagraph(map, paraIdx, options = {}) {
+  const P = map.paragraphs[paraIdx];
+  return layoutLessons(map, P.lessonIdx, { ...options, isl: P.isl, key: paraIdx });
+}
+
+/**
+ * Телефон: довільна група уроків (параграф або цілий розділ, якщо урок = §) як один вертикальний
+ * острів. x = центр ± amp·sin(1.05·i), крок step; висота полотна росте з кількістю уроків.
+ */
+export function layoutLessons(map, lessonIdx, options = {}) {
   const width = options.width ?? 390, top = options.top ?? 200, step = options.step ?? 76;
-  const P = map.paragraphs[paraIdx], n = P.lessonIdx.length;
   const cx = width / 2, amp = Math.min(92, width / 2 - 75);
-  const nodes = P.lessonIdx.map((li, i) => ({ lessonIdx: li, x: r0(cx + amp * Math.sin(1.05 * i)), y: r0(top + i * step) }));
+  const nodes = lessonIdx.map((li, i) => ({ lessonIdx: li, x: r0(cx + amp * Math.sin(1.05 * i)), y: r0(top + i * step) }));
   const last = nodes.length ? nodes[nodes.length - 1].y : top;
   const height = last + 220;
-  const rnd = mulberry32((map.grade || 0) * 1000 + paraIdx);
+  const rnd = mulberry32((map.grade || 0) * 1000 + (options.key ?? 0));
   const ry = (last - top) / 2 + 110, cy = (top + last) / 2;
   const island = blob(cx, cy, width / 2 - 26, ry, rnd, 10, 0.06).d;
   const curve = nodes.length > 1 ? spline(nodes.map(({ x, y }) => ({ x, y })), 20) : [];
   const route = curve.length ? "M" + curve.filter((_, i) => i % 3 === 0).concat([curve[curve.length - 1]]).map((p) => `${r0(p.x)},${r0(p.y)}`).join(" L") : "";
-  return { width, height, viewBox: `0 0 ${width} ${height}`, island, isl: P.isl, route, nodes };
+  return { width, height, viewBox: `0 0 ${width} ${height}`, island, isl: options.isl ?? 1, route, nodes };
 }

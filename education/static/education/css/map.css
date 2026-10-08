@@ -152,3 +152,102 @@
 .score-row__btn:hover { background: var(--card); }
 .score-row__btn .progress { display: block; }
 .score-row__btn .progress__fill { display: block; }
+
+/* --- Телефон: один острів на екран (фаза 11) ---------------------------------------------- */
+.map-mobile { display: none; }
+@media (max-width: 720px) {
+  /* поки мапа вантажиться (скелетон, помилка) — видно сцену; щойно телефонна мапа готова — її */
+  .map-layout:has(.map-mobile:not([hidden])) .map-stage { display: none; }
+  .map-mobile:not([hidden]) {
+    position: relative; flex: 1; min-width: 0; display: block;
+    background: radial-gradient(ellipse at 50% 45%, var(--bg-sea-1) 0%, var(--bg-sea-2) 75%);
+  }
+}
+.mm-card {
+  position: absolute; left: var(--sp-4); right: var(--sp-4); top: var(--sp-3); z-index: 3;
+  display: flex; align-items: center; gap: var(--sp-3); padding: 10px 14px;
+}
+.mm-card__badge {
+  flex-shrink: 0; padding: 6px 8px; border-radius: var(--r-sm);
+  background: var(--acc); color: var(--ink); font: var(--fw-bold) var(--fs-12) / 1 var(--font-display);
+}
+.mm-card__text { flex: 1; min-width: 0; }
+.mm-card__title { font-size: var(--fs-15); font-weight: var(--fw-heavy); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mm-card__meta { font-size: var(--fs-12); color: var(--muted-2); font-weight: var(--fw-bold); }
+
+.mm-scroll {
+  position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 76px 0 calc(var(--sheet-h, 190px) + var(--sp-4));
+  touch-action: pan-y;
+}
+.mm-canvas { position: relative; width: 100%; aspect-ratio: var(--ar, .5); }
+.mm-nav {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  margin: var(--sp-2) auto; padding: 8px 14px; min-height: 44px;
+  background: var(--surface); border: 1px solid var(--line-3); border-radius: var(--r-pill);
+  color: var(--text-2); font-size: var(--fs-13); font-weight: var(--fw-heavy); cursor: pointer;
+}
+.mm-nav[hidden] { display: none; }
+
+.lesson-sheet {
+  position: absolute; left: 12px; right: 12px; bottom: 8px; z-index: 4;
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 60%; overflow-y: auto;
+  padding: 14px 16px 16px;
+  background: var(--card-2); border: 1px solid var(--line-3); border-radius: var(--r-2xl);
+  box-shadow: var(--shadow-sheet);
+}
+.lesson-sheet__head {
+  display: flex; align-items: flex-start; gap: 10px; width: 100%;
+  padding: 0; border: 0; background: none; text-align: left; cursor: pointer;
+}
+.lesson-sheet__titles { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.lesson-sheet__kicker { font-size: var(--fs-12); color: var(--muted-2); font-weight: var(--fw-heavy); }
+.lesson-sheet__title { font: var(--fw-bold) var(--fs-17) / var(--lh-title) var(--font-display); }
+.lesson-sheet__head .stars { padding-top: 4px; flex-shrink: 0; }
+.lesson-sheet__progress { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: var(--fs-12); font-weight: var(--fw-heavy); }
+.lesson-sheet__progress .progress { flex: 1; }
+.lesson-sheet__tasks { font-size: var(--fs-13); color: var(--muted); font-weight: var(--fw-bold); }
+.lesson-sheet__more { display: none; }
+.lesson-sheet.is-open .lesson-sheet__more { display: flex; }
+.lesson-sheet .btn--secondary { gap: var(--sp-2); }
+
+/* Список островів (модальний лист) */
+.islands-sheet {
+  width: min(100vw, 520px); max-height: 85dvh; margin: auto auto 0; padding: 0;
+  background: var(--surface-2); color: var(--text);
+  border: 1px solid var(--line-3); border-radius: var(--r-2xl) var(--r-2xl) 0 0;
+}
+.islands-sheet::backdrop { background: var(--bg); opacity: .7; }
+.islands-sheet__head {
+  position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sp-4); background: var(--surface-2); border-bottom: 1px solid var(--line);
+}
+.islands-sheet__head h2 { font-size: var(--fs-17); }
+.islands-sheet__list { margin: 0; padding: var(--sp-3) var(--sp-4) var(--sp-6); display: flex; flex-direction: column; gap: var(--sp-2); }
+.islands-sheet__section { padding-top: var(--sp-3); }
+.island-pick__btn {
+  display: flex; align-items: center; gap: var(--sp-3); width: 100%; min-height: 56px;
+  padding: var(--sp-2) var(--sp-3); background: var(--card); border: 1px solid var(--line-card);
+  border-radius: var(--r-lg); color: var(--text); text-align: left; cursor: pointer;
+}
+.island-pick__btn[aria-current="true"] { border-color: var(--acc); }
+.island-pick__badge {
+  flex-shrink: 0; min-width: 40px; padding: 6px 8px; border-radius: var(--r-sm); text-align: center;
+  background: var(--acc); color: var(--ink); font: var(--fw-bold) var(--fs-12) / 1 var(--font-display);
+}
+.island-pick.is-fog .island-pick__badge { background: var(--neutral-bg); color: var(--muted); }
+.island-pick__body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.island-pick__title { font-weight: var(--fw-heavy); font-size: var(--fs-14); }
+.island-pick__score { font-size: var(--fs-12); color: var(--muted-2); font-weight: var(--fw-bold); }
+.island-pick__body .progress { display: block; }
+.island-pick__body .progress__fill { display: block; }
+.island-pick__btn .icon { color: var(--muted-2); }
+
+/* Телефон: права панель прихована. Це правило стоїть ПІСЛЯ `.lesson-panel { display: flex }` (фаза 10) —
+   інакше воно його не перекриває (знайдено тестом Playwright). */
+@media (max-width: 720px) {
+  .lesson-panel { display: none; }
+  /* прокрутка до вузла не ховає його під карткою параграфа чи нижнім листом */
+  .mm-scroll { scroll-padding: 90px 0 calc(var(--sheet-h, 190px) + var(--sp-4)); }
+}

@@ -44,7 +44,68 @@
       <ul class="panel-islands__list stack stack--gap-2" data-f="islands"></ul>
     </section>
   </aside>
+
+  {# Телефон (фаза 11): один острів-параграф на екран. Показується CSS-ом при ширині ≤ 720 px. #}
+  <section class="map-mobile" id="mapMobile" aria-label="Мапа {{ grade.number }} класу" hidden>
+    <div class="mm-card card card--float">
+      <span class="mm-card__badge" data-f="badge"></span>
+      <div class="mm-card__text">
+        <p class="mm-card__title" data-f="title"></p>
+        <p class="mm-card__meta" data-f="meta"></p>
+      </div>
+      <button class="btn-icon" type="button" data-f="all" aria-label="Усі острови" aria-haspopup="dialog">{% icon "map" size=20 %}</button>
+    </div>
+    <div class="mm-scroll" id="mmScroll">
+      <button class="mm-nav mm-nav--prev" type="button" data-f="prev" hidden>{% icon "chevron-left" size=16 %}<span></span></button>
+      <div class="mm-canvas" id="mmCanvas">
+        <svg class="sea" id="mmSea" aria-hidden="true"></svg>
+        <div class="map-nodes" id="mmNodes" role="group" aria-label="Уроки острова"></div>
+      </div>
+      <button class="mm-nav mm-nav--next" type="button" data-f="next" hidden><span></span>{% icon "chevron-right" size=16 %}</button>
+    </div>
+    <section class="lesson-sheet" id="lessonSheet" aria-label="Вибраний урок">
+      <button class="lesson-sheet__head" type="button" data-f="toggle" aria-expanded="false" aria-controls="lessonSheetMore">
+        <span class="lesson-sheet__titles">
+          <span class="lesson-sheet__kicker" data-f="kicker"></span>
+          <span class="lesson-sheet__title" data-f="title"></span>
+        </span>
+        <span class="stars stars--gap" role="img" data-f="stars"></span>
+      </button>
+      <div class="lesson-sheet__progress">
+        <div class="progress progress--md" role="progressbar" aria-label="Розв’язано завдань" aria-valuemin="0" data-f="progress"><div class="progress__fill"></div></div>
+        <span data-f="count"></span>
+      </div>
+      <p class="lesson-sheet__tasks" data-f="tasks"></p>
+      <div class="lesson-sheet__more stack stack--gap-3" id="lessonSheetMore">
+        <div class="row row--gap-2 row--wrap" data-f="blocks"></div>
+        <a class="btn btn--secondary btn--block" data-f="theory" href="#">{% icon "book" size=18 %}Читати теорію уроку</a>
+      </div>
+      <div data-f="cta"></div>
+    </section>
+  </section>
 </div>
+
+<dialog class="islands-sheet" id="islandsSheet" aria-labelledby="islandsSheetTitle">
+  <div class="islands-sheet__head">
+    <h2 id="islandsSheetTitle">Острови {{ grade.number }} класу</h2>
+    <button class="btn-icon" type="button" data-f="close" aria-label="Закрити">{% icon "close" size=20 %}</button>
+  </div>
+  <ul class="islands-sheet__list" data-f="list"></ul>
+</dialog>
+
+<template id="tpl-island-pick">
+  <li class="island-pick">
+    <button class="island-pick__btn" type="button">
+      <span class="island-pick__badge" data-f="badge"></span>
+      <span class="island-pick__body">
+        <span class="island-pick__title" data-f="title"></span>
+        <span class="island-pick__score" data-f="score"></span>
+        <span class="progress progress--sm"><span class="progress__fill"></span></span>
+      </span>
+      {% icon "chevron-right" size=18 %}
+    </button>
+  </li>
+</template>
 
 {# Шаблони панелі (заповнює js/lesson-panel.js лише через textContent — без HTML-рядків) #}
 <template id="tpl-lesson-panel">
@@ -95,5 +156,6 @@
 {% endblock %}
 {% block scripts %}
 <script type="module" src="{% static 'education/js/lesson-panel.js' %}"></script>
+<script type="module" src="{% static 'education/js/map-mobile.js' %}"></script>
 <script type="module" src="{% static 'education/js/map.js' %}"></script>
 {% endblock %}

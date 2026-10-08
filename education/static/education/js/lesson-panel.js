@@ -65,13 +65,18 @@ export function islandRows(map) {
     const paras = S.paragraphIdx.map((p) => map.paragraphs[p]);
     const perSection = paras.length > 0 && paras.every((P) => P.lessonIdx.length <= 1);
     const groups = perSection
-      ? [{ label: `Розділ ${S.roman} ${S.shortTitle}`, lessons: paras.flatMap((P) => P.lessonIdx), isl: paras[0]?.isl ?? 1 }]
-      : paras.map((P) => ({ label: `${S.roman} · §${P.number} ${P.shortTitle}`, lessons: P.lessonIdx, isl: P.isl }));
+      ? [{ label: `Розділ ${S.roman} ${S.shortTitle}`, lessons: paras.flatMap((P) => P.lessonIdx), isl: paras[0]?.isl ?? 1,
+           kind: "section", badge: S.roman, title: S.shortTitle, sectionIdx: map.sections.indexOf(S), paraIdx: null }]
+      : paras.map((P) => ({ label: `${S.roman} · §${P.number} ${P.shortTitle}`, lessons: P.lessonIdx, isl: P.isl,
+           kind: "paragraph", badge: `§${P.number}`, title: P.shortTitle, sectionIdx: map.sections.indexOf(S),
+           paraIdx: map.paragraphs.indexOf(P) }));
     for (const g of groups) {
       const got = g.lessons.reduce((s, i) => s + map.lessons[i].stars, 0), max = g.lessons.length * 3;
       const target = g.lessons.find((i) => ["current", "open"].includes(map.lessons[i].state))
         ?? g.lessons.find((i) => map.lessons[i].state !== "soon") ?? g.lessons[0];
-      rows.push({ label: g.label, score: `${got} / ${max} ★`, got, max, isl: g.isl, target });
+      const done = g.lessons.filter((i) => map.lessons[i].state === "done").length;
+      const fog = g.lessons.every((i) => map.lessons[i].state === "soon");
+      rows.push({ ...g, score: `${got} / ${max} ★`, got, max, target, done, fog });
     }
   }
   return rows;

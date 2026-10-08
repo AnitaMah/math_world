@@ -105,6 +105,10 @@ async function load() {
   await document.fonts.ready;
   fitChips();
   nodes.select(initialIndex(map.lessons, location.hash), { push: false });
+  // вибір на телефоні → тихо синхронізувати десктопні вузли (без повторної події)
+  stage.addEventListener("lesson:select", (e) => {
+    if (e.detail.source === "mobile") nodes.select(e.detail.index, { silent: true, push: true });
+  });
   stage.dispatchEvent(new CustomEvent("map:ready", { detail: { map, layout: L, nodes } }));
 }
 

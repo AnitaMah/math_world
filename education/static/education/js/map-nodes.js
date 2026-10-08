@@ -83,11 +83,12 @@ function lockSvg() {
 export function renderNodes(layer, map, L, { onSelect } = {}) {
   layer.replaceChildren();
   const pct = (v, total) => `${((v / total) * 100).toFixed(3)}%`;
-  const buttons = [];
+  const buttons = new Map();          // індекс уроку → кнопка (на телефоні — лише уроки групи)
+  const order = [];                   // індекси уроків у порядку на мапі
   let current = -1;
 
-  map.lessons.forEach((lesson, i) => {
-    const pos = L.nodes[i];
+  for (const pos of L.nodes) {
+    const i = pos.lessonIdx, lesson = map.lessons[i];
     const isl = map.paragraphs[lesson.paraIdx].isl;
     const wrap = document.createElement("div");
     wrap.className = `node-wrap isl-${isl}`;
@@ -123,17 +124,20 @@ export function renderNodes(layer, map, L, { onSelect } = {}) {
       wrap.append(stars);
     }
     layer.append(wrap);
-    buttons.push(btn);
-  });
+    buttons.set(i, btn);
+    order.push(i);
+  }
 
-  function select(i, { focus = false, push = true } = {}) {
-    if (i < 0 || i >= buttons.length) return;
-    if (current >= 0) buttons[current].setAttribute("aria-pressed", "false");
+  /** Вибрати урок i (індекс у map.lessons). Якщо його немає на цьому шарі — лише запам’ятати. */
+  function select(i, { focus = false, push = true, silent = false } = {}) {
+    if (i < 0 || i >= map.lessons.length) return;
+    buttons.get(current)?.setAttribute("aria-pressed", "false");
     current = i;
-    buttons[i].setAttribute("aria-pressed", "true");
-    if (focus) buttons[i].focus();
+    const btn = buttons.get(i);
+    btn?.setAttribute("aria-pressed", "true");
+    if (focus) btn?.focus();
     if (push) history.replaceState(null, "", lessonHash(map.lessons[i]));
-    onSelect?.(i, map.lessons[i]);
+    if (!silent) onSelect?.(i, map.lessons[i]);
   }
 
   layer.addEventListener("click", (e) => {
@@ -149,12 +153,12 @@ export function renderNodes(layer, map, L, { onSelect } = {}) {
   layer.addEventListener("keydown", (e) => {
     const btn = e.target.closest(".node");
     if (!btn) return;
-    const i = Number(btn.dataset.index);
-    if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); select(Math.min(i + 1, buttons.length - 1), { focus: true }); }
-    if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); select(Math.max(i - 1, 0), { focus: true }); }
+    const k = order.indexOf(Number(btn.dataset.index));
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); select(order[Math.min(k + 1, order.length - 1)], { focus: true }); }
+    if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); select(order[Math.max(k - 1, 0)], { focus: true }); }
   });
 
-  return { select, selected: () => current, buttons };
+  return { select, selected: () => current, buttons, order };
 }
 
 /** Ділянки, де всі уроки «у хмарах», і найбільша з них — для підказки. */
