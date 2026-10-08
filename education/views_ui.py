@@ -140,6 +140,24 @@ def world_page(request):
     return render(request, "education/world.html", {"cards": cards, "fog_from": fog_from, "show_fog": fog_from <= 9})
 
 
+def _place_figures(blocks):
+    """Рисунки блоків — у тексті, одразу після абзацу, де їх уперше згадано (рис. 3, рисунку 6…).
+
+    Пул рисунків спільний на урок: рисунок із блоку «Теорія» може бути згаданий у «Коли зроблено
+    уроки». Незгадані рисунки не показуються. Результат — b["html"] для кожного блоку.
+    """
+    from .templatetags.ui import text_with_figures
+    figmap = {}
+    for b in blocks:
+        for f in b["figures"]:
+            if f.image and f.number and f.number not in figmap:
+                figmap[f.number] = f
+    used = set()
+    for b in blocks:
+        b["html"] = text_with_figures(b["obj"].text, figmap, used)
+    return used
+
+
 def lesson_page(request, item):
     """`/items/<id>/` у новому UI (фаза 13): теорія й вправи уроку кольором острова.
 
@@ -165,6 +183,8 @@ def lesson_page(request, item):
         stars = prog.stars if prog else 0
 
     playable = playable_counts([item]).get(item.id, 0)
+    blocks = _blocks_context(item)
+    _place_figures(blocks)
     import re
     return render(request, "education/lesson.html", {
         "item": item,
@@ -177,6 +197,6 @@ def lesson_page(request, item):
         "isl": isl,
         "stars": stars,
         "playable": playable,
-        "blocks": _blocks_context(item),
+        "blocks": blocks,
         "staff": request.user.is_staff,
     })

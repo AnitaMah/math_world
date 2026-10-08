@@ -1,11 +1,11 @@
-{% load ui %}{# Блоки уроку в новому UI (фаза 13). Дані — views._blocks_context. Відповіді — лише staff. Рисунки блоків (теорії) поки приховані — лише текст. #}
+{% load ui %}{# Блоки уроку в новому UI (фаза 13). Дані — views._blocks_context. Відповіді — лише staff. Рисунки блоків стоять у тексті після абзацу, де їх згадано (views_ui._place_figures). #}
 {% for b in blocks %}{% with block=b.obj %}
 <section class="lblock lblock--{{ block.block_type }}" aria-labelledby="block-{{ block.id }}">
   <h2 class="lblock__title" id="block-{{ block.id }}">
     <span class="lblock__icon">{% icon block.block_type|block_icon size=20 %}</span>{{ block.block_type|block_name }}
     {% if staff and block.needs_review %}<span class="tag lblock__review">перевірити</span>{% endif %}
   </h2>
-  {% if block.text %}<div class="lblock__text">{{ block.text|reflow }}</div>{% endif %}
+  {% if b.html %}<div class="lblock__text">{{ b.html }}</div>{% endif %}
 
   {% if b.exercises %}
   <ol class="lex-list">

@@ -3,7 +3,11 @@
 ``{% load ui %}`` → ``{% icon "star" size=18 %}``, ``{% icon "lock" label="Закрито" %}``,
 ``{% icon "bolt" class="icon--points" %}``.
 """
+import re
+
 from django import template
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from django.utils.html import format_html
 
 register = template.Library()
@@ -122,21 +126,22 @@ def difficulty_name(code):
     return DIFFICULTY.get(code or "", "")
 
 
+
 _PARA_END = (".", "!", "?", ":", ";", "»")
+_FIG_REF = re.compile(
+    r"рис(?:\.|ун\w*)\s*(\d+)((?:\s*(?:,|і|та|й|–|—|-)\s*\d+(?![\d.,]*\s*(?:см|мм|дм|км|м)\b))*)",
+    re.IGNORECASE)
 
 
-@register.filter
-def reflow(text):
+def paragraphs(text):
     """Склеює рядки, розірвані при парсингу PDF, в абзаци (фаза 13).
 
     Новий абзац — якщо попередній рядок закінчується розділовим знаком
     кінця речення або наступний починається з маркера списку / номера.
+    Перенос слова «по-\nзначають» склеюється.
     """
-    from django.utils.html import escape
-    from django.utils.safestring import mark_safe
-    import re
     if not text:
-        return ""
+        return []
     paras, cur = [], []
     for raw in str(text).splitlines():
         line = raw.strip()
@@ -148,9 +153,63 @@ def reflow(text):
         if cur and (starts_new or cur[-1].endswith(_PARA_END)):
             paras.append(" ".join(cur)); cur = []
         if cur and cur[-1].endswith("-") and line[:1].islower():
-            cur[-1] = cur[-1][:-1] + line   # перенос слова
+            cur[-1] = cur[-1][:-1] + line
         else:
             cur.append(line)
     if cur:
         paras.append(" ".join(cur))
-    return mark_safe("".join(f"<p>{escape(p)}</p>" for p in paras))
+    return [_strip_stray_captions(p) for p in paras]
+
+
+_LOWER = "а-яіїєґ'’"
+
+
+def _strip_stray_captions(p):
+    """Підпис «Рис. 3», що OCR вклеїв посеред речення: «геометрич- Рис. 3 них» → «геометричних».
+
+    Справжні згадки пишуться з малої («рис. 3»), тож прибираємо лише «Рис. N» між словами.
+    """
+    p = re.sub(rf"(\w)-\s+Рис\.\s*\d+\s+(?=[{_LOWER}])", r"\1", p)
+    return re.sub(rf"(?<=[\w,])\s+Рис\.\s*\d+(?=\s+[{_LOWER}])", "", p)
+
+
+def figure_refs(paragraph):
+    """Номери рисунків, згаданих в абзаці: «рис. 3», «рисунку 6», «рис. 3 і 4», «рис. 3–5»."""
+    out = []
+    for m in _FIG_REF.finditer(paragraph):
+        nums = [int(m.group(1))] + [int(n) for n in re.findall(r"\d+", m.group(2) or "")]
+        tail = m.group(2) or ""
+        if len(nums) == 2 and re.search(r"[–—-]", tail) and 0 < nums[1] - nums[0] <= 10:
+            nums = list(range(nums[0], nums[1] + 1))
+        out += [str(n) for n in nums if str(n) not in out]
+    return out
+
+
+def figure_html(fig):
+    return (f'<figure class="lfigure"><img src="{escape(fig.image.url)}" alt="{escape(str(fig))}" '
+            f'loading="lazy"><figcaption>{escape(str(fig))}</figcaption></figure>')
+
+
+def text_with_figures(text, figmap=None, used=None):
+    """Абзаци `<p>` + рисунки одразу після абзацу, де їх уперше згадано.
+
+    figmap: {"3": Figure}; used: спільна множина вже вставлених номерів (на весь урок).
+    Незгадані рисунки не показуються (здебільшого це фото-ілюстрації).
+    """
+    figmap = figmap or {}
+    used = used if used is not None else set()
+    html = []
+    for p in paragraphs(text):
+        html.append(f"<p>{escape(p)}</p>")
+        for n in figure_refs(p):
+            fig = figmap.get(n)
+            if fig is not None and n not in used:
+                used.add(n)
+                html.append(figure_html(fig))
+    return mark_safe("".join(html))
+
+
+@register.filter
+def reflow(text):
+    """Лише абзаци, без рисунків."""
+    return text_with_figures(text)
