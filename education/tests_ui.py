@@ -336,8 +336,10 @@ class GradeMapPageTests(TestCase):
         self.assertIn("education/js/map.js", html)
         self.assertIn("education/css/map.css", html)
         self.assertIn("<title>Мапа 5 класу · Математичний світ</title>", html)
-        for state in ("mapLoading", "mapError", "mapEmpty", "lessonPanel"):
+        for state in ("mapLoading", "mapError", "mapEmpty", "lessonPanel", "mapNodes", "tpl-lesson-panel", "tpl-island-row"):
             self.assertIn(f'id="{state}"', html)
+        # панель підписується на події мапи раніше, ніж мапа їх надсилає
+        self.assertLess(html.index("js/lesson-panel.js"), html.index("js/map.js"))
 
     def test_grade_tab_active_and_links_to_maps(self):
         html = self.client.get("/grades/5/").content.decode()

@@ -129,3 +129,26 @@
   background: var(--ring); color: var(--ink);
   font-size: calc(12px * var(--s, 1)); font-weight: var(--fw-heavy); white-space: nowrap; pointer-events: none;
 }
+
+/* --- Панель уроку (фаза 10) -------------------------------------------------------------- */
+.lesson-panel { display: flex; flex-direction: column; gap: var(--sp-5); }
+.panel-lesson { gap: var(--sp-4); }
+.panel-lesson__section { display: flex; align-items: center; gap: var(--sp-2); color: var(--muted); font-size: var(--fs-13); font-weight: var(--fw-heavy); }
+.panel-lesson__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--acc); flex-shrink: 0; }
+.panel-lesson__title { font-size: var(--fs-22); }
+.panel-lesson__position { color: var(--muted-2); font-size: var(--fs-13); font-weight: var(--fw-bold); }
+.panel-lesson__score { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.panel-lesson__solved { color: var(--muted); font-size: var(--fs-13); font-weight: var(--fw-bold); text-align: right; }
+.panel-lesson__hint { color: var(--muted-2); font-size: var(--fs-12); font-weight: var(--fw-bold); }
+.panel-lesson .btn--secondary { gap: var(--sp-2); }
+
+.panel-islands { border-top: 1px solid var(--line); padding-top: 14px; }
+.panel-islands__list { margin: 0; }
+.score-row__btn {
+  display: flex; flex-direction: column; gap: var(--sp-1); width: 100%;
+  padding: 4px 6px; margin: -4px -6px; border: 0; border-radius: var(--r-sm);
+  background: none; text-align: left; cursor: pointer; box-sizing: content-box;
+}
+.score-row__btn:hover { background: var(--card); }
+.score-row__btn .progress { display: block; }
+.score-row__btn .progress__fill { display: block; }

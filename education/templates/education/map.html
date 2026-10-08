@@ -1,5 +1,5 @@
 {% extends "education/base.html" %}
-{% load static %}
+{% load static ui %}
 {% block title %}Мапа {{ grade.number }} класу{% endblock %}
 {% block body_class %}page-map{% endblock %}
 {% block styles %}<link rel="stylesheet" href="{% static 'education/css/map.css' %}">{% endblock %}
@@ -37,8 +37,63 @@
   </section>
 
   <aside class="lesson-panel" id="lessonPanel" aria-label="Урок">
-    <p class="empty-note">Обери урок на мапі — тут з’явиться, що в ньому і скільки зірок можна здобути.</p>
+    <p class="empty-note" data-panel="hint">Обери урок на мапі — тут з’явиться, що в ньому і скільки зірок можна здобути.</p>
+
+    <section class="panel-islands stack stack--gap-2" data-panel="islands" hidden aria-labelledby="islandsTitle">
+      <h2 class="label-caps" id="islandsTitle" data-f="islands-title">Острови класу</h2>
+      <ul class="panel-islands__list stack stack--gap-2" data-f="islands"></ul>
+    </section>
   </aside>
 </div>
+
+{# Шаблони панелі (заповнює js/lesson-panel.js лише через textContent — без HTML-рядків) #}
+<template id="tpl-lesson-panel">
+  <div class="panel-lesson stack" data-panel="lesson">
+    <header class="stack stack--gap-2">
+      <p class="panel-lesson__section"><span class="panel-lesson__dot" aria-hidden="true"></span><span data-f="section"></span></p>
+      <h1 class="panel-lesson__title" data-f="title" aria-live="polite"></h1>
+      <p class="row row--gap-2"><span class="status" data-f="status"></span><span class="panel-lesson__position" data-f="position"></span></p>
+    </header>
+
+    <div class="card stack stack--gap-3">
+      <div class="panel-lesson__score">
+        <span class="stars stars--gap" role="img" data-f="stars"></span>
+        <span class="panel-lesson__solved" data-f="solved"></span>
+      </div>
+      <div class="progress" role="progressbar" aria-label="Розв’язано завдань" aria-valuemin="0" data-f="progress"><div class="progress__fill"></div></div>
+      <p class="panel-lesson__hint">★ — 30 % завдань · ★★ — 70 % · ★★★ — усі</p>
+    </div>
+
+    <div class="stack stack--gap-3" data-f="tasks">
+      <div class="feature-row">
+        <span class="feature-row__icon feature-row__icon--auto">{% icon "check" size=20 %}</span>
+        <div><div class="feature-row__title" data-f="auto"></div><div class="feature-row__sub">Відповідь звіряється з книгою</div></div>
+      </div>
+      <div class="feature-row" data-f="ai-row">
+        <span class="feature-row__icon feature-row__icon--ai">{% icon "sparkle" size=20 %}</span>
+        <div><div class="feature-row__title" data-f="ai"></div><div class="feature-row__sub">Пишеш розв’язок — ШІ дає підказку, бали ×2</div></div>
+      </div>
+      <div class="row row--gap-2 row--wrap" data-f="blocks"></div>
+    </div>
+    <p class="empty-note" data-f="empty" hidden>Вправи цього уроку ще не імпортовано з підручника. Коли пайплайн їх обробить, тут з’являться завдання.</p>
+
+    <div class="stack stack--gap-2">
+      <div data-f="cta"></div>
+      <a class="btn btn--secondary btn--block" data-f="theory" href="#">{% icon "book" size=18 %}Читати теорію уроку</a>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-island-row">
+  <li class="score-row">
+    <button class="score-row__btn" type="button">
+      <span class="score-row__head"><span class="score-row__label" data-f="label"></span><span class="score-row__score" data-f="score"></span></span>
+      <span class="progress progress--sm" role="progressbar" aria-valuemin="0"><span class="progress__fill"></span></span>
+    </button>
+  </li>
+</template>
 {% endblock %}
-{% block scripts %}<script type="module" src="{% static 'education/js/map.js' %}"></script>{% endblock %}
+{% block scripts %}
+<script type="module" src="{% static 'education/js/lesson-panel.js' %}"></script>
+<script type="module" src="{% static 'education/js/map.js' %}"></script>
+{% endblock %}
