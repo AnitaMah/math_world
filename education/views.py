@@ -186,6 +186,9 @@ def item_list(request, paragraph_id):
 def item_detail(request, item_id):
     lang = _lang(request)
     item = get_object_or_404(Item.objects.select_related("paragraph__section"), pk=item_id)
+    if getattr(settings, "NEW_UI", False):
+        from .views_ui import lesson_page
+        return lesson_page(request, item)
     paragraph = item.paragraph
 
     tp = TheoryPractice.objects.filter(item=item).first()

@@ -13,6 +13,7 @@ ICONS = frozenset({
     "star", "bolt", "flame", "play", "boat", "logo",
     "lock", "map", "chart", "user", "check", "sparkle", "close",
     "chevron-down", "chevron-left", "chevron-right", "book",
+    "chat", "pencil", "repeat", "owl", "scroll",
 })
 
 
@@ -85,3 +86,71 @@ def uk_plural(n, forms):
     if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14:
         return few
     return many
+
+
+# Блоки уроку (фаза 13): людські назви без службових значків з моделі («Самоперевірка (❓)») + іконка
+BLOCKS = {
+    "theory": ("Теорія", "book"),
+    "self_check": ("Перевір себе", "check"),
+    "oral_exercise": ("Розв’язуємо усно", "chat"),
+    "exercise": ("Вправи", "pencil"),
+    "review_exercise": ("Повторення", "repeat"),
+    "wise_owl": ("Задача від Мудрої Сови", "owl"),
+    "history_aside": ("Коли зроблено уроки", "scroll"),
+    "self_test": ("Перевірте себе", "check"),
+    "summary": ("Головне в параграфі", "book"),
+}
+DIFFICULTY = {
+    "preparatory": "Підготовчий", "medium": "Середній", "sufficient": "Достатній",
+    "high": "Високий", "olympiad": "Олімпіадний",
+}
+
+
+@register.filter
+def block_name(block_type):
+    return BLOCKS.get(block_type, (str(block_type), "book"))[0]
+
+
+@register.filter
+def block_icon(block_type):
+    return BLOCKS.get(block_type, ("", "book"))[1]
+
+
+@register.filter
+def difficulty_name(code):
+    """Назва складності без значків («Високий»); невідома чи порожня → ''."""
+    return DIFFICULTY.get(code or "", "")
+
+
+_PARA_END = (".", "!", "?", ":", ";", "»")
+
+
+@register.filter
+def reflow(text):
+    """Склеює рядки, розірвані при парсингу PDF, в абзаци (фаза 13).
+
+    Новий абзац — якщо попередній рядок закінчується розділовим знаком
+    кінця речення або наступний починається з маркера списку / номера.
+    """
+    from django.utils.html import escape
+    from django.utils.safestring import mark_safe
+    import re
+    if not text:
+        return ""
+    paras, cur = [], []
+    for raw in str(text).splitlines():
+        line = raw.strip()
+        if not line:
+            if cur:
+                paras.append(" ".join(cur)); cur = []
+            continue
+        starts_new = bool(re.match(r"^([-–—•»]|\d+[.)]\s)", line))
+        if cur and (starts_new or cur[-1].endswith(_PARA_END)):
+            paras.append(" ".join(cur)); cur = []
+        if cur and cur[-1].endswith("-") and line[:1].islower():
+            cur[-1] = cur[-1][:-1] + line   # перенос слова
+        else:
+            cur.append(line)
+    if cur:
+        paras.append(" ".join(cur))
+    return mark_safe("".join(f"<p>{escape(p)}</p>" for p in paras))

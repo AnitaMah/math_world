@@ -138,3 +138,45 @@ def world_page(request):
     cards = _grade_cards()
     fog_from = (max(c["number"] for c in cards) + 1) if cards else 5
     return render(request, "education/world.html", {"cards": cards, "fog_from": fog_from, "show_fog": fog_from <= 9})
+
+
+def lesson_page(request, item):
+    """`/items/<id>/` у новому UI (фаза 13): теорія й вправи уроку кольором острова.
+
+    Викликається з views.item_detail, коли NEW_UI увімкнено. Відповіді й позначки «перевірити» —
+    лише для персоналу (is_staff): діти бачать умови, а не відповіді.
+    """
+    from .models import Paragraph
+    from .services import playable_counts
+    from .views import _blocks_context, _item_title
+
+    paragraph = item.paragraph
+    section = paragraph.section
+    grade = section.grade
+    order = list(Paragraph.objects.filter(section__grade=grade)
+                 .order_by("section__number", "number").values_list("id", flat=True))
+    isl = (order.index(paragraph.id) % 5) + 1 if paragraph.id in order else 1
+
+    stars = 0
+    from .game import get_player
+    player = get_player(request, create=False)
+    if player is not None:
+        prog = player.progress.filter(item=item).first()
+        stars = prog.stars if prog else 0
+
+    playable = playable_counts([item]).get(item.id, 0)
+    import re
+    return render(request, "education/lesson.html", {
+        "item": item,
+        "title": re.sub(r"^\s*\d+\.\s*", "", _item_title(item, "uk")),
+        "paragraph": paragraph,
+        "paragraph_title": re.sub(r"^§\s*\d+\.\s*", "", paragraph.name_uk),
+        "section": section,
+        "grade": grade,
+        "current_grade": grade.number,
+        "isl": isl,
+        "stars": stars,
+        "playable": playable,
+        "blocks": _blocks_context(item),
+        "staff": request.user.is_staff,
+    })
