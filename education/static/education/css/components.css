@@ -129,3 +129,10 @@ a.btn:hover { color: inherit; }
 }
 .score-row__label { color: var(--text-2); min-width: 0; }
 .score-row__score { color: var(--muted-2); white-space: nowrap; }
+
+/* --- Бейдж рівня складності (теорія, гра — фаза 14) ------------------------------------- */
+.diff { display: inline-block; padding: 2px 9px; border-radius: var(--r-pill); font-size: var(--fs-12); font-weight: var(--fw-heavy); background: var(--neutral-bg); color: var(--text-2); }
+.diff--preparatory, .diff--medium { color: var(--info); }
+.diff--sufficient { color: var(--isl-5-acc); }
+.diff--high { color: var(--isl-3-acc); }
+.diff--olympiad { color: var(--isl-4-acc); }

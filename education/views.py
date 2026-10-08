@@ -219,6 +219,9 @@ def item_detail(request, item_id):
 def play_lesson(request, kind, pk):
     from django.urls import reverse
     lesson = get_object_or_404(Item if kind == "item" else Paragraph, pk=pk)
+    if getattr(settings, "NEW_UI", False):
+        from .views_ui import play_page
+        return play_page(request, kind, lesson)
     if kind == "item":
         title, back = _item_title(lesson, "uk"), reverse("item_detail", args=[lesson.pk])
         api_url = reverse("api_play_item", args=[lesson.pk])

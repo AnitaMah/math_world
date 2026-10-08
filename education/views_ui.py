@@ -171,9 +171,7 @@ def lesson_page(request, item):
     paragraph = item.paragraph
     section = paragraph.section
     grade = section.grade
-    order = list(Paragraph.objects.filter(section__grade=grade)
-                 .order_by("section__number", "number").values_list("id", flat=True))
-    isl = (order.index(paragraph.id) % 5) + 1 if paragraph.id in order else 1
+    isl = _island_of(paragraph)
 
     stars = 0
     from .game import get_player
@@ -199,4 +197,79 @@ def lesson_page(request, item):
         "playable": playable,
         "blocks": blocks,
         "staff": request.user.is_staff,
+    })
+
+
+# --------------------------------------------------------------------------- гра (фаза 14)
+
+def _island_of(paragraph):
+    """Колір острова параграфа: isl-1..5 за його порядком у класі (як на мапі)."""
+    from .models import Paragraph
+    order = list(Paragraph.objects.filter(section__grade=paragraph.section.grade)
+                 .order_by("section__number", "number").values_list("id", flat=True))
+    return (order.index(paragraph.id) % 5) + 1 if paragraph.id in order else 1
+
+
+def _grade_lessons(grade):
+    """Уроки класу в порядку мапи: пункти параграфа, або сам § (kind="paragraph"), якщо пунктів немає."""
+    from django.db.models import Prefetch
+    from .models import Item, Paragraph
+    pars = (Paragraph.objects.filter(section__grade=grade).order_by("section__number", "number")
+            .prefetch_related(Prefetch("item_set", queryset=Item.objects.order_by("number"))))
+    lessons = []
+    for p in pars:
+        items = list(p.item_set.all())
+        lessons += [("item", i) for i in items] if items else [("paragraph", p)]
+    return lessons
+
+
+def _lesson_ref(kind, obj):
+    return f"lesson-{'p' if kind == 'paragraph' else ''}{obj.pk}"
+
+
+def _next_lesson_url(grade, kind, lesson):
+    """Наступний урок класу, у якому є ігрові завдання (кнопка «Наступний урок» на фіналі)."""
+    from django.urls import reverse
+    from .services import playable_counts
+    lessons = _grade_lessons(grade)
+    keys = [(k, o.pk) for k, o in lessons]
+    if (kind, lesson.pk) not in keys:
+        return ""
+    rest = lessons[keys.index((kind, lesson.pk)) + 1:]
+    counts = {"item": playable_counts([o for k, o in rest if k == "item"]),
+              "paragraph": playable_counts([o for k, o in rest if k == "paragraph"])}
+    for k, o in rest:
+        if counts[k].get(o.pk):
+            return reverse("play_item" if k == "item" else "play_paragraph", args=[o.pk])
+    return ""
+
+
+def play_page(request, kind, lesson):
+    """`/play/item|paragraph/<id>/` у новому UI (фаза 14): повноекранна гра кольором острова.
+
+    Завдання, перевірку й прогрес фронтенд бере з /api/play/… (бекенд не змінюємо).
+    Вихід ✕ і «На мапу» ведуть на мапу класу з цим уроком (#lesson-<id>).
+    """
+    import re
+    from django.urls import reverse
+    from .views import _item_title
+
+    paragraph = lesson.paragraph if kind == "item" else lesson
+    grade = paragraph.section.grade
+    if kind == "item":
+        title = re.sub(r"^\s*\d+\.\s*", "", _item_title(lesson, "uk"))
+        label = f"Урок {lesson.number} · {title}"
+        api_url = reverse("api_play_item", args=[lesson.pk])
+        theory_url = reverse("item_detail", args=[lesson.pk])
+    else:
+        title = re.sub(r"^§\s*\d+\.\s*", "", paragraph.name_uk)
+        label = f"§{paragraph.number} · {title}"
+        api_url = reverse("api_play_paragraph", args=[lesson.pk])
+        theory_url = reverse("item_list", args=[lesson.pk])
+    map_url = reverse("grade_map_page", args=[grade.number]) + "#" + _lesson_ref(kind, lesson)
+    return render(request, "education/play_v2.html", {
+        "title": title, "label": label, "kind": kind, "lesson": lesson,
+        "isl": _island_of(paragraph), "grade": grade, "current_grade": grade.number,
+        "api_url": api_url, "map_url": map_url, "theory_url": theory_url,
+        "next_url": _next_lesson_url(grade, kind, lesson),
     })

@@ -13,7 +13,7 @@
     <li class="lex" id="ex-{{ ex.id }}">
       <div class="lex__head">
         <span class="lex__num">{{ ex.number }}</span>
-        {% with d=ex.difficulty|difficulty_name %}{% if d %}<span class="lex__diff lex__diff--{{ ex.difficulty }}">{{ d }}</span>{% endif %}{% endwith %}
+        {% with d=ex.difficulty|difficulty_name %}{% if d %}<span class="diff diff--{{ ex.difficulty }}">{{ d }}</span>{% endif %}{% endwith %}
         {% if ex.homework %}<span class="tag">домашнє</span>{% endif %}
         {% if staff and ex.needs_review %}<span class="tag lblock__review">перевірити</span>{% endif %}
       </div>

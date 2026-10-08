@@ -71,15 +71,44 @@ export const api = {
     return mockFile(`grade-${n}${variant}.json`);
   },
   play(kind, id) {
+    if (mockMode()) return mockFile(new URLSearchParams(globalThis.location?.search ?? "").get("mock_play") === "empty" ? "play.empty.json" : "play.json");
     return getJSON(`/api/play/${kind === "paragraph" ? "paragraphs" : "items"}/${id}/`);
   },
   check(subId, answer) {
+    if (mockMode()) return mockCheck(subId, answer);
     return postJSON(`/api/subexercises/${subId}/check/`, { answer });
   },
   solution(exId, solution) {
+    if (mockMode()) return mockSolution(exId, solution);
     return postJSON(`/api/exercises/${exId}/solution/`, { solution });
   },
 };
+
+// --- Моки перевірки (лише ?mock=…; правильні відповіді — у play.json._mock_answers) ------
+
+let mockPoints = 40;
+
+async function mockCheck(subId, answer) {
+  const { data } = await mockFile("play.json");
+  const correct = String(data._mock_answers?.[subId] ?? "").replace(",", ".") === String(answer).trim().replace(",", ".");
+  const task = data.tasks.find((t) => t.sub?.id === subId);
+  const points = correct ? task?.points ?? 1 : 0;
+  mockPoints += points;
+  return { ok: true, status: 200, data: { subexercise: subId, correct, points, already_solved: false,
+    total_points: mockPoints, streak: 3, progress: { solved: 2, total: 4, points: 7, stars: correct ? 2 : 1 } } };
+}
+
+async function mockSolution(exId, solution) {
+  if (new URLSearchParams(globalThis.location?.search ?? "").get("mock_ai") === "off") {
+    return { ok: false, status: 503, data: { error: "ai_unavailable", detail: "Перевірка ШІ не налаштована" } };
+  }
+  const correct = /16/.test(solution) && /9/.test(solution);
+  mockPoints += correct ? 5 : 0;
+  return { ok: true, status: 200, data: { exercise: exId, correct, verdict: correct ? "correct" : "wrong",
+    feedback: correct ? "Усе вірно: MK = 16 см, KN = 9 см." : "Склади рівняння: x + (x + 7) = 25.",
+    points: correct ? 5 : 0, already_solved: false, total_points: mockPoints, streak: 3,
+    progress: { solved: 4, total: 4, points: 12, stars: correct ? 3 : 2 } } };
+}
 
 // --- Фолбеки, поки бекенд не віддає всіх полів контракту -------------------------------
 

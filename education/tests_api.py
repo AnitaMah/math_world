@@ -77,6 +77,7 @@ class CheckServiceTests(LessonFixture):
 
 
 class PageTests(LessonFixture):
+    @override_settings(NEW_UI=False)   # стара сторінка пункту; нова — tests_ui.LessonPageTests
     def test_item_detail_shows_exercise(self):
         resp = self.client.get(reverse("item_detail", args=[self.item.pk]))
         self.assertEqual(resp.status_code, 200)

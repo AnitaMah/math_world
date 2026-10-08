@@ -43,11 +43,6 @@
 .lex:first-child { border-top: 0; padding-top: 0; }
 .lex__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-2); }
 .lex__num { font: var(--fw-bold) var(--fs-15) / 1 var(--font-display); color: var(--acc); }
-.lex__diff { padding: 2px 9px; border-radius: var(--r-pill); font-size: var(--fs-12); font-weight: var(--fw-heavy); background: var(--neutral-bg); }
-.lex__diff--preparatory, .lex__diff--medium { color: var(--info); }
-.lex__diff--sufficient { color: var(--isl-5-acc); }
-.lex__diff--high { color: var(--isl-3-acc); }
-.lex__diff--olympiad { color: var(--isl-4-acc); }
 .lex__cond { font-size: 16px; line-height: 1.55; }
 .lex__subs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px var(--sp-4); }
 .lex__sub { font-size: var(--fs-15); color: var(--text-2); }
