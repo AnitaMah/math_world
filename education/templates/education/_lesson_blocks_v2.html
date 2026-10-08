@@ -1,4 +1,4 @@
-{% load ui %}{# Блоки уроку в новому UI (фаза 13). Дані — views._blocks_context. Відповіді — лише staff. #}
+{% load ui %}{# Блоки уроку в новому UI (фаза 13). Дані — views._blocks_context. Відповіді — лише staff. Рисунки блоків (теорії) поки приховані — лише текст. #}
 {% for b in blocks %}{% with block=b.obj %}
 <section class="lblock lblock--{{ block.block_type }}" aria-labelledby="block-{{ block.id }}">
   <h2 class="lblock__title" id="block-{{ block.id }}">
@@ -6,9 +6,6 @@
     {% if staff and block.needs_review %}<span class="tag lblock__review">перевірити</span>{% endif %}
   </h2>
   {% if block.text %}<div class="lblock__text">{{ block.text|reflow }}</div>{% endif %}
-  {% for fig in b.figures %}{% if fig.image %}
-    <figure class="lfigure"><img src="{{ fig.image.url }}" alt="{{ fig }}" loading="lazy"><figcaption>{{ fig }}</figcaption></figure>
-  {% endif %}{% endfor %}
 
   {% if b.exercises %}
   <ol class="lex-list">
