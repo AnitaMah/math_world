@@ -2,11 +2,14 @@
 // Вузли уроків — фаза 9, панель уроку — фаза 10, телефон — фаза 11.
 import { api, normalizeMap } from "./api.js";
 import { layoutGrade } from "./map-layout.js";
+import { renderNodes, fogRegions, initialIndex } from "./map-nodes.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const stage = document.getElementById("mapStage");
 const canvas = document.getElementById("mapCanvas");
 const sea = document.getElementById("sea");
+const nodesLayer = document.getElementById("mapNodes");
+const fogHint = document.getElementById("fogHint");
 const show = (id) => {
   for (const el of ["mapLoading", "mapError", "mapEmpty"]) document.getElementById(el).hidden = el !== id;
   canvas.hidden = id !== null;
@@ -28,7 +31,7 @@ const ICONS = {
   equation: `<text class="sea__icon-text" font-size="34" font-style="italic">x</text>`,
 };
 
-export function renderSea(map, L) {
+export function renderSea(map, L, fog = []) {
   const parts = [`<title id="seaTitle">Мапа ${esc(map.grade)} класу: острови-розділи і стежки уроків</title>`];
   parts.push(`<defs>${L.islands.map((i) => `<clipPath id="isl-clip-${i.sectionIdx}"><path d="${i.d}"/></clipPath>`).join("")}</defs>`);
   // 1–2. вода
@@ -44,6 +47,8 @@ export function renderSea(map, L) {
   parts.push(`<g aria-hidden="true">${L.routes.map((r) => `<path class="sea__route" d="${r.d}"/>`).join("")}`
     + `${L.connectors.map((c) => `<path class="${c.kind === "boat" ? "sea__boat-route" : "sea__route"}" d="${c.d}"/>`).join("")}`
     + `${L.connectors.filter((c) => c.boat).map((c) => `<use class="sea__boat" href="#i-boat" x="${c.boat.x - 16}" y="${c.boat.y - 18}" width="32" height="32"/>`).join("")}</g>`);
+  // 9. хмари над параграфами, яких ще немає в БД
+  parts.push(`<g aria-hidden="true">${fog.map((r) => `<path class="sea__fog" d="${r.d}"/>`).join("")}</g>`);
   // чіпи параграфів / розділів
   parts.push(`<g class="sea__chips">${L.chips.map((c) => {
     const isl = c.isl ? `isl-${c.isl}` : "";
@@ -83,11 +88,24 @@ async function load() {
   const L = layoutGrade(map);
   sea.setAttribute("viewBox", L.viewBox);
   canvas.style.setProperty("--ar", (L.width / L.height).toFixed(4));
-  sea.innerHTML = renderSea(map, L);
+  const { fog, biggest } = fogRegions(map, L);
+  sea.innerHTML = renderSea(map, L, fog);
+  // підказка — одна на мапу, у центрі найбільшої хмари
+  fogHint.hidden = !biggest;
+  if (biggest) {
+    fogHint.style.setProperty("--x", `${((biggest.cx / L.width) * 100).toFixed(3)}%`);
+    fogHint.style.setProperty("--y", `${((biggest.cy / L.height) * 100).toFixed(3)}%`);
+  }
+  // масштаб вузлів = ширина полотна / ширина viewBox
+  new ResizeObserver(() => canvas.style.setProperty("--s", (canvas.clientWidth / L.width).toFixed(4))).observe(canvas);
+  const nodes = renderNodes(nodesLayer, map, L, {
+    onSelect: (i, lesson) => stage.dispatchEvent(new CustomEvent("lesson:select", { detail: { index: i, lesson, map } })),
+  });
   show(null);
   await document.fonts.ready;
   fitChips();
-  stage.dispatchEvent(new CustomEvent("map:ready", { detail: { map, layout: L } }));
+  nodes.select(initialIndex(map.lessons, location.hash), { push: false });
+  stage.dispatchEvent(new CustomEvent("map:ready", { detail: { map, layout: L, nodes } }));
 }
 
 document.getElementById("mapRetry").addEventListener("click", load);
