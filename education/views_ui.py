@@ -99,3 +99,11 @@ def ui_api(request):
     """`/ui/api/` — відповіді API-клієнта й normalizeMap() (реальний бекенд або ?mock=1)."""
     _debug_only()
     return render(request, "education/ui_api.html")
+
+
+def grade_map_page(request, number):
+    """`/grades/<n>/` — мапа-архіпелаг класу (фаза 8). Дані малює js/map.js з /api/grades/<n>/map/."""
+    from django.shortcuts import get_object_or_404
+    from .models import Grade
+    grade = get_object_or_404(Grade, number=number, subject__code="math")
+    return render(request, "education/map.html", {"grade": grade, "current_grade": grade.number})

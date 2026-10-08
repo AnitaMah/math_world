@@ -1,0 +1,42 @@
+{% extends "education/base.html" %}
+{% load static %}
+{% block title %}Мапа {{ grade.number }} класу{% endblock %}
+{% block body_class %}page-map{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'education/css/map.css' %}">{% endblock %}
+{% block content %}
+<div class="map-layout">
+  <section class="map-stage" id="mapStage" aria-label="Мапа {{ grade.number }} класу" data-grade="{{ grade.number }}">
+    <div class="map-canvas" id="mapCanvas" hidden>
+      <svg class="sea" id="sea" role="img" aria-labelledby="seaTitle">
+        <title id="seaTitle">Мапа {{ grade.number }} класу: острови-розділи і стежки уроків</title>
+      </svg>
+    </div>
+
+    <div class="map-status" id="mapLoading" role="status">
+      <div class="map-skeleton" aria-hidden="true"><span></span><span></span></div>
+      <span class="visually-hidden">Завантажуємо мапу…</span>
+    </div>
+
+    <div class="map-status" id="mapError" hidden>
+      <div class="card stack stack--gap-3 map-message">
+        <h1 class="map-message__title">Не вдалося завантажити мапу</h1>
+        <p class="muted" id="mapErrorText">Перевір з’єднання і спробуй ще раз.</p>
+        <button class="btn btn--primary" type="button" id="mapRetry">Спробувати ще раз</button>
+      </div>
+    </div>
+
+    <div class="map-status" id="mapEmpty" hidden>
+      <div class="card card--dashed stack stack--gap-3 map-message">
+        <h1 class="map-message__title">Мапа {{ grade.number }} класу ще будується</h1>
+        <p class="muted">Розділи цього підручника ще не імпортовано. Загляни трохи згодом.</p>
+        <a class="btn btn--secondary" href="{% url 'home' %}">Обрати інший клас</a>
+      </div>
+    </div>
+  </section>
+
+  <aside class="lesson-panel" id="lessonPanel" aria-label="Урок">
+    <p class="empty-note">Обери урок на мапі — тут з’явиться, що в ньому і скільки зірок можна здобути.</p>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'education/js/map.js' %}"></script>{% endblock %}

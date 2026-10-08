@@ -21,6 +21,7 @@ urlpatterns = [
     path("api/", include("education.api_urls")),
     path("admin/", admin.site.urls),
     # Новий UI: вкладки нижньої навігації (поки заглушки)
+    path("grades/<int:number>/", views_ui.grade_map_page, name="grade_map_page"),
     path("progress/", views_ui.progress_page, name="progress"),
     path("profile/", views_ui.profile_page, name="profile"),
     # Службові сторінки нового UI (лише DEBUG, інакше 404)

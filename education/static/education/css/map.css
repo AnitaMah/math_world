@@ -1,0 +1,71 @@
+/* Мапа класу (фаза 8): океан, острови, ділянки, стежки, чіпи. Вузли — фаза 9, панель — фаза 10.
+   Уся мапа — один SVG з viewBox, тому масштабується разом із чіпами. Лише токени. */
+
+.page-map main { padding: 0; }
+
+.map-layout { display: flex; height: calc(100dvh - var(--topbar-h)); min-height: 480px; }
+
+.map-stage {
+  position: relative; flex: 1; min-width: 0;
+  display: grid; place-items: center; padding: var(--sp-3);
+  container-type: size;
+  background: radial-gradient(ellipse at 45% 40%, var(--bg-sea-1) 0%, var(--bg-sea-2) 70%);
+  overflow: hidden;
+}
+/* Полотно зберігає пропорції viewBox (--ar = ширина / висота) і вписується в сцену */
+.map-canvas {
+  position: relative;
+  width: min(100cqw - 2 * var(--sp-3), (100cqh - 2 * var(--sp-3)) * var(--ar, 1.317));
+  aspect-ratio: var(--ar, 1.317);
+}
+.sea { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+
+.lesson-panel {
+  flex-shrink: 0; width: var(--panel-w);
+  background: var(--surface-2); border-left: 1px solid var(--line);
+  padding: 22px; overflow-y: auto;
+}
+@media (max-width: 1100px) { .lesson-panel { width: 320px; } }
+
+/* --- Шари SVG ------------------------------------------------------------------------ */
+.sea__wave { fill: none; stroke: var(--wave); stroke-width: 2; stroke-linecap: round; }
+.sea__speck { fill: var(--speck); }
+.sea__shallow { fill: none; stroke: var(--shallow); stroke-width: 26; }
+.sea__rim { fill: var(--rim); stroke: var(--rim-stroke); stroke-width: 2; }
+.sea__land { fill: var(--land); }
+.sea__icon { fill: none; stroke: var(--acc); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; opacity: .55; }
+.sea__icon-fill { fill: var(--acc); opacity: .35; stroke: none; }
+.sea__icon-text { fill: var(--acc); opacity: .5; stroke: none; font-family: var(--font-display); font-weight: var(--fw-bold); text-anchor: middle; dominant-baseline: central; }
+.sea__route { fill: none; stroke: var(--route); stroke-width: 3; stroke-dasharray: 1 9; stroke-linecap: round; }
+.sea__boat-route { fill: none; stroke: var(--boat-route); stroke-width: 2.5; stroke-dasharray: 6 7; stroke-linecap: round; }
+.sea__boat { color: var(--boat); }
+
+/* Чіпи параграфів — теж у SVG, щоб масштабувались разом із мапою */
+.sea__chip-bg { fill: var(--surface); stroke: var(--line-3); stroke-width: 1; }
+.sea__chip-badge { fill: var(--acc); }
+.sea__chip-badge--section { fill: var(--card-2); stroke: var(--line-strong); }
+.sea__chip-badge-text { fill: var(--ink); font: var(--fw-bold) 11px var(--font-display); dominant-baseline: central; }
+.sea__chip-badge--section + .sea__chip-badge-text { fill: var(--text); }
+.sea__chip-text { fill: var(--text); font: var(--fw-heavy) 13px var(--font-body); dominant-baseline: central; }
+
+/* --- Стани: завантаження, помилка, порожньо ---------------------------------------------- */
+.map-status { position: absolute; inset: 0; display: grid; place-items: center; padding: var(--sp-6); }
+.map-status[hidden] { display: none; }
+.map-message { max-width: 420px; text-align: center; align-items: center; }
+.map-message__title { font-size: var(--fs-20); }
+
+.map-skeleton { position: relative; width: min(80%, 720px); aspect-ratio: 1.6; }
+.map-skeleton span {
+  position: absolute; background: var(--rim); border-radius: 46% 54% 50% 50% / 52% 46% 54% 48%;
+  animation: map-skeleton 1.6s ease-in-out infinite alternate;
+}
+.map-skeleton span:first-child { left: 0; top: 4%; width: 58%; height: 92%; }
+.map-skeleton span:last-child { right: 0; top: 10%; width: 34%; height: 84%; animation-delay: .4s; }
+@keyframes map-skeleton { from { opacity: .35; } to { opacity: .8; } }
+
+/* --- Телефон: поки вся мапа в масштабі; один острів і нижній лист — фаза 11 ------------- */
+@media (max-width: 720px) {
+  .map-layout { height: calc(100dvh - var(--topbar-h-mobile) - var(--bottom-nav-h)); }
+  .page-map main { padding-bottom: 0 !important; }
+  .lesson-panel { display: none; }
+}

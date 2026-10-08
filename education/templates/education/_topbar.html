@@ -6,8 +6,8 @@
 
   {% if grades %}
   <nav class="topbar__grades" aria-label="Клас">
-    {% for g in grades %}{# TODO(FE-фаза-8): href → /grades/<n>/ (мапа класу) #}
-      <a class="btn btn--sm topbar__grade{% if g.active %} is-active{% endif %}" href="{% url 'home' %}#grade-{{ g.number }}"{% if g.active %} aria-current="page"{% endif %}>{{ g.label }}</a>
+    {% for g in grades %}
+      <a class="btn btn--sm topbar__grade{% if g.active %} is-active{% endif %}" href="{% url 'grade_map_page' g.number %}"{% if g.active %} aria-current="page"{% endif %}>{{ g.label }}</a>
     {% endfor %}
   </nav>
   {% endif %}
