@@ -70,3 +70,18 @@ def topbar(context):
         "csrf_token": context.get("csrf_token"),
         "next_path": request.get_full_path() if request else "/",
     }
+
+
+@register.filter
+def uk_plural(n, forms):
+    """``{{ n|uk_plural:"острів,острови,островів" }}`` → форма слова для n (без самого числа)."""
+    one, few, many = [f.strip() for f in str(forms).split(",")]
+    try:
+        n = abs(int(n))
+    except (TypeError, ValueError):
+        return many
+    if n % 10 == 1 and n % 100 != 11:
+        return one
+    if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14:
+        return few
+    return many

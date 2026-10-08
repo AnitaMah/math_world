@@ -107,3 +107,34 @@ def grade_map_page(request, number):
     from .models import Grade
     grade = get_object_or_404(Grade, number=number, subject__code="math")
     return render(request, "education/map.html", {"grade": grade, "current_grade": grade.number})
+
+
+def _grade_cards():
+    """Картки класів для екрана «Світ»: дані з БД (кількість островів і уроків, автор)."""
+    from .models import Grade, Item, Paragraph
+    from .templatetags.ui import _short_author
+    cards = []
+    for g in Grade.objects.filter(subject__code="math").order_by("number").prefetch_related("textbooks"):
+        tb = next((t for t in g.textbooks.all()), None)
+        sections = g.section_set.count()
+        items = Item.objects.filter(paragraph__section__grade=g).count()
+        paragraphs = Paragraph.objects.filter(section__grade=g).count()
+        cards.append({
+            "number": g.number,
+            "author": _short_author(tb) if tb else "",
+            "year": tb.year if tb else None,
+            "sections": sections,
+            "lessons": items or paragraphs,       # урок = пункт (Мерзляк) або § (Тарасенкова)
+            "lesson_is_paragraph": not items,
+        })
+    return cards
+
+
+def world_page(request):
+    """`/` — «Світ»: вибір класу (фаза 12). Старий список класів — при NEW_UI=0."""
+    if not getattr(settings, "NEW_UI", False):
+        from .views import grade_list
+        return grade_list(request)
+    cards = _grade_cards()
+    fog_from = (max(c["number"] for c in cards) + 1) if cards else 5
+    return render(request, "education/world.html", {"cards": cards, "fog_from": fog_from, "show_fog": fog_from <= 9})

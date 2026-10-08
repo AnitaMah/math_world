@@ -1,0 +1,47 @@
+{% extends "education/base.html" %}
+{% load static ui %}
+{% block title %}Обери свій світ{% endblock %}
+{% block body_class %}page-world{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'education/css/world.css' %}">{% endblock %}
+{% block content %}
+<div class="page world">
+  <header class="world__head">
+    <div class="stack stack--gap-2">
+      <h1 class="world__title">Обери свій світ</h1>
+      <p class="world__lead">Кожен клас — окремий архіпелаг. Острів — розділ підручника, стежка — його уроки.</p>
+    </div>
+    <nav class="topbar__grades world__subjects" aria-label="Предмет">
+      <span class="btn btn--sm topbar__grade is-active" aria-current="page">Математика</span>
+      <span class="btn btn--sm topbar__grade world__soon" aria-disabled="true">Українська мова · скоро</span>
+    </nav>
+  </header>
+
+  <ul class="world__grid">
+    {% for c in cards %}
+    <li class="world-grade" data-grade="{{ c.number }}" data-lessons="{{ c.lessons }}">
+      <div class="world-grade__map" aria-hidden="true"><svg class="world-grade__svg" data-f="mini"></svg></div>
+      <a class="card world-grade__card" href="{% url 'grade_map_page' c.number %}" data-f="card">
+        <span class="world-grade__row">
+          <span class="world-grade__name">{{ c.number }} клас</span>
+          <span class="world-grade__stars" data-f="stars-chip" hidden>{% icon "star" size=16 %}<span data-f="stars">0</span>&nbsp;/&nbsp;<span data-f="max">{{ c.lessons|add:c.lessons|add:c.lessons }}</span></span>
+          <span class="status status--soon" data-f="building" hidden>Мапа будується</span>
+        </span>
+        <span class="world-grade__meta">{% if c.author %}{{ c.author }}{% if c.year %}, {{ c.year }}{% endif %} · {% endif %}{{ c.sections }} {{ c.sections|uk_plural:"острів,острови,островів" }} · {{ c.lessons }} {% if c.lesson_is_paragraph %}{{ c.lessons|uk_plural:"параграф,параграфи,параграфів" }}{% else %}{{ c.lessons|uk_plural:"урок,уроки,уроків" }}{% endif %}</span>
+        <span class="world-grade__cta" data-f="cta">Відкрити мапу</span>
+        <span class="world-grade__note" data-f="note" hidden>Розділи вже на мапі, стежки з уроками з’являться після імпорту.</span>
+      </a>
+    </li>
+    {% endfor %}
+    {% if show_fog %}
+    <li class="world-grade world-grade--fog">
+      <div class="world-grade__map world-grade__fog" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="card card--dashed world-grade__card">
+        <span class="world-grade__name">{% if fog_from < 9 %}{{ fog_from }}–9{% else %}9{% endif %} клас</span>
+        <span class="world-grade__meta">Ще в тумані. Додамо, коли буде підручник.</span>
+      </div>
+    </li>
+    {% endif %}
+  </ul>
+</div>
+{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'education/js/world.js' %}"></script>{% endblock %}

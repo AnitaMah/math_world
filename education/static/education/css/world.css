@@ -1,0 +1,53 @@
+/* «Світ» — вибір класу (фаза 12). Лише токени. */
+.page-world main { background: radial-gradient(ellipse at 40% 45%, var(--bg-sea-1) 0%, var(--bg-sea-2) 75%); min-height: calc(100dvh - var(--topbar-h)); }
+.world { display: flex; flex-direction: column; gap: var(--sp-8); }
+.world__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: var(--sp-6); }
+.world__title { font-size: var(--fs-32); line-height: var(--lh-tight); }
+.world__lead { color: var(--muted); font-size: 16px; max-width: 620px; }
+.world__subjects { align-self: flex-start; }
+.world__soon { cursor: default; color: var(--muted-2); }
+.world__soon:hover { background: none; color: var(--muted-2); }
+
+.world__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: var(--sp-6); margin: 0; }
+.world-grade { display: flex; flex-direction: column; gap: var(--sp-4); }
+.world-grade__map { position: relative; aspect-ratio: 1.32; }
+.world-grade__svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.world-grade__card { text-decoration: none; display: flex; flex-direction: column; gap: var(--sp-2); padding: var(--sp-4) 18px; color: var(--text); border-radius: 18px; }
+a.world-grade__card:hover { color: var(--text); border-color: var(--line-strong); }
+.world-grade__row { display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3); }
+.world-grade__name { font: var(--fw-bold) var(--fs-20) / 1.2 var(--font-display); }
+.world-grade__stars { display: inline-flex; align-items: center; gap: 4px; font-weight: var(--fw-heavy); font-size: var(--fs-14); }
+.world-grade__stars[hidden] { display: none; }
+.world-grade__meta { color: var(--muted); font-size: var(--fs-14); font-weight: var(--fw-bold); }
+.world-grade__cta {
+  align-self: flex-start; padding: 7px 14px; border-radius: var(--r-sm);
+  background: var(--isl-1-acc); color: var(--ink); font-size: var(--fs-14); font-weight: var(--fw-heavy);
+}
+.world-grade__cta[hidden], .world-grade__note[hidden] { display: none; }
+.world-grade__note { color: var(--muted-2); font-size: var(--fs-13); font-weight: var(--fw-bold); }
+.world-grade.is-building .world-grade__card { border-style: dashed; border-color: var(--line-strong); }
+
+/* мініатюра */
+.mini__land { fill: var(--land); }
+.mini__rim { fill: var(--rim); stroke: var(--rim-stroke); stroke-width: 4; }
+.mini__rim--building { stroke-dasharray: 10 18; stroke-linecap: round; }
+.mini__num { fill: var(--muted-2); font: var(--fw-bold) 54px var(--font-display); text-anchor: middle; dominant-baseline: central; }
+.mini__dot { fill: var(--star-off); }
+.mini__dot--done { fill: var(--acc); }
+.mini__dot--current { fill: var(--ring); }
+
+/* 7–9 клас у тумані */
+.world-grade__fog { position: relative; }
+.world-grade__fog span { position: absolute; border-radius: 50%; background: var(--fog); opacity: .5; }
+.world-grade__fog span:nth-child(1) { width: 46%; height: 52%; left: 8%; top: 22%; }
+.world-grade__fog span:nth-child(2) { width: 52%; height: 60%; left: 30%; top: 8%; }
+.world-grade__fog span:nth-child(3) { width: 44%; height: 50%; left: 48%; top: 34%; }
+.world-grade__fog span:nth-child(4) { width: 30%; height: 34%; left: 22%; top: 52%; }
+.world-grade--fog .world-grade__card { color: var(--muted-2); }
+.world-grade--fog .world-grade__name { color: var(--muted); }
+
+@media (max-width: 720px) {
+  .page-world main { min-height: calc(100dvh - var(--topbar-h-mobile)); }
+  .world__title { font-size: var(--fs-26); }
+  .world-grade__map { aspect-ratio: 1.6; }
+}

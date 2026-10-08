@@ -8,7 +8,7 @@ from education import views_ui
 
 
 urlpatterns = [
-    path('', education_views.grade_list, name='home'),  # ← додай цей рядок
+    path("", views_ui.world_page, name="home"),   # «Світ» (новий UI); при NEW_UI=0 — старий список
     path("grades/", education_views.grade_list, name="grade_list"),
     path("grades/<int:grade_id>/sections/", education_views.section_list, name="section_list"),
     path("sections/<int:section_id>/paragraphs/", education_views.paragraph_list, name="paragraph_list"),

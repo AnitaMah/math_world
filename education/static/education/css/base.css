@@ -6,6 +6,8 @@
 body, h1, h2, h3, p, ul, ol, figure, blockquote, dl, dd { margin: 0; }
 ul[class], ol[class] { padding: 0; list-style: none; }
 img, svg { display: block; max-width: 100%; }
+/* `hidden` має перемагати display компонентів (.status, .btn, .chip…) — інакше прихований елемент видно */
+[hidden] { display: none !important; }
 button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
 
