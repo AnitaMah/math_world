@@ -1,0 +1,7 @@
+<div class="field{% if field.errors %} field--error{% endif %}">
+  <label class="field__label" for="{{ fid }}">{{ field.label }}</label>
+  {{ widget }}
+  {% if field.errors %}<p class="field__error" id="{{ fid }}-err">{% for e in field.errors %}{{ e }}{% if not forloop.last %} {% endif %}{% endfor %}</p>{% endif %}
+  {% if hint %}<p class="field__hint" id="{{ fid }}-hint">{{ hint }}</p>{% endif %}
+  {% if rules %}<details class="field__rules"><summary>Вимоги до пароля</summary>{{ rules }}</details>{% endif %}
+</div>

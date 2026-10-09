@@ -213,3 +213,34 @@ def text_with_figures(text, figmap=None, used=None):
 def reflow(text):
     """Лише абзаци, без рисунків."""
     return text_with_figures(text)
+
+
+# --------------------------------------------------------------------------- вхід і реєстрація (фаза 15)
+
+AUTH_HINTS = {   # дружніші за стандартні help_text Django
+    "username": "Літери, цифри та символи @ . + - _ — до 150 знаків.",
+    "password2": "Введи той самий пароль ще раз.",
+}
+
+
+@register.inclusion_tag("registration/_field.html")
+def auth_field(field, hints=True):
+    """Поле форми входу/реєстрації: label над полем, підказка, помилки з aria-describedby.
+
+    Віджет рендерить Django (`as_widget`) — тож лишаються autocomplete, maxlength, required і
+    пароль не повертається у value. Вимоги до пароля (HTML-список валідаторів) — у <details>.
+    """
+    fid = field.id_for_label or f"id_{field.html_name}"
+    help_html = str(field.help_text or "")
+    rules = help_html if hints and help_html.lstrip().startswith("<ul") else ""
+    hint = (AUTH_HINTS.get(field.name) or ("" if rules else help_html)) if hints and not field.errors else ""
+    described = [f"{fid}-err"] if field.errors else []
+    if hint:
+        described.append(f"{fid}-hint")
+    attrs = {"class": "field__input"}
+    if described:
+        attrs["aria-describedby"] = " ".join(described)
+    if field.errors:
+        attrs["aria-invalid"] = "true"
+    return {"field": field, "fid": fid, "widget": field.as_widget(attrs=attrs),
+            "hint": hint, "rules": mark_safe(rules) if rules else ""}

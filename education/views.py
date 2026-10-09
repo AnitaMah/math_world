@@ -232,14 +232,21 @@ def play_lesson(request, kind, pk):
 
 
 def signup(request):
-    """Реєстрація: прогрес гостя з цієї сесії переноситься в новий акаунт (сигнал user_logged_in)."""
+    """Реєстрація: прогрес гостя з цієї сесії переноситься в новий акаунт (сигнал user_logged_in).
+
+    `next` — з GET або прихованого поля форми; лише безпечні адреси цього сайту (інакше — на головну).
+    """
     from django.contrib.auth import login
     from django.contrib.auth.forms import UserCreationForm
     from django.shortcuts import redirect
+    from django.utils.http import url_has_allowed_host_and_scheme
 
+    nxt = request.POST.get("next") or request.GET.get("next") or ""
+    if not url_has_allowed_host_and_scheme(nxt, allowed_hosts={request.get_host()}, require_https=request.is_secure()):
+        nxt = ""
     form = UserCreationForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
-        return redirect(request.GET.get("next") or "home")
-    return render(request, "registration/signup.html", {"form": form})
+        return redirect(nxt or "home")
+    return render(request, "registration/signup.html", {"form": form, "next": nxt})

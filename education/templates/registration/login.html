@@ -1,8 +1,12 @@
 {% extends "registration/_auth_base.html" %}
-{% block content %}
-<h1>Вхід</h1>
-<p class="hint">Прогрес, який ти набрав як гість, перейде в акаунт.</p>
-<form method="post">{% csrf_token %}{{ form.as_p }}<button class="btn btn--primary" type="submit" style="width:100%">Увійти</button>
-<input type="hidden" name="next" value="{{ next }}"></form>
-<p>Немає акаунта? <a href="{% url 'signup' %}">Зареєструватися</a></p>
+{% load ui %}
+{% block title %}Вхід{% endblock %}
+{% block heading %}Вхід{% endblock %}
+{% block form %}
+<form class="auth__form" method="post" action="{% url 'login' %}" novalidate>{% csrf_token %}
+  {% for field in form %}{% auth_field field hints=False %}{% endfor %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <button class="btn btn--primary btn--block" type="submit">Увійти</button>
+</form>
 {% endblock %}
+{% block switch %}Немає акаунта? <a href="{% url 'signup' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Зареєструватися</a>{% endblock %}
