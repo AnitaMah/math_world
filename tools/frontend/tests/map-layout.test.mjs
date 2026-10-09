@@ -127,11 +127,17 @@ test("телефон: §1 — 6 вузлів «змійкою» поруч із 
   assert.equal(P.isl, 1);
 });
 
-test("кеш і швидкість: 6 клас < 20 мс", () => {
+// Поріг — від катастрофічного уповільнення, не бенчмарк: на слабкому ноутбуці з Windows
+// перший прогін (прогрів JIT) ішов 160 мс, тож міряємо медіану 5 прогонів після прогріву.
+test("кеш і швидкість: 6 клас — медіана < 100 мс", () => {
   const m = load("grade-6.json");
   const a = layoutGrade(m);
   assert.equal(layoutGrade(m), a);           // той самий об’єкт із кешу
-  const t = performance.now();
-  layoutGrade(m, { seed: 42 });              // без кешу
-  assert.ok(performance.now() - t < 20);
+  layoutGrade(m, { seed: 1 });               // прогрів
+  const times = [2, 3, 4, 5, 6].map((seed) => {
+    const t = performance.now();
+    layoutGrade(m, { seed });                // без кешу (інший seed)
+    return performance.now() - t;
+  }).sort((x, y) => x - y);
+  assert.ok(times[2] < 100, `медіана ${times[2].toFixed(1)} мс`);
 });
