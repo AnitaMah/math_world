@@ -1,136 +1,218 @@
-// Екран гри: тягне завдання уроку з /api/play/..., показує по одному, перевіряє через API.
-(() => {
-  const root = document.getElementById("play");
-  const $ = (id) => document.getElementById(id);
-  const stage = $("stage"), mainBtn = $("mainBtn"), skipBtn = $("skipBtn");
-  const fb = $("feedback"), fbIcon = $("feedbackIcon"), fbTitle = $("feedbackTitle"), fbText = $("feedbackText");
-  const csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
-  const DIFF = {preparatory: "Підготовчий", medium: "Середній", sufficient: "Достатній", high: "Високий", olympiad: "Олімпіадний"};
-  const PRAISE = ["Чудово!", "Правильно!", "Так тримати!", "Супер!", "Молодець!"];
+// Екран гри в новому UI (фаза 14). Дані — /api/play/… через api.js, логіка — play-core.js.
+// Стани: loading → answer ⇄ busy → next → … → finish. Колір — острів уроку (isl-N на body).
+import { api } from "./api.js";
+import { errorFeedback, feedbackFor, finishModel, orderTasks, progressPct, taskView } from "./play-core.js";
 
-  let tasks = [], order = [], pos = 0, state = "answer", sessionPoints = 0, progress = null;
+const root = document.getElementById("play");
+const $ = (id) => document.getElementById(id);
+const stage = $("stage"), actions = $("actions");
+const fb = $("feedback"), fbIcon = $("feedbackIcon"), fbTitle = $("feedbackTitle"), fbText = $("feedbackText");
+const { kind, lesson: lessonId, map: mapUrl, theory: theoryUrl, next: nextUrl } = root.dataset;
 
-  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const AUTO_SKIP_MS = 2500;
+let tasks = [], order = [], pos = 0, state = "loading", sessionPoints = 0, progress = null, startStars = 0;
+let mainBtn = $("mainBtn"), skipBtn = $("skipBtn");
 
-  async function api(url, body) {
-    const opts = body ? {method: "POST", headers: {"Content-Type": "application/json", "X-CSRFToken": csrf},
-                         body: JSON.stringify(body), credentials: "same-origin"} : {credentials: "same-origin"};
-    const r = await fetch(url, opts);
-    const data = await r.json().catch(() => ({error: "bad_response", detail: "Сервер відповів незрозуміло"}));
-    return {ok: r.ok, status: r.status, data};
-  }
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const icon = (name, size = 20, cls = "") =>
+  `<svg class="icon icon--${name} ${cls}" width="${size}" height="${size}" aria-hidden="true" focusable="false"><use href="#i-${name}"/></svg>`;
+const reduceMotion = () => globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-  function setProgress() {
-    const done = tasks.filter((t) => t.solved).length;
-    const pct = tasks.length ? Math.round(100 * done / tasks.length) : 0;
-    $("progressFill").style.width = pct + "%";
-    document.querySelector(".play-progress").setAttribute("aria-valuenow", pct);
-  }
+// --- Верх ------------------------------------------------------------------------------
 
-  function showFeedback(kind, title, text) {
-    fb.hidden = false;
-    fb.className = "feedback feedback--" + kind;
-    fbIcon.textContent = kind === "ok" ? "✓" : "✗";
-    fbTitle.textContent = title;
-    fbText.textContent = text || "";
-  }
+function setProgress() {
+  const pct = progressPct(tasks);
+  $("progressFill").style.setProperty("--p", pct + "%");
+  root.querySelector(".progress").setAttribute("aria-valuenow", pct);
+}
 
-  function hideFeedback() { fb.hidden = true; }
+function updateMe(data) {
+  const detail = {};
+  if (data.total_points !== undefined) detail.points = data.total_points;
+  if (data.streak !== undefined) detail.streak = data.streak;
+  if (Object.keys(detail).length) document.dispatchEvent(new CustomEvent("me:updated", { detail }));
+}
 
-  function render() {
-    hideFeedback();
-    state = "answer";
-    if (pos >= order.length) return finish();
-    const t = tasks[order[pos]], ex = t.exercise;
-    const badge = t.kind === "ai" ? '<span class="badge badge--ai">ШІ перевірить</span>'
-      : (ex.difficulty ? `<span class="badge badge--${ex.difficulty}">${DIFF[ex.difficulty] || ""}</span>` : "");
-    const figs = ex.figures.filter((f) => f.url).map((f) => `<figure class="task-figure"><img src="${f.url}" alt="Рисунок ${esc(f.number)}"></figure>`).join("");
-    const question = t.sub
-      ? `<div class="task-question"><small>Вправа ${ex.number}, ${esc(t.sub.number)})</small>${esc(t.sub.text.replace(/[;.]$/, ""))}</div>`
-      : "";
-    const input = t.kind === "ai"
-      ? `<textarea class="solution-input" id="answer" placeholder="Напиши розв'язок і відповідь…" maxlength="1500"></textarea>
-         <p class="hint">Пиши кроки так, як у зошиті. ШІ підкаже, якщо щось не так.</p>`
-      : `<input class="answer-input" id="answer" autocomplete="off" inputmode="text" placeholder="Твоя відповідь" maxlength="200">
-         <p class="hint">Дріб — через «/», десятковий — через кому: 3/4, 2,5. Так/ні — словом.</p>`;
-    stage.innerHTML = `<div class="task-meta"><span>№${ex.number}</span>${badge}<span>+${t.points} ⭐</span>${t.solved ? "<span>✓ розв'язано</span>" : ""}</div>
-      <p class="task-condition">${esc(ex.condition)}</p>${figs}${question}${input}`;
-    const field = $("answer");
-    field.addEventListener("input", () => { mainBtn.disabled = !field.value.trim(); });
-    field.addEventListener("keydown", (e) => { if (e.key === "Enter" && t.kind !== "ai" && field.value.trim()) check(); });
-    mainBtn.textContent = t.kind === "ai" ? "Перевірити з ШІ" : "Перевірити";
-    mainBtn.className = "btn btn--primary";
-    mainBtn.disabled = true;
-    skipBtn.hidden = false;
-    field.focus({preventScroll: true});
-  }
+// --- Відгук ----------------------------------------------------------------------------
 
-  async function check() {
-    const t = tasks[order[pos]], field = $("answer"), text = field.value.trim();
-    if (!text || state !== "answer") return;
-    state = "busy"; mainBtn.disabled = true; mainBtn.textContent = "Перевіряю…";
-    const res = t.kind === "ai"
-      ? await api(`/api/exercises/${t.exercise.id}/solution/`, {solution: text})
-      : await api(`/api/subexercises/${t.sub.id}/check/`, {answer: text});
-    if (!res.ok) {
-      state = "answer"; mainBtn.disabled = false; mainBtn.textContent = "Перевірити";
-      return showFeedback("bad", "Ой", res.data.detail || "Помилка, спробуй ще раз");
-    }
-    const d = res.data;
-    if (d.progress) progress = d.progress;
-    if (d.total_points !== undefined) $("points").textContent = d.total_points;
-    if (d.streak !== undefined) $("streak").textContent = d.streak;
-    if (d.correct) {
-      t.solved = true; sessionPoints += d.points || 0; setProgress();
-      const pts = d.points ? ` +${d.points} ⭐` : (d.already_solved ? " (вже було розв'язано)" : "");
-      showFeedback("ok", PRAISE[Math.floor(Math.random() * PRAISE.length)] + pts, d.feedback || "");
-      state = "next"; mainBtn.textContent = "Далі"; mainBtn.className = "btn btn--ok"; mainBtn.disabled = false;
+function showFeedback(f) {
+  fb.className = `feedback feedback--${f.kind}`;
+  fbIcon.innerHTML = icon(f.kind === "ok" ? "check" : f.kind === "info" ? "sparkle" : "close", 22);
+  fbTitle.innerHTML = esc(f.title) + (f.points ? ` <span class="feedback__pts">${icon("bolt", 16)}+${f.points}</span>` : "");
+  fbText.textContent = f.text || "";
+  fb.hidden = false;
+}
+
+const hideFeedback = () => { fb.hidden = true; };
+
+function setMain(text, variant = "primary", disabled = false) {
+  mainBtn.textContent = text;
+  mainBtn.className = `btn btn--${variant} btn--block game__main`;
+  mainBtn.disabled = disabled;
+}
+
+// --- Завдання --------------------------------------------------------------------------
+
+function render() {
+  hideFeedback();
+  if (pos >= order.length) return finish();
+  state = "answer";
+  const v = taskView(tasks[order[pos]]);
+  const badge = v.isAi
+    ? `<span class="badge-ai">${icon("sparkle", 14)}ШІ перевірить</span>`
+    : v.diff ? `<span class="diff diff--${v.diff.code}">${v.diff.name}</span>` : "";
+  const figs = v.figures.map((f) =>
+    `<figure class="lfigure"><img src="${esc(f.url)}" alt="${esc(f.label || "Рисунок")}">${f.label ? `<figcaption>${esc(f.label)}</figcaption>` : ""}</figure>`).join("");
+  const question = v.question
+    ? `<div class="task__q"><small>${esc(v.question.label)}</small><span class="task__expr">${esc(v.question.text)}</span></div>` : "";
+  const field = v.isAi
+    ? `<textarea class="task__solution" id="answer" placeholder="${v.placeholder}" maxlength="1500" aria-describedby="hint"></textarea>`
+    : `<input class="task__answer" id="answer" autocomplete="off" inputmode="text" placeholder="${v.placeholder}" maxlength="200" aria-describedby="hint">`;
+  stage.innerHTML = `<article class="task">
+      <div class="task__meta"><span class="task__num">№${esc(v.number)}</span>${badge}
+        <span class="task__pts">${icon("bolt", 15)}+${v.points}</span>
+        ${v.solved ? `<span class="task__solved">${icon("check", 15)}розв’язано</span>` : ""}</div>
+      <p class="task__cond">${esc(v.condition)}</p>
+      ${figs ? `<div class="task__figs">${figs}</div>` : ""}
+      ${question}
+      ${v.tail ? `<p class="task__tail">${esc(v.tail)}</p>` : ""}
+      <label class="visually-hidden" for="answer">${v.isAi ? "Розв’язок" : "Відповідь"}</label>
+      ${field}
+      <p class="task__hint" id="hint">${v.hint}</p>
+    </article>`;
+  const input = $("answer");
+  input.addEventListener("input", () => {
+    input.classList.remove("is-wrong");
+    if (state === "answer") mainBtn.disabled = !input.value.trim();
+  });
+  input.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || !input.value.trim()) return;
+    if (!v.isAi || e.ctrlKey || e.metaKey) { e.preventDefault(); check(); }
+  });
+  setMain(v.button, "primary", true);
+  skipBtn.hidden = false;
+  stage.scrollTop = 0;
+  input.focus({ preventScroll: true });
+}
+
+async function check() {
+  const t = tasks[order[pos]], input = $("answer"), text = input.value.trim();
+  if (!text || state !== "answer") return;
+  const v = taskView(t);
+  state = "busy";
+  setMain("Перевіряю…", "primary", true);
+  const res = v.isAi ? await api.solution(t.exercise.id, text) : await api.check(t.sub.id, text);
+  if (!res.ok) {
+    const f = errorFeedback(res);
+    showFeedback(f);
+    if (f.skip) {
+      state = "skipping";
+      setMain("Далі", "primary");
       skipBtn.hidden = true;
-    } else {
-      field.classList.remove("shake"); void field.offsetWidth; field.classList.add("shake");
-      showFeedback("bad", d.verdict === "unclear" ? "Не зовсім зрозуміло" : "Ще не так",
-                   d.feedback || "Перевір обчислення і спробуй ще раз.");
-      state = "answer"; mainBtn.textContent = t.kind === "ai" ? "Перевірити з ШІ" : "Перевірити";
-      mainBtn.className = "btn btn--bad"; mainBtn.disabled = false;
+      setTimeout(() => { if (state === "skipping") next(); }, AUTO_SKIP_MS);
+      return;
     }
+    state = "answer";
+    setMain(f.retry ? "Спробувати ще раз" : v.button, "primary");
+    return;
   }
-
-  function next() { pos += 1; render(); }
-
-  function finish() {
-    const stars = progress ? progress.stars : 0;
-    const starHtml = [1, 2, 3].map((i) => `<span class="${i <= stars ? "" : "off"}">★</span>`).join("");
-    const done = tasks.filter((t) => t.solved).length;
-    stage.innerHTML = `<div class="finish"><div class="finish-stars" aria-label="${stars} з 3 зірок">${starHtml}</div>
-      <h2>${done === tasks.length ? "Урок пройдено!" : "Гарна робота!"}</h2>
-      <p>Розв'язано ${done} з ${tasks.length} · за цей раз +${sessionPoints} ⭐</p></div>`;
-    hideFeedback();
-    mainBtn.className = "btn btn--primary"; mainBtn.disabled = false;
-    mainBtn.textContent = done === tasks.length ? "До уроку" : "Ще раз — нерозв'язані";
-    state = done === tasks.length ? "exit" : "again";
+  const d = res.data;
+  if (d.progress) progress = d.progress;
+  updateMe(d);
+  const f = feedbackFor(d);
+  showFeedback(f);
+  if (d.correct) {
+    t.solved = true;
+    sessionPoints += d.points || 0;
+    setProgress();
+    state = "next";
+    setMain("Далі", "ok");
     skipBtn.hidden = true;
+    mainBtn.focus();
+  } else {
+    input.classList.add("is-wrong");
+    if (!reduceMotion()) { input.classList.remove("shake"); void input.offsetWidth; input.classList.add("shake"); }
+    state = "answer";
+    setMain(v.button, "primary");
+    input.focus({ preventScroll: true });
   }
+}
 
+function next() { pos += 1; render(); }
+
+// --- Фінал -----------------------------------------------------------------------------
+
+function finish() {
+  state = "finish";
+  hideFeedback();
+  const m = finishModel({ tasks, progress, startStars, sessionPoints, nextUrl });
+  const stars = [1, 2, 3].map((i) =>
+    `<svg class="icon star ${i <= m.stars ? "star--on" : "star--off"}" style="--i:${i - 1}" width="56" height="56" aria-hidden="true" focusable="false"><use href="#i-star"/></svg>`).join("");
+  const burst = m.stars === 3 || m.newStar
+    ? `<div class="finish__burst" aria-hidden="true">${Array.from({ length: 14 }, (_, i) => `<i style="--a:${i * 360 / 14}deg;--c:${i % 3}"></i>`).join("")}</div>` : "";
+  stage.innerHTML = `<section class="finish" aria-labelledby="finishTitle">
+      <div class="finish__stars" role="img" aria-label="${m.starsLabel}">${burst}${stars}</div>
+      ${m.newStar ? `<p class="finish__new">${m.newStar}</p>` : ""}
+      <h2 class="finish__title" id="finishTitle" tabindex="-1">${m.title}</h2>
+      <p class="finish__summary">${m.summary} · <span class="finish__pts">${icon("bolt", 18)}${m.pointsText}</span></p>
+    </section>`;
+  actions.innerHTML = [
+    m.next ? `<a class="btn btn--ok btn--block" href="${esc(nextUrl)}">${icon("play", 18)}Наступний урок</a>` : "",
+    `<a class="btn btn--primary btn--block" href="${esc(mapUrl)}">${icon("map", 18)}На мапу</a>`,
+    m.retry ? `<button class="btn btn--secondary btn--block" type="button" id="retryBtn">${icon("repeat", 18)}Ще раз — нерозв’язані</button>` : "",
+  ].join("");
+  $("retryBtn")?.addEventListener("click", retryUnsolved);
+  $("finishTitle").focus({ preventScroll: true });
+}
+
+function retryUnsolved() {
+  actions.innerHTML = `<button class="btn btn--primary btn--block game__main" id="mainBtn" type="button" disabled>Перевірити</button>
+    <button class="btn btn--secondary btn--block" id="skipBtn" type="button">Пропустити</button>`;
+  bindButtons();
+  order = order.filter((i) => !tasks[i].solved);
+  pos = 0;
+  render();
+}
+
+// --- Порожні стани ---------------------------------------------------------------------
+
+function emptyState(message, { retry = false } = {}) {
+  state = "empty";
+  stage.innerHTML = `<p class="empty-note game__empty">${esc(message)}</p>`;
+  actions.innerHTML = [
+    retry ? `<button class="btn btn--primary btn--block" type="button" id="reloadBtn">${icon("repeat", 18)}Спробувати ще раз</button>` : "",
+    `<a class="btn btn--${retry ? "secondary" : "primary"} btn--block" href="${esc(mapUrl)}">${icon("map", 18)}На мапу</a>`,
+    !retry && theoryUrl ? `<a class="btn btn--secondary btn--block" href="${esc(theoryUrl)}">${icon("book", 18)}Читати теорію</a>` : "",
+  ].join("");
+  $("reloadBtn")?.addEventListener("click", () => location.reload());
+}
+
+// --- Старт -----------------------------------------------------------------------------
+
+function bindButtons() {
+  mainBtn = $("mainBtn");
+  skipBtn = $("skipBtn");
   mainBtn.addEventListener("click", () => {
     if (state === "answer") check();
-    else if (state === "next") next();
-    else if (state === "exit") location.href = root.dataset.back;
-    else if (state === "again") { order = order.filter((i) => !tasks[i].solved); pos = 0; render(); }
+    else if (state === "next" || state === "skipping") next();
   });
-  skipBtn.addEventListener("click", () => { if (state === "answer") next(); });
+  skipBtn.addEventListener("click", () => { if (state === "answer" || state === "skipping") next(); });
+}
 
-  (async () => {
-    const [play, me] = await Promise.all([api(root.dataset.api), api("/api/me/")]);
-    if (me.ok) { $("points").textContent = me.data.points; $("streak").textContent = me.data.streak; }
-    if (!play.ok) { stage.innerHTML = `<p class="empty">${esc(play.data.detail || "Не вдалося завантажити урок")}</p>`; return; }
-    tasks = play.data.tasks; progress = play.data.progress;
-    document.title = play.data.lesson.title + " · гра";
-    if (!tasks.length) {
-      stage.innerHTML = '<p class="empty">У цьому уроці ще немає ігрових завдань.</p>';
-      mainBtn.textContent = "До уроку"; mainBtn.disabled = false; state = "exit"; skipBtn.hidden = true; return;
-    }
-    // Спершу нерозв'язані, потім розв'язані (повторення)
-    order = tasks.map((_, i) => i).sort((a, b) => tasks[a].solved - tasks[b].solved);
-    setProgress(); render();
-  })();
-})();
+async function start() {
+  bindButtons();
+  const res = await api.play(kind, lessonId);
+  if (!res.ok) {
+    if (res.data?.error === "lesson_locked") return emptyState("Цей урок ще закритий — спершу пройди попередній.");
+    return emptyState(res.status === 0 ? "Немає зв’язку. Спробуй ще раз." : (res.data?.detail || "Не вдалося завантажити урок."), { retry: true });
+  }
+  tasks = res.data.tasks || [];
+  progress = res.data.progress;
+  startStars = progress?.stars ?? 0;
+  if (!tasks.length) return emptyState("У цьому уроці ще немає ігрових завдань.");
+  order = orderTasks(tasks);
+  setProgress();
+  render();
+}
+
+start();

@@ -59,7 +59,7 @@ test("6 клас: урок = §, острови по розділах", () => {
   const m = panelModel(map, 0);
   assert.equal(m.position, "Параграф 1 з 35");
   assert.equal(m.title, "Дільники і кратні натурального числа");
-  assert.equal(m.theoryHref, `/paragraphs/${map.lessons[0].id}/items/`);
+  assert.equal(m.theoryHref, `/paragraphs/${map.lessons[0].id}/`);
   const rows = islandRows(map);
   assert.equal(rows.length, 5);
   assert.equal(rows[0].label, "Розділ I Подільність натуральних чисел");
@@ -78,7 +78,7 @@ test("5 клас: острови по параграфах, рахунок зі�
 
 test("theoryUrl", () => {
   assert.equal(theoryUrl({ kind: "item", id: 5 }), "/items/5/");
-  assert.equal(theoryUrl({ kind: "paragraph", id: 54 }), "/paragraphs/54/items/");
+  assert.equal(theoryUrl({ kind: "paragraph", id: 54 }), "/paragraphs/54/");
 });
 
 test("lessonListModel: текстова альтернатива мапи (фаза 16)", async () => {

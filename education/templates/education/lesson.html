@@ -1,6 +1,7 @@
 {% extends "education/base.html" %}
 {% load static ui %}
-{% block title %}Урок {{ item.number }}. {{ title }}{% endblock %}
+{# Теорія уроку (фаза 13) і сторінка § (фаза 18). Контекст — views_ui._lesson_render. #}
+{% block title %}{{ label }}. {{ title }}{% endblock %}
 {% block body_class %}page-lesson isl-{{ isl }}{% endblock %}
 {% block styles %}<link rel="stylesheet" href="{% static 'education/css/lesson.css' %}">{% endblock %}
 {% block content %}
@@ -8,28 +9,51 @@
   <nav class="lesson__crumbs" aria-label="Де ти">
     <a href="{% url 'grade_map_page' grade.number %}">{{ grade.number }} клас</a>
     {% icon "chevron-right" size=14 %}
-    <a href="{% url 'grade_map_page' grade.number %}#lesson-{{ item.id }}">§{{ paragraph.number }} {{ paragraph_title }}</a>
-    {% icon "chevron-right" size=14 %}
-    <span aria-current="page">Урок {{ item.number }}</span>
+    {% if kind == "item" %}
+      <a href="{% url 'paragraph_page' paragraph.id %}">§{{ paragraph.number }} {{ paragraph_title }}</a>
+      {% icon "chevron-right" size=14 %}
+      <span aria-current="page">{{ label }}</span>
+    {% else %}
+      <span aria-current="page">§{{ paragraph.number }} {{ paragraph_title }}</span>
+    {% endif %}
   </nav>
 
   <header class="lesson__head">
-    <p class="lesson__kicker"><span class="lesson__dot" aria-hidden="true"></span>Урок {{ item.number }} · §{{ paragraph.number }}</p>
+    <p class="lesson__kicker"><span class="lesson__dot" aria-hidden="true"></span>{% if kind == "item" %}{{ label }} · §{{ paragraph.number }}{% else %}Розділ {{ section.number }} · §{{ paragraph.number }}{% endif %}</p>
     <h1 class="lesson__title">{{ title }}</h1>
     <div class="lesson__actions">
-      {% if playable %}
-        <a class="btn btn--primary" href="{% url 'play_item' item.id %}">{% icon "play" size=18 %}{% if stars %}Пройти ще раз{% else %}Почати урок{% endif %}</a>
-      {% else %}
-        <button class="btn btn--muted" type="button" aria-disabled="true">Завдань ще немає</button>
+      {% if is_lesson %}
+        {% if playable %}
+          <a class="btn btn--primary" href="{{ play_url }}">{% icon "play" size=18 %}{% if stars %}Пройти ще раз{% else %}Почати урок{% endif %}</a>
+        {% else %}
+          <button class="btn btn--muted" type="button" aria-disabled="true">Завдань ще немає</button>
+        {% endif %}
       {% endif %}
-      <a class="btn btn--secondary" href="{% url 'grade_map_page' grade.number %}#lesson-{{ item.id }}">{% icon "map" size=18 %}На мапу</a>
-      {% include "education/_stars.html" with count=stars size=22 %}
+      <a class="btn btn--secondary" href="{{ map_url }}">{% icon "map" size=18 %}На мапу</a>
+      {% if is_lesson %}{% include "education/_stars.html" with count=stars size=22 %}{% endif %}
     </div>
   </header>
 
+  {% if items %}
+  <section class="lblock lesson-list" aria-labelledby="lessonsTitle">
+    <h2 class="lblock__title" id="lessonsTitle"><span class="lblock__icon">{% icon "map" size=20 %}</span>Уроки параграфа</h2>
+    <ol class="lesson-list__items">
+      {% for it in items %}
+      <li>
+        <a class="lesson-list__link" href="{{ it.url }}">
+          <span class="lesson-list__num">{{ it.obj.number }}</span>
+          <span class="lesson-list__title">{{ it.title }}</span>
+          {% if it.playable %}{% include "education/_stars.html" with count=it.stars size=14 %}{% else %}<span class="lesson-list__soon">скоро</span>{% endif %}
+        </a>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
   {% if blocks %}
-    {% include "education/_lesson_blocks_v2.html" %}
-  {% else %}
+    {% include "education/_lesson_blocks.html" %}
+  {% elif is_lesson %}
     <p class="empty-note">Теорію й вправи цього уроку ще не імпортовано з підручника.</p>
   {% endif %}
 </article>

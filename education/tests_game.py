@@ -5,7 +5,7 @@ from unittest import mock
 
 from django.contrib.auth.models import User
 from django.core.management import call_command
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -153,12 +153,11 @@ class ApiGameTests(GameFixture):
         self.assertEqual(resp.status_code, 503)
         self.assertEqual(Attempt.objects.count(), 0)
 
-    @override_settings(NEW_UI=False)   # старий екран гри; новий — tests_ui.PlayPageTests
     def test_play_page(self):
         resp = self.client.get(reverse("play_item", args=[self.item.pk]))
         self.assertContains(resp, reverse("api_play_item", args=[self.item.pk]))
         self.assertContains(resp, "play.js")
-        self.assertContains(self.client.get(reverse("item_detail", args=[self.item.pk])), "Грати урок")
+        self.assertContains(self.client.get(reverse("item_detail", args=[self.item.pk])), "Почати урок")
 
 
 class GuestToAccountTests(GameFixture):

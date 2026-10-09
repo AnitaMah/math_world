@@ -19,7 +19,7 @@ export function blockingLesson(map, index) {
 
 /** Куди веде «Читати теорію»: сторінка пункту або старий список § (поки немає нової сторінки §). */
 export function theoryUrl(lesson) {
-  return lesson.kind === "paragraph" ? `/paragraphs/${lesson.id}/items/` : `/items/${lesson.id}/`;
+  return lesson.kind === "paragraph" ? `/paragraphs/${lesson.id}/` : `/items/${lesson.id}/`;
 }
 
 /** Усе, що панель показує для уроку, — без DOM (тестується в node). */

@@ -680,3 +680,41 @@ https://claude.ai/code/artifact/04922b47-8945-4f84-9af4-447cfffc4c4e
   - ярлик «Ти тут» стояв над вузлом і закривав зірки сусіднього вузла (вузли 1 і 2 в одному стовпчику).
     `tagSide()` вибирає вільну сторону: над → під → праворуч → ліворуч.
 - Тести: Django `RealApiTests` (1), JS `mockMode` поза DEBUG, `orderTasks` з ШІ, `tagSide` (усього 58).
+
+## 2026-10-09 — прибирання старого UI (фаза 18, кроки FE-0601…0615)
+
+- **Нова сторінка § `/paragraphs/<id>/`** (`views_ui.paragraph_page`) — без неї видаляти старий
+  `item_list` було не можна: він був **єдиною** сторінкою теорії для § без пунктів (Тарасенкова,
+  туди вела панель мапи й гра) і єдиним місцем, де видно блоки рівня § («Головне в параграфі»,
+  «Перевірте себе» у Мерзляка §1). Тепер:
+  - § без пунктів = урок: теорія, вправи, «Почати урок» → `/play/paragraph/<id>/`, мапа `#lesson-p<id>`;
+  - § з пунктами = огляд: «Уроки параграфа» (номер кольором острова, назва, зірки або «скоро») +
+    блоки рівня §; кнопки гри немає, «На мапу» → перший урок §.
+  - `lesson.html` спільний для пункту й § (`views_ui._lesson_render`); у крихтах уроку «§1 …» веде на
+    сторінку §. `theoryUrl()` у панелі мапи для §-уроку → `/paragraphs/<id>/`.
+  - Вправи з `needs_review` на сторінках теорії тепер бачить **лише персонал** (як і в грі; раніше
+    діти бачили «сумнівні» умови на новій сторінці уроку).
+- **Видалено**: шаблони `grade_list`, `section_list`, `paragraph_list`, `item_list`, `mint_overview`,
+  `_map_partial`, `item_detail`, старі `_lesson_blocks` і `play.html`; статика `map.js` (стара, в корені
+  static), `map_data_uk.json`, `css/map_ui.css`, старі `css/play.css` і `js/play.js`
+  (`img/5_class_map.png` уже не було). У `views.py` — `load_map_data`, `_lang`, `_base_context`,
+  `grade_list`, `section_list`, `paragraph_list`, `item_list` і старий рендер `item_detail`.
+- **Перейменовано** (суфікси v2 більше не потрібні): `_lesson_blocks_v2.html` → `_lesson_blocks.html`,
+  `play_v2.html` → `play.html`, `css/play-v2.css` → `css/play.css`, `js/play-v2.js` → `js/play.js`.
+- **Старі адреси → 301** (`views.old_*`): `/grades/` → `/`; `/grades/<pk>/sections/` → `/grades/<номер>/`;
+  `/sections/<id>/paragraphs/` → мапа з першим уроком розділу; `/paragraphs/<id>/items/` →
+  `/paragraphs/<id>/`. URL-імена (`grade_list`, `section_list`, `paragraph_list`, `item_list`)
+  лишені — на них ще робить `reverse` `map_builder.py`.
+- **Прапорець `NEW_UI` прибрано** (settings, усі гілки у views, тести). Context processor `ui_flags`
+  → `ui_debug` (лише `UI_DEBUG` для моків, фаза 17).
+- Перевірки: емодзі в шаблонах/JS/CSS — **0**; `style="` у шаблонах — лише CSS-змінні (`--x`, `--p`) і
+  `fill: var(--…)` у SVG-логотипі (атрибут `fill` змінних не приймає). UI-кіт і спрайт іконок
+  переведено на класи (`.row--between`, `.kit-small`, `.icon-sprite`).
+- Тести: `tests_api.PageTests` і `tests_game.test_play_page` переписано під нові сторінки (без
+  `override_settings(NEW_UI=False)`); нові `ParagraphPageAndRedirectTests` (5), `UiDebugContextProcessorTests` (2).
+
+### Для бекенд-чату (крок 0612)
+Фронтенду **більше не потрібні**: `education/map_builder.py`, команда `generate_map_json`
+(`map_data_uk.json` видалено), `Item.details_list()`, `TheoryPractice` у views. Їх можна прибрати
+разом з іменами старих URL у `math_world/urls.py` (тоді прибрати й тест `resolve("/grades/3/sections/")`
+у `tests_ui.py`).

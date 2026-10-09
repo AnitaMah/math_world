@@ -101,3 +101,6 @@ p a, li a, .prose a { text-decoration: underline; text-underline-offset: 2px; }
 .icon--muted { color: var(--muted-2); }
 .icon--acc { color: var(--acc); }
 .icon--off { color: var(--star-off); }
+
+/* Спрайт іконок (_icons.html): не займає місця */
+.icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }

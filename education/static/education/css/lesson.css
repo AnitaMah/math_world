@@ -56,3 +56,16 @@
   .lesson__actions .stars { margin-left: 0; }
   .lblock { padding: var(--sp-4); }
 }
+
+/* Список уроків на сторінці § (фаза 18) */
+.lesson-list__items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.lesson-list__link {
+  display: flex; align-items: center; gap: var(--sp-3); min-height: 48px; padding: var(--sp-2) 0;
+  border-top: 1px solid var(--line); color: var(--text); text-decoration: none;
+}
+.lesson-list__items li:first-child .lesson-list__link { border-top: 0; }
+.lesson-list__link:hover { color: var(--text); }
+.lesson-list__link:hover .lesson-list__title { text-decoration: underline; }
+.lesson-list__num { width: 32px; height: 32px; flex-shrink: 0; border-radius: 50%; display: grid; place-items: center; background: var(--acc); color: var(--ink); font: var(--fw-bold) var(--fs-14) / 1 var(--font-display); }
+.lesson-list__title { flex: 1; font-weight: var(--fw-bold); }
+.lesson-list__soon { color: var(--muted-2); font-size: var(--fs-13); font-weight: var(--fw-heavy); }

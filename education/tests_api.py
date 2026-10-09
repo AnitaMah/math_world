@@ -77,24 +77,32 @@ class CheckServiceTests(LessonFixture):
 
 
 class PageTests(LessonFixture):
-    @override_settings(NEW_UI=False)   # стара сторінка пункту; нова — tests_ui.LessonPageTests
     def test_item_detail_shows_exercise(self):
         resp = self.client.get(reverse("item_detail", args=[self.item.pk]))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
         self.assertIn('id="ex-%d"' % self.ex.pk, html)
         self.assertIn("238 + 435;", html)
-        self.assertIn("difficulty--medium", html)
-        self.assertIn("<details class=\"exercise-answer\">", html)
+        self.assertIn("diff--medium", html)
         self.assertIn("textbook_figures/", html)
         self.assertIn("Числа 1, 2, 3", html)
+        self.assertNotIn("Відповідь (бачить лише вчитель)", html)          # відповіді — лише персоналу
+        self.assertNotIn("Сумнівна вправа", html)                           # needs_review — теж
+        from django.contrib.auth.models import User
+        self.client.force_login(User.objects.create_user("t", password="pw-12345678", is_staff=True))
+        html = self.client.get(reverse("item_detail", args=[self.item.pk])).content.decode()
+        self.assertIn("Відповідь (бачить лише вчитель)", html)
+        self.assertIn("Сумнівна вправа", html)
 
-    def test_item_list_counts_and_paragraph_blocks(self):
-        resp = self.client.get(reverse("item_list", args=[self.par.pk]))
+    def test_paragraph_page_shows_paragraph_blocks(self):
+        """Колишній список пунктів (`item_list`) — тепер сторінка § з блоками рівня § (фаза 18)."""
+        resp = self.client.get(reverse("paragraph_page", args=[self.par.pk]))
         self.assertEqual(resp.status_code, 200)
         html = resp.content.decode()
-        self.assertIn("вправ: 1", html)                                     # прихована needs_review не рахується
         self.assertIn("Перевірте себе", html)                                # блок рівня §
+        self.assertIn(reverse("item_detail", args=[self.item.pk]), html)     # список уроків §
+        old = self.client.get(reverse("item_list", args=[self.par.pk]))
+        self.assertEqual((old.status_code, old["Location"]), (301, reverse("paragraph_page", args=[self.par.pk])))
 
     def test_item_detail_query_count_is_constant(self):
         """0874: кількість запитів не росте з кількістю вправ (немає N+1)."""

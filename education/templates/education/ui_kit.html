@@ -102,12 +102,12 @@
     <h2 class="label-caps" id="kit-cards">Картки, прогрес, зірки</h2>
     <div class="kit-grid">
       <div class="card stack stack--gap-3 isl-2">
-        <div class="row" style="justify-content: space-between">
+        <div class="row row--between">
           {% include "education/_stars.html" with count=1 size=30 %}
-          <span class="muted" style="font-size: var(--fs-13); font-weight: var(--fw-bold)">Розв’язано 6 з 17</span>
+          <span class="muted kit-small">Розв’язано 6 з 17</span>
         </div>
         {% include "education/_progress.html" with value=6 max=17 label="Розв’язано 6 з 17" %}
-        <p class="muted-2" style="font-size: var(--fs-12); font-weight: var(--fw-bold)">★ — 30 % завдань · ★★ — 70 % · ★★★ — усі</p>
+        <p class="muted-2 kit-tiny">★ — 30 % завдань · ★★ — 70 % · ★★★ — усі</p>
       </div>
       <div class="stack stack--gap-3">
         <div class="card--dashed card"><strong>Мапа будується</strong><p class="muted">Розділи вже на мапі, стежки з уроками з’являться після імпорту.</p></div>

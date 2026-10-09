@@ -1,5 +1,5 @@
 // Логіка екрана гри без DOM (фаза 14): порядок завдань, вигляд завдання, відгук, фінал.
-// play-v2.js лише малює те, що повертають ці функції. Тести: tools/frontend/tests/play-core.test.mjs.
+// play.js лише малює те, що повертають ці функції. Тести: tools/frontend/tests/play-core.test.mjs.
 import { plural } from "./ui.js";
 
 export const DIFFICULTY = {

@@ -70,3 +70,8 @@
 .row--gap-6 { gap: var(--sp-6); }
 .kit-stars-demo { padding: var(--sp-3); background: var(--isl-2-land); border-radius: var(--r-md); }
 .ui-dev__pre { margin: 0; max-height: 420px; overflow: auto; font-size: var(--fs-12); color: var(--text-2); white-space: pre-wrap; }
+
+/* Дрібниці UI-кіту (фаза 18: без inline-style у шаблонах) */
+.row--between { justify-content: space-between; }
+.kit-small { font-size: var(--fs-13); font-weight: var(--fw-bold); }
+.kit-tiny { font-size: var(--fs-12); font-weight: var(--fw-bold); }

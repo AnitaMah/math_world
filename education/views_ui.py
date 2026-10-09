@@ -131,10 +131,7 @@ def _grade_cards():
 
 
 def world_page(request):
-    """`/` — «Світ»: вибір класу (фаза 12). Старий список класів — при NEW_UI=0."""
-    if not getattr(settings, "NEW_UI", False):
-        from .views import grade_list
-        return grade_list(request)
+    """`/` — «Світ»: вибір класу (фаза 12)."""
     cards = _grade_cards()
     fog_from = (max(c["number"] for c in cards) + 1) if cards else 5
     return render(request, "education/world.html", {"cards": cards, "fog_from": fog_from, "show_fog": fog_from <= 9})
@@ -159,44 +156,83 @@ def _place_figures(blocks):
 
 
 def lesson_page(request, item):
-    """`/items/<id>/` у новому UI (фаза 13): теорія й вправи уроку кольором острова.
+    """`/items/<id>/` — теорія й вправи уроку кольором острова (фаза 13)."""
+    return _lesson_render(request, "item", item)
 
-    Викликається з views.item_detail, коли NEW_UI увімкнено. Відповіді й позначки «перевірити» —
-    лише для персоналу (is_staff): діти бачать умови, а не відповіді.
+
+def paragraph_page(request, paragraph_id):
+    """`/paragraphs/<id>/` — сторінка § (фаза 18, замість старого `item_list`).
+
+    § без пунктів (Тарасенкова) — це сам урок: теорія, вправи, «Почати урок». § з пунктами (Мерзляк) —
+    блоки рівня § («Головне в параграфі», «Перевірте себе») і список його уроків.
     """
+    from django.shortcuts import get_object_or_404
     from .models import Paragraph
+    paragraph = get_object_or_404(Paragraph.objects.select_related("section__grade"), pk=paragraph_id)
+    return _lesson_render(request, "paragraph", paragraph)
+
+
+def _strip_title(text, paragraph=False):
+    import re
+    return re.sub(r"^§\s*\d+\.\s*" if paragraph else r"^\s*\d+\.\s*", "", text or "")
+
+
+def _lesson_render(request, kind, lesson):
+    """Спільний рендер `lesson.html` для пункту й параграфа.
+
+    Відповіді, позначки «перевірити» і вправи з `needs_review` — лише для персоналу (is_staff):
+    діти бачать умови, а не відповіді, і не бачать сумнівного (як і в грі).
+    """
+    from django.urls import reverse
+    from .game import get_player
     from .services import playable_counts
     from .views import _blocks_context, _item_title
 
-    paragraph = item.paragraph
+    paragraph = lesson.paragraph if kind == "item" else lesson
     section = paragraph.section
     grade = section.grade
-    isl = _island_of(paragraph)
+    staff = request.user.is_staff
+    items = list(paragraph.item_set.order_by("number")) if kind == "paragraph" else []
+    is_lesson = kind == "item" or not items          # § з пунктами — не урок, а огляд
 
-    stars = 0
-    from .game import get_player
     player = get_player(request, create=False)
+    progress = {}
     if player is not None:
-        prog = player.progress.filter(item=item).first()
-        stars = prog.stars if prog else 0
+        from django.db.models import Q
+        for p in player.progress.filter(Q(item__paragraph=paragraph) | Q(paragraph=paragraph)):
+            progress[("item", p.item_id) if p.item_id else ("paragraph", p.paragraph_id)] = p.stars
 
-    playable = playable_counts([item]).get(item.id, 0)
-    blocks = _blocks_context(item)
+    blocks = _blocks_context(lesson)
+    if not staff:
+        for b in blocks:
+            b["exercises"] = [e for e in b["exercises"] if not e["obj"].needs_review]
     _place_figures(blocks)
-    import re
+
+    if kind == "item":
+        title = _strip_title(_item_title(lesson, "uk"))
+        label = f"Урок {lesson.number}"
+        play_url = reverse("play_item", args=[lesson.pk])
+        anchor = f"lesson-{lesson.pk}"
+    else:
+        title = _strip_title(paragraph.name_uk, paragraph=True)
+        label = f"§{paragraph.number}"
+        play_url = reverse("play_paragraph", args=[lesson.pk]) if is_lesson else ""
+        anchor = f"lesson-p{lesson.pk}" if is_lesson else (f"lesson-{items[0].pk}" if items else "")
+    map_url = reverse("grade_map_page", args=[grade.number]) + (f"#{anchor}" if anchor else "")
+
+    item_counts = playable_counts(items)
     return render(request, "education/lesson.html", {
-        "item": item,
-        "title": re.sub(r"^\s*\d+\.\s*", "", _item_title(item, "uk")),
-        "paragraph": paragraph,
-        "paragraph_title": re.sub(r"^§\s*\d+\.\s*", "", paragraph.name_uk),
-        "section": section,
-        "grade": grade,
-        "current_grade": grade.number,
-        "isl": isl,
-        "stars": stars,
-        "playable": playable,
-        "blocks": blocks,
-        "staff": request.user.is_staff,
+        "kind": kind, "lesson": lesson, "is_lesson": is_lesson,
+        "title": title, "label": label,
+        "paragraph": paragraph, "paragraph_title": _strip_title(paragraph.name_uk, paragraph=True),
+        "section": section, "grade": grade, "current_grade": grade.number,
+        "isl": _island_of(paragraph),
+        "stars": progress.get((kind, lesson.pk), 0),
+        "playable": playable_counts([lesson]).get(lesson.pk, 0) if is_lesson else 0,
+        "play_url": play_url, "map_url": map_url,
+        "blocks": blocks, "staff": staff,
+        "items": [{"obj": i, "title": _strip_title(_item_title(i, "uk")), "url": reverse("item_detail", args=[i.pk]),
+                   "stars": progress.get(("item", i.pk), 0), "playable": item_counts.get(i.pk, 0)} for i in items],
     })
 
 
@@ -265,9 +301,9 @@ def play_page(request, kind, lesson):
         title = re.sub(r"^§\s*\d+\.\s*", "", paragraph.name_uk)
         label = f"§{paragraph.number} · {title}"
         api_url = reverse("api_play_paragraph", args=[lesson.pk])
-        theory_url = reverse("item_list", args=[lesson.pk])
+        theory_url = reverse("paragraph_page", args=[lesson.pk])
     map_url = reverse("grade_map_page", args=[grade.number]) + "#" + _lesson_ref(kind, lesson)
-    return render(request, "education/play_v2.html", {
+    return render(request, "education/play.html", {
         "title": title, "label": label, "kind": kind, "lesson": lesson,
         "isl": _island_of(paragraph), "grade": grade, "current_grade": grade.number,
         "api_url": api_url, "map_url": map_url, "theory_url": theory_url,
