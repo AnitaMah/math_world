@@ -250,3 +250,23 @@ class InvariantTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ParagraphHeadingInHeaderBandTests(unittest.TestCase):
+    """§ 5 стоїть так високо (y≈56pt), що рядок потрапляє в колонтитул без номера сторінки."""
+
+    @staticmethod
+    def _header_page(pdf_page, heading, *rows):
+        lay = page(pdf_page, *rows)
+        words = [Word(t, BBox(80 + j * 60, 40, 80 + j * 60 + 50, 70), 99.0) for j, t in enumerate(heading.split())]
+        lay.header_lines = [Line(words=words, page_index=pdf_page, line_id=99, zone="header")]
+        return lay
+
+    def test_heading_opens_paragraph_once(self):
+        toc = [TocEntry("section", "I", "Натуральні числа і дії з ними"),
+               TocEntry("paragraph", "1", "Натуральні числа"),
+               TocEntry("item", "1", "Ряд натуральних чисел")]
+        layouts = [self._header_page(5, "§ 1. Натуральні числа", "1. Ряд натуральних чисел", "Текст пункту."),
+                   self._header_page(6, "§ 1. Натуральні числа", "Ще текст.")]
+        root = parse_structure(M5, layouts, toc=toc).root
+        self.assertEqual([p.number for p in kinds(root, "paragraph")], ["1"])

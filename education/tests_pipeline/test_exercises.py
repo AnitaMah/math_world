@@ -188,3 +188,11 @@ class EnrichTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ContinuationLineIsNotFigureLabelTests(unittest.TestCase):
+    def test_equation_with_units_is_text(self):
+        self.assertFalse(is_figure_label_line(line((100, "CD = 23 см, DE = 10 см."))))
+
+    def test_real_labels_still_detected(self):
+        self.assertTrue(is_figure_label_line(line((100, "A D B"))))

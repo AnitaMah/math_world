@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 from rapidfuzz import fuzz
 
 from .datatypes import BBox, Line, Node, SourceRef
-from .layout import PageLayout
+from .layout import PageLayout, split_running_header
 from .profiles import TextbookProfile
 from .profiles.base import TocEntry, normalize_marker_text, section_number
 
@@ -112,12 +112,20 @@ class PageLine:
                          bbox=self.line.bbox, line_ids=(self.line.line_id,))
 
 
+_HEADING_SIGN_RE = re.compile(r"^§\s?\d{1,2}\.\s*\S")     # лише справжній знак «§»
+
+
 def iter_body_lines(layouts: Iterable[PageLayout], skip_pages: Iterable[int] = ()) -> Iterator[PageLine]:
     """Рядки тіла всіх сторінок по порядку (колонтитули вже прибрані в layout)."""
     skip = set(skip_pages)
     for layout in sorted(layouts, key=lambda lay: lay.pdf_page):
         if layout.pdf_page in skip:
             continue
+        # Перша сторінка § без колонтитула: «§ 5. Десяткові дроби» стоїть у верхній смузі й без номера сторінки
+        # в тому ж рядку — це заголовок, а не колонтитул (у справжнього колонтитула номер у цьому ж рядку).
+        for line in layout.header_lines:
+            if line.words and _HEADING_SIGN_RE.match(line.text.strip()) and split_running_header(line)[1] is None:
+                yield PageLine(line, layout)
         for line in layout.body_lines:
             if line.words:
                 yield PageLine(line, layout)
@@ -374,7 +382,8 @@ class StructureParser:
 
         entry = self._match_paragraph(text)
         if entry:
-            self._open_paragraph(entry, pl)
+            if self.paragraph is None or self.paragraph.number != entry.number:    # повтор заголовка — не новий §
+                self._open_paragraph(entry, pl)
             return
         entry = self._match_item(text)
         if entry:

@@ -108,6 +108,25 @@ def _merge_boxes(boxes: list[BBox], gap: int) -> list[BBox]:
     return merged
 
 
+def _split_side_by_side(box: BBox, boxes_src: list[BBox], caps: list[BBox], text_height: int) -> list[BBox]:
+    """Розділяє злиту область, якщо під нею в одному ряду стоять ≥2 підписи «Рис. N» (рис. 22 і 23 поруч).
+
+    Первинні плями розкладаємо за найближчим по горизонталі підписом; якщо кожен підпис
+    отримав свої плями — повертаємо окремі області, інакше лишаємо як було.
+    """
+    row = [c for c in caps if box.x0 - text_height <= c.center[0] <= box.x1 + text_height
+           and 0 <= c.y0 - box.y1 <= text_height * 6]
+    if len(row) < 2 or len(boxes_src) < 2:
+        return [box]
+    groups: dict[int, list[BBox]] = {}
+    for b in boxes_src:
+        j = min(range(len(row)), key=lambda k: abs(row[k].center[0] - b.center[0]))
+        groups.setdefault(j, []).append(b)
+    if len(groups) < 2:
+        return [box]
+    return [BBox.union_all(g) for g in groups.values()]
+
+
 def find_figure_regions(image: np.ndarray, layout: PageLayout, text_height: int | None = None) -> list[BBox]:
     """Області рисунків на сторінці (у пікселях оригінальної картинки)."""
     import cv2
@@ -143,7 +162,13 @@ def find_figure_regions(image: np.ndarray, layout: PageLayout, text_height: int 
         if (big or long_thin) and (ink[y:y + h, x:x + w] > 0).sum() > text_height * 3:
             boxes.append(BBox(x, y, x + w, y + h))
     boxes += [r.bbox for r in layout.regions if r.kind == "figure"]
-    boxes = _merge_boxes(boxes, gap=text_height)
+    raw_boxes = list(boxes)
+    merged = _merge_boxes(boxes, gap=text_height)
+    boxes = []
+    caps = [ln.bbox for ln in layout.body_lines if is_caption_line(ln)]
+    for box in merged:
+        boxes += _split_side_by_side(box, boxes_src=[b for b in raw_boxes if box.x0 <= b.x0 and box.y0 <= b.y0 and b.x1 <= box.x1 and b.y1 <= box.y1], caps=caps,
+                                     text_height=text_height)
     return sorted((b for b in boxes if b.width < w_img * 0.95), key=lambda b: (b.y0, b.x0))
 
 

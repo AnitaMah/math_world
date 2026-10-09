@@ -83,6 +83,19 @@ class ImporterTests(TestCase):
         self.assertEqual(Exercise.objects.count(), 1)
         self.assertEqual(ImportRun.objects.filter(status="success").count(), 2)
 
+    def test_new_pdf_of_same_textbook_rebinds_instead_of_duplicating(self):
+        """Повна книга замість стор. 1–46: інший sha PDF, але той самий підручник і ті самі дані."""
+        self.imp()
+        first = Textbook.objects.get()
+        newer = copy.deepcopy(self.data)
+        newer["meta"]["pdf_sha256"] = "b" * 64
+        newer["meta"]["pdf_name"] = "5-klas-matematika-merzljak-2018.pdf"
+        res = self.imp(newer)
+        tb = Textbook.objects.get()                      # досі один підручник
+        self.assertEqual((tb.pk, tb.pdf_sha256, tb.pdf_name), (first.pk, "b" * 64, newer["meta"]["pdf_name"]))
+        self.assertTrue(any("перепідв" in w for w in res.warnings))
+        self.assertEqual((Exercise.objects.count(), Section.objects.count()), (1, 1))
+
     # ------------------------------------------------------------------ 0762
     def test_one_changed_exercise(self):
         self.imp()

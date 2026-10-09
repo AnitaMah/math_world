@@ -59,11 +59,18 @@ class SplitExercise:
     figure_labels: str = ""   # підписи з рисунка, що потрапили в рядки вправи («А N К е R»)
 
 
+_NOT_LABEL_TOKENS = frozenset({"=", "+", "−", "-", "–", "×", "·", ":", "<", ">", "≈"})
+_UNITS = frozenset({"мм", "см", "дм", "м", "км", "г", "кг", "т", "л", "хв", "год", "с", "грн", "га"})
+
+
 def is_figure_label_line(line: Line) -> bool:
     """Рядок з підписів рисунка: майже самі 1–2-символьні «слова» (А, В, С, К) і жодного справжнього слова."""
     words = [w.text.strip(".,;:") for w in line.words]
     words = [w for w in words if w]
     if not words:
+        return False
+    # «CD = 23 см, DE = 10 см.» — продовження умови, а не підписи точок: є знак рівності/дії або одиниця виміру
+    if any(w in _NOT_LABEL_TOKENS for w in words) or any(w in _UNITS for w in words):
         return False
     short = sum(1 for w in words if len(w) <= 2)
     longest_alpha = max((sum(ch.isalpha() for ch in w) for w in words), default=0)

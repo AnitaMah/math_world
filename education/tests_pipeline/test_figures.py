@@ -76,6 +76,21 @@ class ExtractTests(unittest.TestCase):
             self.assertTrue(fig.path.exists())
             self.assertEqual(fig.path.name, "p019_ris15.png")
 
+    def test_side_by_side_figures_are_separate(self):
+        img = np.full((800, 1000), 255, np.uint8)
+        caps = [text_line("Рис. 22", 150, 420, line_id=1), text_line("Рис. 23", 650, 420, line_id=2)]
+        for ln in caps:
+            draw_text_block(img, ln)
+        cv2.line(img, (100, 300), (350, 300), 0, 2)               # рис. 22 — ліворуч
+        cv2.line(img, (225, 270), (225, 330), 0, 2)
+        cv2.line(img, (400, 300), (700, 300), 0, 2)               # рис. 23 — праворуч, впритул
+        cv2.line(img, (550, 270), (550, 330), 0, 2)
+        layout = PageLayout(pdf_page=21, page_height=800, body_lines=caps)
+        figs = extract_page_figures(img, layout)
+        self.assertEqual(sorted(f.number for f in figs), ["22", "23"])
+        by = {f.number: f for f in figs}
+        self.assertLess(by["22"].bbox.x1, by["23"].bbox.x0)
+
     def test_heading_underline_is_not_figure(self):
         img = np.full((800, 600), 255, np.uint8)
         cv2.line(img, (60, 300), (360, 300), 0, 2)               # підкреслення «Вправи»

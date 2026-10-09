@@ -199,10 +199,22 @@ class TextbookImporter:
             author, year = profile.author, profile.year
         except KeyError:
             self.result.warnings.append(f"невідомий профіль {meta['profile']!r}: автор/рік не заповнено")
-        textbook, created = Textbook.objects.get_or_create(
-            pdf_sha256=meta["pdf_sha256"],
-            defaults={"subject": subject, "grade": grade, "profile_code": meta["profile"], "title": meta["title"],
-                      "author": author, "year": year, "pdf_name": meta["pdf_name"]})
+        textbook = Textbook.objects.filter(pdf_sha256=meta["pdf_sha256"]).first()
+        created = False
+        if textbook is None:
+            # Той самий підручник, але інший PDF (напр. повна книга замість стор. 1–46): підручник той самий —
+            # перепідв'язуємо до нового файла, ключі уроків/вправ лишаються, тож дані не дублюються.
+            textbook = Textbook.objects.filter(profile_code=meta["profile"], grade=grade, subject=subject).first()
+            if textbook is not None:
+                self.result.warnings.append(
+                    f"Підручник {textbook.pk} перепідв'язано до нового PDF ({textbook.pdf_name} → {meta['pdf_name']})")
+                textbook.pdf_sha256, textbook.pdf_name = meta["pdf_sha256"], meta["pdf_name"]
+                textbook.save(update_fields=["pdf_sha256", "pdf_name"])
+            else:
+                textbook = Textbook.objects.create(
+                    pdf_sha256=meta["pdf_sha256"], subject=subject, grade=grade, profile_code=meta["profile"],
+                    title=meta["title"], author=author, year=year, pdf_name=meta["pdf_name"])
+                created = True
         if not created and (textbook.grade_id != grade.pk or textbook.subject_id != subject.pk):
             raise ValidationError(f"Підручник {textbook} уже прив'язаний до іншого класу/предмета")
         self.textbook, self.grade = textbook, grade
