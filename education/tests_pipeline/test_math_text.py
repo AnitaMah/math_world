@@ -170,3 +170,15 @@ class PowerTests(unittest.TestCase):
 
     def test_huge_exponent_rejected(self):
         self.assertEqual(analyze_expression("2 + 3⁹⁹").status, "malformed")
+
+
+class GroupedNumberTrustTests(unittest.TestCase):
+    def test_ocr_text_with_spaces_is_suspect(self):
+        r = analyze_expression("67 216 : 8;")
+        self.assertEqual((r.status, r.issues), ("suspect", ["grouped_number"]))
+
+    def test_text_layer_with_spaces_is_ok(self):
+        r = analyze_expression("67 216 : 8;", trusted_text=True)
+        self.assertEqual((r.status, r.answer, r.expression), ("ok", "8402", "67216 : 8"))
+        r = analyze_expression("(318 . 207 − 64 934) . 276 + 604 . 88;", trusted_text=True)
+        self.assertEqual((r.status, r.answer), ("ok", "299344"))

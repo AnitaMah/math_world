@@ -196,3 +196,25 @@ class ContinuationLineIsNotFigureLabelTests(unittest.TestCase):
 
     def test_real_labels_still_detected(self):
         self.assertTrue(is_figure_label_line(line((100, "A D B"))))
+
+
+class TrustedTextDifficultyTests(unittest.TestCase):
+    def run_enrich(self, trusted):
+        import tempfile
+        from pathlib import Path
+        lines = [line((79, "12. Обчисліть:"), y=0, line_id=0)]
+        layout = PageLayout(pdf_page=7, page_height=1329, body_lines=lines)
+        root = Node("textbook")
+        root.add(Node("block", data={"block_type": "exercise"})).add(
+            Node("exercise", number="12", text="Обчисліть:", data={"difficulty": "medium", "line_keys": [[7, 0]]}))
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "p.png"
+            cv2.imwrite(str(path), np.full((100, 300), 255, np.uint8))      # на картинці значка немає
+            enrich_exercises(root, [layout], get_profile("math_merzlyak_5"), {7: path}, trusted_text=trusted)
+        return root.find("exercise")[0].data["difficulty"]
+
+    def test_text_layer_level_wins_over_pixels(self):
+        self.assertEqual(self.run_enrich(trusted=True), "medium")
+
+    def test_ocr_level_is_replaced_by_pixels(self):
+        self.assertIsNone(self.run_enrich(trusted=False))

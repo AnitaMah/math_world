@@ -267,8 +267,14 @@ def enrich_exercises(
     layouts: Iterable[PageLayout],
     profile: TextbookProfile,
     page_images: Mapping[int, Path] | None = None,
+    trusted_text: bool = False,
 ) -> EnrichStats:
-    """Доповнює кожну вправу дерева підпунктами й мітками (змінює дерево на місці)."""
+    """Доповнює кожну вправу дерева підпунктами й мітками (змінює дерево на місці).
+
+    trusted_text — слова з вбудованого текстового шару PDF: значок складності (◦ • •• *) там справжній символ,
+    тож читаємо його з тексту, а аналіз пікселів лишається лише для вправ, де значка в тексті не знайшлося.
+    На Мерзляку-5 текстовий шар не дав жодного порушення порядку складності проти 166 у пікселів.
+    """
     by_key: dict[tuple[int, int], Line] = {}
     for layout in layouts:
         for line in layout.body_lines:
@@ -337,7 +343,9 @@ def enrich_exercises(
                     homework = is_colored(img, number_box)
                 elif profile.homework_marker == "margin_icon":
                     homework = has_margin_icon(img, number_box)
-                if profile.difficulty_from_image:
+                if profile.difficulty_from_image and trusted_text and ex.data.get("difficulty") not in (None, "unknown"):
+                    ex.data["difficulty_ocr"] = ex.data["difficulty"]          # значок прочитано з тексту — довіряємо
+                elif profile.difficulty_from_image:
                     symbol = detect_difficulty_mark(img, number_box, next_box)
                     level = profile.difficulty_marks.get(symbol) if symbol else None
                     ocr_level = ex.data.get("difficulty")

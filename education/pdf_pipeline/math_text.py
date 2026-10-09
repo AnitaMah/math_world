@@ -57,7 +57,8 @@ def tokenize_expr(text: str, trusted_text: bool = False) -> list[Token]:
     """Розбиває вираз на токени і нормалізує знаки: −–— → «-», ·×* → «*», :÷ → «/».
 
     trusted_text — текст з вбудованого шару PDF (не OCR): «.» між операндами — це «·» множення,
-    а не помилка розпізнавання, тож `dot_as_mul` не підозрілий."""
+    а не помилка розпізнавання, тож `dot_as_mul` не підозрілий; так само число з пробілами-тисячами
+    («67 216») у шарі — одне число, а не два розірваних OCR, тож `grouped_number` не підозрілий."""
     tokens: list[Token] = []
     for m in _TOKEN_RE.finditer(text):
         kind = m.lastgroup
@@ -66,7 +67,7 @@ def tokenize_expr(text: str, trusted_text: bool = False) -> list[Token]:
             continue
         if kind == "grouped":
             tokens.append(Token("number", raw.replace(" ", "").replace(" ", ""), raw,
-                                suspect="grouped_number"))
+                                suspect="" if trusted_text else "grouped_number"))
         elif kind == "number":
             tokens.append(Token("number", raw.replace(",", "."), raw))
         elif kind == "sup":

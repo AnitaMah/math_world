@@ -46,6 +46,7 @@ class ParagraphMarkerTests(unittest.TestCase):
 class ValueTests(unittest.TestCase):
     def test_clean_value(self):
         self.assertEqual(clean_value(" 4: "), "4")
+        self.assertEqual(clean_value("545 679; Рис. 224"), "545 679")      # підпис рисунка не частина відповіді
         self.assertEqual(clean_value("Hi"), "ні")
         self.assertEqual(clean_value("- 36"), "-36")
 

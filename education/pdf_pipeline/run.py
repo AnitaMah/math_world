@@ -347,7 +347,9 @@ def _run_structure(profile: Any, res: RunResult, state: dict[str, Any], overwrit
     parsed = parse_structure(profile, body)
     root = parsed.root
     state["parse_issues"] = parsed.issues
-    enrich = enrich_exercises(root, res.layouts, profile, page_paths)
+    engines = {o.engine for o in state.get("ocr", {}).values()}
+    trusted_text = bool(engines) and all(e.startswith("pdftext") for e in engines)
+    enrich = enrich_exercises(root, res.layouts, profile, page_paths, trusted_text=trusted_text)
     flag_difficulty_order(root)
 
     bars = {}
@@ -357,10 +359,9 @@ def _run_structure(profile: Any, res: RunResult, state: dict[str, Any], overwrit
             if found:
                 bars[lay.pdf_page] = found
     natural = profile.grade <= 5
-    engines = {o.engine for o in state.get("ocr", {}).values()}
     state["natural_numbers"] = natural
     math = enrich_math(root, natural_numbers=natural, fraction_bars=bars,
-                      trusted_text=bool(engines) and all(e.startswith("pdftext") for e in engines))
+                      trusted_text=trusted_text)
 
     figures = extract_all_figures(body, page_paths, res.out_dir / "figures", overwrite=overwrite_figures)
     fig_stats = attach_figures(root, figures)
