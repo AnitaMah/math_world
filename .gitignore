@@ -60,3 +60,6 @@ tools/frontend/shots/
 tools/frontend/test-results/
 tools/frontend/ui.sqlite3
 tools/frontend/playwright-report/
+
+# робочі файли ручної перевірки (черга review_queue.csv тощо)
+review/

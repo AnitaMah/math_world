@@ -34,10 +34,12 @@ def ocr_page(prepared: PreparedPage, engine: OcrEngine, params: OcrParams | None
         return PageOcr.from_dict(load_json(out))
 
     started = time.perf_counter()
-    raw_words = engine.recognize(prepared.path, params)
+    if hasattr(engine, "recognize_page"):       # текстовий шар PDF: координати вже в системі оригіналу
+        words = engine.recognize_page(prepared.page)
+    else:
+        raw_words = engine.recognize(prepared.path, params)
+        words = [dataclasses.replace(w, bbox=prepared.transform.to_original(w.bbox)) for w in raw_words]
     duration_ms = int((time.perf_counter() - started) * 1000)
-
-    words = [dataclasses.replace(w, bbox=prepared.transform.to_original(w.bbox)) for w in raw_words]
     result = PageOcr(
         page=prepared.page,
         words=words,

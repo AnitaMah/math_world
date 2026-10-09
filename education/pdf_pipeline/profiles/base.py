@@ -136,6 +136,7 @@ class TextbookProfile:
     toc_path: str | None = None
     skip_pages: frozenset[int] = frozenset()      # обкладинка, передмова, зміст…
     answers_pages: tuple[int, int] | None = None  # (перша, остання) сторінка PDF з відповідями
+    ocr_engine: str = "tesseract"       # "tesseract" або "pdftext" (вбудований текстовий шар PDF)
     header_band: float = 0.11
     footer_band: float = 0.06
     notes: tuple[str, ...] = field(default_factory=tuple)

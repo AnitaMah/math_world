@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import logging
 import subprocess
 import sys
@@ -48,6 +49,11 @@ STAGES = ("inspect", "images", "preprocess", "ocr", "layout", "structure", "visi
 CACHED_STAGES = ("images", "preprocess", "ocr")
 
 EngineFactory = Callable[[PipelineConfig], OcrEngine]
+
+
+def pdftext_engine(pdf_path: Path, cfg: PipelineConfig) -> OcrEngine:
+    from .ocr.pdftext import PdfTextEngine
+    return PdfTextEngine(pdf_path)
 
 
 def default_engine(cfg: PipelineConfig) -> OcrEngine:
@@ -122,11 +128,13 @@ def run_pipeline(pdf_path: str | Path, profile_code: str, pages: Iterable[int], 
                  out_dir: str | Path = "pipeline_out", from_stage: str | None = None, to_stage: str | None = None,
                  force: bool = False, workers: int = 1, engine_factory: EngineFactory = default_engine,
                  ocr_params: OcrParams | None = None, vision_limit: int = 0, vision_dry_run: bool = False,
-                 vision_client: Any = None, report: bool = True) -> RunResult:
+                 vision_client: Any = None, report: bool = True, ocr_engine: str | None = None) -> RunResult:
     from .profiles import get_profile
 
     pdf_path = Path(pdf_path)
     profile = get_profile(profile_code)
+    if engine_factory is default_engine and (ocr_engine or profile.ocr_engine) == "pdftext":
+        engine_factory = functools.partial(pdftext_engine, pdf_path)
     if force and from_stage is None:
         from_stage = "images"
     force_from, last = _stage_range(from_stage, to_stage)
@@ -349,8 +357,10 @@ def _run_structure(profile: Any, res: RunResult, state: dict[str, Any], overwrit
             if found:
                 bars[lay.pdf_page] = found
     natural = profile.grade <= 5
+    engines = {o.engine for o in state.get("ocr", {}).values()}
     state["natural_numbers"] = natural
-    math = enrich_math(root, natural_numbers=natural, fraction_bars=bars)
+    math = enrich_math(root, natural_numbers=natural, fraction_bars=bars,
+                      trusted_text=bool(engines) and all(e.startswith("pdftext") for e in engines))
 
     figures = extract_all_figures(body, page_paths, res.out_dir / "figures", overwrite=overwrite_figures)
     fig_stats = attach_figures(root, figures)
@@ -431,6 +441,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--vision-limit", type=int, default=0, help="скільки вправ віддати vision-LLM (0 — вимкнено)")
     parser.add_argument("--vision-dry-run", action="store_true", help="показати, що піде у vision, без запитів")
     parser.add_argument("--no-report", action="store_true")
+    parser.add_argument("--ocr-engine", choices=["tesseract", "pdftext"], help="за замовчуванням — з профілю")
     parser.add_argument("-v", "--verbose", action="count", default=0, help="-v — по сторінках, -vv — debug")
     args = parser.parse_args(argv)
 
@@ -449,7 +460,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         res = run_pipeline(args.pdf, args.profile, pages, cfg, out_dir=args.out, from_stage=args.from_stage,
                            to_stage=args.to_stage, force=args.force, workers=args.workers,
                            vision_limit=args.vision_limit, vision_dry_run=args.vision_dry_run,
-                           report=not args.no_report)
+                           report=not args.no_report, ocr_engine=args.ocr_engine)
     except PipelineError as exc:
         print(f"\nПОМИЛКА: {exc}", file=sys.stderr)
         return 2

@@ -50,8 +50,11 @@ class Token:
     suspect: str = ""   # чому підозрілий ("" — ні)
 
 
-def tokenize_expr(text: str) -> list[Token]:
-    """Розбиває вираз на токени і нормалізує знаки: −–— → «-», ·×* → «*», :÷ → «/»."""
+def tokenize_expr(text: str, trusted_text: bool = False) -> list[Token]:
+    """Розбиває вираз на токени і нормалізує знаки: −–— → «-», ·×* → «*», :÷ → «/».
+
+    trusted_text — текст з вбудованого шару PDF (не OCR): «.» між операндами — це «·» множення,
+    а не помилка розпізнавання, тож `dot_as_mul` не підозрілий."""
     tokens: list[Token] = []
     for m in _TOKEN_RE.finditer(text):
         kind = m.lastgroup
@@ -78,7 +81,7 @@ def tokenize_expr(text: str) -> list[Token]:
             elif raw in DIV_CHARS:
                 tokens.append(Token("op", "/", raw))
         elif kind == "dot":
-            tokens.append(Token("op", "*", raw, suspect="dot_as_mul"))
+            tokens.append(Token("op", "*", raw, suspect="" if trusted_text else "dot_as_mul"))
         elif kind in ("lparen", "rparen"):
             tokens.append(Token(kind, "(" if kind == "lparen" else ")", raw))
         else:
@@ -216,14 +219,14 @@ _LEADING_RE = re.compile(r"^[^\d(\[a-zA-Zа-яА-ЯіїєґІЇЄҐ]+")   # см
 _PRETTY = {"+": "+", "-": "−", "*": "·", "/": ":"}
 
 
-def analyze_expression(text: str, natural_numbers: bool = True) -> ExprResult:
+def analyze_expression(text: str, natural_numbers: bool = True, trusted_text: bool = False) -> ExprResult:
     """Аналізує текст підпункту як арифметичний вираз.
 
     natural_numbers — книга про натуральні числа (5 клас): дробова чи від'ємна
     відповідь там майже напевно означає зламаний знак (напр. «98 : 34» замість «98 · 34»).
     """
     core = _LEADING_RE.sub("", _TRAILING_RE.sub("", text.strip()))
-    tokens = tokenize_expr(core)
+    tokens = tokenize_expr(core, trusted_text)
     if any(t.kind == "word" for t in tokens) or not any(t.kind == "op" for t in tokens):
         return ExprResult("not_expression", core)
     if any(t.kind == "var" for t in tokens):
@@ -298,7 +301,7 @@ class MathStats:
 
 
 def enrich_math(root: Node, natural_numbers: bool = True,
-                fraction_bars: dict[int, list[BBox]] | None = None) -> MathStats:
+                fraction_bars: dict[int, list[BBox]] | None = None, trusted_text: bool = False) -> MathStats:
     """Для підпунктів обчислювальних вправ: вираз, статус, автоматична відповідь.
 
     fraction_bars — {сторінка: [дроби]} з detect_fraction_bars; вправа, у рамці якої
@@ -315,7 +318,7 @@ def enrich_math(root: Node, natural_numbers: bool = True,
         if ex.data.get("task_verb") not in ("compute",):
             continue
         for sub in ex.find("subexercise"):
-            result = analyze_expression(sub.text, natural_numbers=natural_numbers)
+            result = analyze_expression(sub.text, natural_numbers=natural_numbers, trusted_text=trusted_text)
             stats.expressions += 1
             setattr(stats, result.status, getattr(stats, result.status) + 1)
             sub.data["expr"] = result.expression

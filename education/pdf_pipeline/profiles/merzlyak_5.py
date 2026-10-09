@@ -14,7 +14,8 @@ PROFILE = TextbookProfile(
     author="Мерзляк А. Г., Полонський В. Б., Якір М. С.",
     year=2018,
     title="Математика. 5 клас",
-    pdf_name="5-klas-matematika-merzljak-2018-1-46.pdf",
+    pdf_name="5-klas-matematika-merzljak-2018.pdf",       # повна книга, 272 стор. (стор. PDF = стор. книги)
+    ocr_engine="pdftext",                                 # у повній книзі якісний текстовий шар; для 1–46 — tesseract
     lesson_level="item",
     section_re=re.compile(r"^Розділ\s+(?P<num>[IVX]+)\.?\s*(?P<title>.*)$", re.IGNORECASE),
     paragraph_re=re.compile(r"^§\s*(?P<num>\d{1,2})\.\s*(?P<title>.+)$"),
@@ -43,7 +44,10 @@ PROFILE = TextbookProfile(
     homework_marker="colored_number",    # номер, надрукований кольором (зелений «10.•»)
     difficulty_from_image=True,          # ◦ OCR губить зовсім, • читає як «"» — визначаємо за пікселями
     toc_path="data/5_class_ukr.txt",
-    skip_pages=frozenset({1, 2, 3, 4}),  # обкладинка, титул, «Від авторів», «Умовні позначення»
+    # обкладинка, титул, «Від авторів», «Умовні позначення»; «Вправи для повторення за курс» (252–262, окремий
+    # розділ без пунктів — пізніше); предметний покажчик і зміст (268–272). Відповіді — answers_pages.
+    skip_pages=frozenset({1, 2, 3, 4} | set(range(252, 263)) | set(range(268, 273))),
+    answers_pages=(263, 267),
     notes=(
         "Самоперевірка (1. Як називають…) іде після теорії без заголовка — розпізнається парсером за позицією.",
         "◀ — кінець розв'язування прикладу в теорії.",
