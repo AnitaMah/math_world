@@ -1,7 +1,7 @@
 // Панель уроку праворуч (фаза 10): що в уроці, зірки, кнопки, острови класу.
 // Слухає події мапи: map:ready (острови класу) і lesson:select (вибраний урок).
 import { plural } from "./ui.js";
-import { playUrl, starsText } from "./map-nodes.js";
+import { nodeLabel, playUrl, starsText } from "./map-nodes.js";
 
 export const BLOCK_NAMES = {
   theory: "Теорія", self_check: "Перевір себе", oral_exercise: "Розв’язуємо усно", exercise: "Вправи",
@@ -179,3 +179,14 @@ export function mountPanel(panel, stage) {
 const panel = globalThis.document?.getElementById("lessonPanel");
 const stage = globalThis.document?.getElementById("mapStage");
 if (panel && stage) mountPanel(panel, stage);
+
+/** Текстова альтернатива мапи (фаза 16): § → уроки з посиланнями на теорію. Для скрінрідера. */
+export function lessonListModel(map) {
+  return map.paragraphs.map((p) => ({
+    heading: `§${p.number}. ${p.shortTitle}`,
+    lessons: p.lessonIdx.map((i) => {
+      const lesson = map.lessons[i];
+      return { text: nodeLabel(lesson), href: lesson.state === "soon" ? "" : theoryUrl(lesson) };
+    }),
+  }));
+}

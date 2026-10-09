@@ -2,7 +2,7 @@
 {% load static ui %}
 {# Екран гри в новому UI (фаза 14). Повноекранний: без верхньої панелі й нижньої навігації. #}
 {# Дані — /api/play/… (js/play-v2.js), колір — острів уроку (isl-N на body). #}
-{% block title %}{{ title }} · гра{% endblock %}
+{% block title %}{{ label }} · гра{% endblock %}
 {% block body_class %}page-play isl-{{ isl }}{% endblock %}
 {% block styles %}<link rel="stylesheet" href="{% static 'education/css/play-v2.css' %}">{% endblock %}
 {% block topbar %}{% endblock %}
@@ -16,11 +16,11 @@
       <div class="progress progress--md" role="progressbar" aria-label="Розв’язано" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
         <div class="progress__fill" id="progressFill" style="--p: 0%"></div>
       </div>
-      <p class="game__label">{{ label }}</p>
+      <h1 class="game__label">{{ label }}</h1>
     </div>
     <div class="game__chips">
-      <span class="chip" title="Бали">{% icon "bolt" size=18 class="icon--points" %}<span data-me="points">—</span></span>
-      <span class="chip game__streak" title="Днів поспіль">{% icon "flame" size=18 class="icon--streak" %}<span data-me="streak">—</span></span>
+      <span class="chip" title="Бали">{% icon "bolt" size=18 %}<span class="visually-hidden">Бали: </span><span data-me="points">—</span></span>
+      <span class="chip game__streak" title="Днів поспіль">{% icon "flame" size=18 %}<span class="visually-hidden">Днів поспіль: </span><span data-me="streak">—</span></span>
     </div>
   </header>
 

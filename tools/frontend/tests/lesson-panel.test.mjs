@@ -80,3 +80,19 @@ test("theoryUrl", () => {
   assert.equal(theoryUrl({ kind: "item", id: 5 }), "/items/5/");
   assert.equal(theoryUrl({ kind: "paragraph", id: 54 }), "/paragraphs/54/items/");
 });
+
+test("lessonListModel: текстова альтернатива мапи (фаза 16)", async () => {
+  const { lessonListModel } = await import("../../../education/static/education/js/lesson-panel.js");
+  const map = {
+    paragraphs: [{ number: 1, shortTitle: "Натуральні числа", lessonIdx: [0, 1] }],
+    lessons: [
+      { kind: "item", id: 7, number: 1, title: "Ряд чисел", state: "done", stars: 2 },
+      { kind: "item", id: 8, number: 2, title: "Цифри", state: "soon", stars: 0 },
+    ],
+  };
+  const [g] = lessonListModel(map);
+  assert.equal(g.heading, "§1. Натуральні числа");
+  assert.equal(g.lessons[0].href, "/items/7/");
+  assert.match(g.lessons[0].text, /^Урок 1\. Ряд чисел — пройдено/);
+  assert.equal(g.lessons[1].href, "");
+});

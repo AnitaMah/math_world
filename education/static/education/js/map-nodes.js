@@ -112,6 +112,7 @@ export function renderNodes(layer, map, L, { onSelect } = {}) {
     btn.dataset.index = String(i);
     btn.setAttribute("aria-pressed", "false");
     btn.setAttribute("aria-label", nodeLabel(lesson));
+    btn.tabIndex = -1;                 // «блукаючий» tabindex: одна зупинка Tab на мапу, далі — стрілки
     if (lesson.state === "locked") btn.append(lockSvg());
     else btn.textContent = String(lesson.number);
     wrap.append(btn);
@@ -128,6 +129,14 @@ export function renderNodes(layer, map, L, { onSelect } = {}) {
     order.push(i);
   }
 
+  /** Зупинка Tab — на вибраному уроці (або на першому, поки нічого не вибрано на цьому шарі). */
+  function setTabStop(i) {
+    for (const b of buttons.values()) b.tabIndex = -1;
+    const target = buttons.get(i) ?? buttons.get(order[0]);
+    if (target) target.tabIndex = 0;
+  }
+  setTabStop(-1);
+
   /** Вибрати урок i (індекс у map.lessons). Якщо його немає на цьому шарі — лише запам’ятати. */
   function select(i, { focus = false, push = true, silent = false } = {}) {
     if (i < 0 || i >= map.lessons.length) return;
@@ -135,6 +144,7 @@ export function renderNodes(layer, map, L, { onSelect } = {}) {
     current = i;
     const btn = buttons.get(i);
     btn?.setAttribute("aria-pressed", "true");
+    setTabStop(i);
     if (focus) btn?.focus();
     if (push) history.replaceState(null, "", lessonHash(map.lessons[i]));
     if (!silent) onSelect?.(i, map.lessons[i]);
@@ -156,6 +166,8 @@ export function renderNodes(layer, map, L, { onSelect } = {}) {
     const k = order.indexOf(Number(btn.dataset.index));
     if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); select(order[Math.min(k + 1, order.length - 1)], { focus: true }); }
     if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); select(order[Math.max(k - 1, 0)], { focus: true }); }
+    if (e.key === "Home") { e.preventDefault(); select(order[0], { focus: true }); }
+    if (e.key === "End") { e.preventDefault(); select(order[order.length - 1], { focus: true }); }
   });
 
   return { select, selected: () => current, buttons, order };

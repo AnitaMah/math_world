@@ -3,6 +3,7 @@
 import { api, normalizeMap } from "./api.js";
 import { layoutGrade } from "./map-layout.js";
 import { renderNodes, fogRegions, initialIndex } from "./map-nodes.js";
+import { lessonListModel } from "./lesson-panel.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const stage = document.getElementById("mapStage");
@@ -109,7 +110,34 @@ async function load() {
   stage.addEventListener("lesson:select", (e) => {
     if (e.detail.source === "mobile") nodes.select(e.detail.index, { silent: true, push: true });
   });
+  renderLessonList(map);
   stage.dispatchEvent(new CustomEvent("map:ready", { detail: { map, layout: L, nodes } }));
+}
+
+/** Прихований для очей список усіх уроків — текстова альтернатива мапи для скрінрідера. */
+function renderLessonList(map) {
+  const nav = document.getElementById("lessonList");
+  if (!nav) return;
+  const title = document.createElement("h2");
+  title.textContent = "Усі уроки списком";
+  const groups = lessonListModel(map).map((g) => {
+    const h = document.createElement("h3");
+    h.textContent = g.heading;
+    const ol = document.createElement("ol");
+    for (const l of g.lessons) {
+      const li = document.createElement("li");
+      if (l.href) {
+        const a = document.createElement("a");
+        a.href = l.href;
+        a.tabIndex = -1;            // для скрінрідера (режим читання); Tab — по видимих елементах
+        a.textContent = l.text;
+        li.append(a);
+      } else li.textContent = l.text;
+      ol.append(li);
+    }
+    return [h, ol];
+  });
+  nav.replaceChildren(title, ...groups.flat());
 }
 
 document.getElementById("mapRetry").addEventListener("click", load);

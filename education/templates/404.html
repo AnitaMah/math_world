@@ -1,0 +1,13 @@
+{% extends "education/base.html" %}
+{% load static ui %}
+{# Сторінка 404 у новому UI (фаза 16). Працює лише при DEBUG=False. #}
+{% block title %}Сторінку не знайдено{% endblock %}
+{% block body_class %}page-error{% endblock %}
+{% block content %}
+<section class="error-page">
+  <p class="error-page__code" aria-hidden="true">404</p>
+  <h1 class="error-page__title">Тут лише море</h1>
+  <p class="error-page__text">Такої сторінки немає — можливо, острів перейменували або посилання з помилкою.</p>
+  <a class="btn btn--primary" href="{% url 'home' %}">{% icon "map" size=18 %}На мапу</a>
+</section>
+{% endblock %}

@@ -1,6 +1,15 @@
 {% extends "education/base.html" %}
 {% load static ui %}
 {% block title %}Обери свій світ{% endblock %}
+{% block meta %}
+  <meta name="description" content="Математика 5–6 класу як гра: острови-розділи, уроки за підручником, зірки й бали. Автоперевірка відповідей і підказки ШІ.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="uk_UA">
+  <meta property="og:site_name" content="Математичний світ">
+  <meta property="og:title" content="Математичний світ — мапа островів з математики">
+  <meta property="og:description" content="Проходь уроки за підручником, збирай зірки й відкривай нові острови.">
+  <meta property="og:url" content="{{ request.build_absolute_uri }}">
+{% endblock %}
 {% block body_class %}page-world{% endblock %}
 {% block styles %}<link rel="stylesheet" href="{% static 'education/css/world.css' %}">{% endblock %}
 {% block content %}

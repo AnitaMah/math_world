@@ -65,8 +65,9 @@
 
 /* --- Телефон: поки вся мапа в масштабі; один острів і нижній лист — фаза 11 ------------- */
 @media (max-width: 720px) {
-  .map-layout { height: calc(100dvh - var(--topbar-h-mobile) - var(--bottom-nav-h)); }
-  .page-map main { padding-bottom: 0 !important; }
+  /* висота = екран мінус верх і нижня навігація; на низькому екрані (масштаб 200 %) — мін. 360 px,
+     сторінка прокручується, а відступ під навігацією не дає їй закрити нижній лист */
+  .map-layout { height: calc(100dvh - var(--topbar-h-mobile) - var(--bottom-nav-h) - env(safe-area-inset-bottom)); min-height: 360px; }
   .lesson-panel { display: none; }
 }
 
@@ -198,7 +199,7 @@
   box-shadow: var(--shadow-sheet);
 }
 .lesson-sheet__head {
-  display: flex; align-items: flex-start; gap: 10px; width: 100%;
+  display: flex; align-items: flex-start; gap: 10px; width: 100%; min-height: 44px;
   padding: 0; border: 0; background: none; text-align: left; cursor: pointer;
 }
 .lesson-sheet__titles { flex: 1; min-width: 0; display: flex; flex-direction: column; }

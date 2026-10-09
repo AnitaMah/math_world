@@ -18,9 +18,9 @@
   <span class="topbar__spacer"></span>
 
   <div class="topbar__stats">
-    <span class="chip topbar__chip" title="Зірки">{% icon "star" size=18 %}<span data-me="stars">—</span><span class="chip__sub topbar__long"> / <span data-me="max_stars">114</span></span></span>
-    <span class="chip topbar__chip" title="Бали">{% icon "bolt" size=18 %}<span data-me="points">—</span><span class="topbar__long"> балів</span></span>
-    <span class="chip topbar__chip" title="Серія днів">{% icon "flame" size=18 %}<span data-me="streak">—</span><span class="topbar__long"> <span data-me="streak_word">днів</span></span></span>
+    <span class="chip topbar__chip" title="Зірки">{% icon "star" size=18 %}<span class="visually-hidden">Зірки: </span><span data-me="stars">—</span><span class="chip__sub topbar__long"> / <span data-me="max_stars">114</span></span></span>
+    <span class="chip topbar__chip" title="Бали">{% icon "bolt" size=18 %}<span class="visually-hidden">Бали: </span><span data-me="points">—</span><span class="topbar__long"> балів</span></span>
+    <span class="chip topbar__chip" title="Серія днів">{% icon "flame" size=18 %}<span class="visually-hidden">Серія: </span><span data-me="streak">—</span><span class="topbar__long"> <span data-me="streak_word">днів</span></span></span>
   </div>
 
   {% if user.is_authenticated %}

@@ -41,7 +41,7 @@
 @media (max-width: 720px) {
   .topbar { height: var(--topbar-h-mobile); padding: 0 var(--sp-4); gap: var(--sp-2); }
   .topbar__brand, .topbar__grades, .topbar__login, .topbar__account { display: none; }
-  .topbar__grade-pick { display: inline-flex; gap: 6px; padding: 7px 12px; font-size: var(--fs-14); }
+  .topbar__grade-pick { display: inline-flex; gap: 6px; min-height: 44px; padding: 7px 14px; font-size: var(--fs-14); }
   .topbar__stats { gap: var(--sp-2); }
   .topbar__chip { background: none; border: 0; padding: 4px; gap: 4px; }
   .topbar__long { display: none; }
@@ -73,3 +73,9 @@
 .stub__icon { width: 56px; height: 56px; border-radius: var(--r-xl); display: grid; place-items: center;
   background: var(--auto-bg); color: var(--isl-1-acc); }
 .stub__name { display: flex; align-items: center; gap: var(--sp-2); font-weight: var(--fw-heavy); }
+
+/* --- Сторінка помилки 404 (фаза 16) ------------------------------------------- */
+.error-page { max-width: 520px; margin: 12vh auto; padding: 0 var(--sp-4); display: flex; flex-direction: column; align-items: center; gap: var(--sp-3); text-align: center; }
+.error-page__code { font: var(--fw-bold) 88px / 1 var(--font-display); color: var(--acc); opacity: .9; }
+.error-page__title { font-size: var(--fs-26); }
+.error-page__text { color: var(--text-2); margin-bottom: var(--sp-3); }

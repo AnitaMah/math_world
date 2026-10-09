@@ -47,6 +47,7 @@ p a, li a, .prose a { text-decoration: underline; text-underline-offset: 2px; }
 
 .skip-link {
   position: absolute; left: var(--sp-4); top: var(--sp-2); z-index: 100;
+  display: inline-flex; align-items: center; min-height: 44px;
   padding: var(--sp-2) var(--sp-4);
   background: var(--text); color: var(--ink);
   border-radius: var(--r-md);

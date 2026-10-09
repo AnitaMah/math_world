@@ -10,7 +10,8 @@
       <svg class="sea" id="sea" role="img" aria-labelledby="seaTitle">
         <title id="seaTitle">Мапа {{ grade.number }} класу: острови-розділи і стежки уроків</title>
       </svg>
-      <div class="map-nodes" id="mapNodes" role="group" aria-label="Уроки"></div>
+      <div class="map-nodes" id="mapNodes" role="group" aria-label="Уроки" aria-describedby="nodesHelp"></div>
+      <p class="visually-hidden" id="nodesHelp">Стрілки — перейти між уроками, Home і End — перший і останній урок.</p>
       <p class="map-fog-hint" id="fogHint" hidden>У хмарах — уроки, які ще не імпортовано з підручника</p>
     </div>
 
@@ -44,6 +45,7 @@
       <ul class="panel-islands__list stack stack--gap-2" data-f="islands"></ul>
     </section>
   </aside>
+  <nav class="visually-hidden" id="lessonList" aria-label="Усі уроки списком"></nav>
 
   {# Телефон (фаза 11): один острів-параграф на екран. Показується CSS-ом при ширині ≤ 720 px. #}
   <section class="map-mobile" id="mapMobile" aria-label="Мапа {{ grade.number }} класу" hidden>
@@ -59,7 +61,7 @@
       <button class="mm-nav mm-nav--prev" type="button" data-f="prev" hidden>{% icon "chevron-left" size=16 %}<span></span></button>
       <div class="mm-canvas" id="mmCanvas">
         <svg class="sea" id="mmSea" aria-hidden="true"></svg>
-        <div class="map-nodes" id="mmNodes" role="group" aria-label="Уроки острова"></div>
+        <div class="map-nodes" id="mmNodes" role="group" aria-label="Уроки острова" aria-describedby="nodesHelp"></div>
       </div>
       <button class="mm-nav mm-nav--next" type="button" data-f="next" hidden><span></span>{% icon "chevron-right" size=16 %}</button>
     </div>
@@ -100,7 +102,7 @@
       <span class="island-pick__body">
         <span class="island-pick__title" data-f="title"></span>
         <span class="island-pick__score" data-f="score"></span>
-        <span class="progress progress--sm"><span class="progress__fill"></span></span>
+        <span class="progress progress--sm" aria-hidden="true"><span class="progress__fill"></span></span>
       </span>
       {% icon "chevron-right" size=18 %}
     </button>
@@ -149,7 +151,7 @@
   <li class="score-row">
     <button class="score-row__btn" type="button">
       <span class="score-row__head"><span class="score-row__label" data-f="label"></span><span class="score-row__score" data-f="score"></span></span>
-      <span class="progress progress--sm" role="progressbar" aria-valuemin="0"><span class="progress__fill"></span></span>
+      <span class="progress progress--sm" aria-hidden="true"><span class="progress__fill"></span></span>
     </button>
   </li>
 </template>

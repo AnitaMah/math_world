@@ -2,7 +2,7 @@
 .page-auth { min-height: 100dvh; background: radial-gradient(ellipse at 50% 0%, var(--bg-sea-1), var(--bg) 70%); }
 
 .auth-top { display: flex; justify-content: center; padding: var(--sp-6) var(--sp-4) 0; }
-.auth-top__brand { display: inline-flex; align-items: center; gap: var(--sp-3); color: var(--text); text-decoration: none; font: var(--fw-bold) var(--fs-17) / 1 var(--font-display); }
+.auth-top__brand { min-height: 44px; display: inline-flex; align-items: center; gap: var(--sp-3); color: var(--text); text-decoration: none; font: var(--fw-bold) var(--fs-17) / 1 var(--font-display); }
 .auth-top__brand:hover { color: var(--text); }
 
 .auth {
@@ -16,6 +16,7 @@
 .auth__error .icon { margin-top: 1px; }
 .auth__form { display: flex; flex-direction: column; gap: var(--sp-4); }
 .auth__form .btn { min-height: 52px; margin-top: var(--sp-2); }
+.auth__switch a { display: inline-block; padding: 12px 4px; margin: -12px 0; }
 .auth__switch { text-align: center; color: var(--muted); font-size: var(--fs-14); font-weight: var(--fw-bold); }
 
 /* Поле */
