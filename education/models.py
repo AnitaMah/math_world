@@ -99,6 +99,9 @@ class Item(models.Model):
     content_de = models.TextField(blank=True, null=True)
     type = models.CharField(max_length=50, default='основний')
     image_path = models.CharField(max_length=255, blank=True, null=True)
+    # Ручна позиція вузла на мапі (viewBox 1080×820); null — розкладка рахується на фронтенді
+    map_x = models.IntegerField(null=True, blank=True)
+    map_y = models.IntegerField(null=True, blank=True)
 
     def details_list(self, lang='uk'):
         import re

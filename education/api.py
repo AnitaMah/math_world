@@ -13,7 +13,7 @@ import time
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import EmptyPage, Paginator
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Sum
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -127,13 +127,25 @@ def textbook_tree(request, textbook_id):
 
 @api_view
 @require_GET
-def grade_map(request, number):
-    """Дерево класу для мапи гри (заміна статичного map_data_uk.json): розділи → § → пункти + к-сть вправ."""
-    grade = get_object_or_404(Grade, number=number, subject__code=request.GET.get("subject", "math"))
+def grades(request):
+    """Класи для екрана «Світ»: підручник, к-сть розділів/уроків, зірки гравця, поточний урок."""
     from .game import get_player
-    sections = list(Section.objects.filter(grade=grade).order_by("number"))
+    from .grade_map import grade_summary, load_grade
+
     player = get_player(request, create=False)
-    return ok({"grade": grade.number, "subject": grade.subject.code, "sections": _tree(sections, player)})
+    qs = Grade.objects.filter(subject__code=request.GET.get("subject", "math")).order_by("number")
+    return ok([grade_summary(gm) for gm in (load_grade(g, player) for g in qs) if gm.sections])
+
+
+@api_view
+@require_GET
+def grade_map(request, number):
+    """Мапа класу (контракт `docs/frontend`): розділи → § → уроки зі станом, зірками, завданнями, блоками."""
+    from .game import get_player
+    from .grade_map import load_grade, map_payload
+
+    grade = get_object_or_404(Grade, number=number, subject__code=request.GET.get("subject", "math"))
+    return ok(map_payload(load_grade(grade, get_player(request, create=False))))
 
 
 def _lesson(kind: str, pk: int):
@@ -279,14 +291,22 @@ def play(request, kind, pk):
     from .game import get_player, lesson_tasks
     from .models import LessonProgress
 
+    from .grade_map import find_lesson
+
     lesson = _lesson(kind, pk)
     player = get_player(request, create=False)
+    gm, info = find_lesson(kind, lesson, player)
+    if info.state == "locked" and not request.user.is_staff:
+        return api_error(403, "lesson_locked", "Спершу пройди попередній урок")
     tasks = lesson_tasks(lesson, player)
     lookup = {"item": lesson} if kind == "item" else {"paragraph": lesson}
     prog = LessonProgress.objects.filter(player=player, **lookup).first() if player else None
     title = lesson.content.splitlines()[0] if kind == "item" and lesson.content else getattr(lesson, "name_uk", "")
     return ok({
-        "lesson": {"id": lesson.pk, "kind": kind, "number": lesson.number, "title": title},
+        "lesson": {"id": lesson.pk, "kind": kind, "number": lesson.number, "title": title,
+                   "grade": gm.grade.number, "section_number": info.section.number,
+                   "paragraph_number": info.paragraph.number, "island": gm.paragraph_island[info.paragraph.pk],
+                   "state": info.state},
         "tasks": [{"id": t.id, "kind": t.kind, "points": t.points, "solved": t.solved,
                    "exercise": {"id": t.exercise.pk, "number": t.exercise.number, "difficulty": t.exercise.difficulty,
                                 "condition": t.exercise.condition, "condition_tail": t.exercise.condition_tail,
@@ -303,4 +323,5 @@ def me(request):
     player = get_player(request, create=False)
     return ok({"authenticated": request.user.is_authenticated,
                "name": request.user.username if request.user.is_authenticated else "Гість",
-               "points": player.points if player else 0, "streak": player.streak if player else 0})
+               "points": player.points if player else 0, "streak": player.streak if player else 0,
+               "stars": player.progress.aggregate(n=Sum("stars"))["n"] or 0 if player else 0})

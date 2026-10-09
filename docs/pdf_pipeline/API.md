@@ -86,7 +86,8 @@ curl "http://127.0.0.1:8000/api/items/117/exercises/?page_size=5"
 ### `GET /api/play/items/<id>/` · `GET /api/play/paragraphs/<id>/`
 Усі завдання уроку для екрана гри (без відповідей) і прогрес поточного гравця.
 ```json
-{"lesson": {"id": 117, "kind": "item", "number": 1, "title": "Ряд натуральних чисел"},
+{"lesson": {"id": 117, "kind": "item", "number": 1, "title": "Ряд натуральних чисел",
+            "grade": 5, "section_number": 1, "paragraph_number": 1, "island": 1, "state": "current"},
  "tasks": [{"id": "s900", "kind": "auto", "points": 1, "solved": false,
             "exercise": {"id": 501, "number": 12, "difficulty": null, "condition": "Обчисліть:", "figures": []},
             "sub": {"id": 900, "number": "1", "text": "238 + 435;"}},
@@ -110,6 +111,25 @@ curl "http://127.0.0.1:8000/api/items/117/exercises/?page_size=5"
 або модель недоступна; `429` — більше 5 перевірок задачі за добу.
 
 ### `GET /api/me/`
-`{"authenticated": false, "name": "Гість", "points": 13, "streak": 3}`
+`{"authenticated": false, "name": "Гість", "points": 13, "streak": 3, "stars": 8}` — `stars` = сума зірок за всі уроки.
 
 Сторінки: `/play/item/<id>/`, `/play/paragraph/<id>/`, `/accounts/login/`, `/accounts/signup/`.
+
+## Мапа-архіпелаг (контракт фронтенду)
+Формат = моки `education/static/education/mock/` (перевіряє `tools/frontend/check_mocks.py`). Рахує все
+`education/grade_map.py`; views лише віддають. Запитів — кілька на клас, не на урок.
+
+- `GET /api/grades/` → масив класів, що мають розділи: `number, subject, author, year, sections, lessons,
+  playable_lessons, stars, max_stars (=3·lessons), current {kind,id,number}|null`.
+- `GET /api/grades/<n>/map/` → `{grade, subject, textbook {author,year}|null, current {kind,id}|null,
+  sections[{id,number,title,paragraphs[{id,number,title,items[урок]}]}]}`. **Урок:** `id, number, title,
+  state, stars, solved, total, tasks {auto, ai}, blocks[], map {x,y}`. У Тарасенкової (§ без пунктів)
+  поля уроку лежать на самому параграфі, `items: []`.
+- **Стан** (`state`): `soon` — немає ігрових завдань (стежку не блокує); `done` — є хоч 1 зірка;
+  `current` — перший урок без зірок у відкритому ланцюгу; `open` — відкритий без зірок (якщо зірки є
+  далі по стежці); `locked` — закритий. Правило: урок N+1 відкривається, коли урок N має ≥ 1 зірку.
+- `blocks` — типи блоків уроку з: theory, self_check, oral_exercise, exercise, review_exercise, wise_owl,
+  history_aside (`self_test` Тарасенкової → `self_check`).
+- `map.x/y` — ручна позиція вузла (`Item.map_x/map_y`, `Paragraph.map_x/map_y`), інакше `null`.
+- `GET /api/play/…` для закритого уроку → **403 `lesson_locked`** (персонал `is_staff` не блокується).
+  У `lesson` додано `grade, section_number, paragraph_number, island (1–5, колір острова), state`.
