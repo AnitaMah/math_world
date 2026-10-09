@@ -58,3 +58,5 @@ review/gemini_request_count.json
 tools/frontend/node_modules/
 tools/frontend/shots/
 tools/frontend/test-results/
+tools/frontend/ui.sqlite3
+tools/frontend/playwright-report/

@@ -88,7 +88,8 @@ WSGI_APPLICATION = 'math_world.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        # DB_PATH — окрема база (візуальні тести фронтенду: tools/frontend/seed_ui.py); інакше робоча
+        'NAME': config('DB_PATH', default=str(BASE_DIR / 'db.sqlite3')),
     }
 }
 

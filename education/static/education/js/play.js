@@ -43,7 +43,7 @@ function showFeedback(f) {
   fb.hidden = false;
 }
 
-const hideFeedback = () => { fb.hidden = true; };
+const hideFeedback = () => { fb.hidden = true; fb.className = "feedback"; };
 
 function setMain(text, variant = "primary", disabled = false) {
   mainBtn.textContent = text;
