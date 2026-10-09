@@ -154,3 +154,19 @@ class EnrichMathTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PowerTests(unittest.TestCase):
+    def test_superscript_power(self):
+        r = analyze_expression("26² – (12² · 3 + 175);", trusted_text=True)
+        self.assertEqual((r.status, r.answer, r.expression), ("ok", "69", "26² − (12² · 3 + 175)"))
+
+    def test_power_of_bracket_and_chain(self):
+        self.assertEqual(analyze_expression("(2 + 3)² + 4³").answer, "89")
+        self.assertEqual(analyze_expression("2 · 3¹⁰").answer, "118098")
+
+    def test_stray_superscript_is_malformed(self):
+        self.assertEqual(analyze_expression("5 + ² · 3").status, "malformed")
+
+    def test_huge_exponent_rejected(self):
+        self.assertEqual(analyze_expression("2 + 3⁹⁹").status, "malformed")

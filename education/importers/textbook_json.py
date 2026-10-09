@@ -92,6 +92,7 @@ class TextbookImporter:
             json.dumps(data, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
         self.result = ImportResult(dry_run=dry_run)
         self.figures: dict[str, Figure] = {}
+        self._seen_items: set[int] = set()
 
     @classmethod
     def from_file(cls, path: str | Path, **kwargs: Any) -> TextbookImporter:
@@ -224,7 +225,25 @@ class TextbookImporter:
             self._figure(fig)
         for sec in self.data["sections"]:
             self._section(sec)
+        self._prune_items()
         return textbook
+
+    def _prune_items(self) -> None:
+        """Пункти підручника, яких уже немає в JSON (напр. після виправлення структури: пункти 30–38 переїхали з §4 в §5).
+
+        Без цього стара копія лишається поруч з новою, і гра показує дублікати вправ. Пункт з прогресом гравців або
+        ручними правками не видаляємо — лише попереджаємо.
+        """
+        stale = (Item.objects.filter(paragraph__section__textbook=self.textbook)
+                 .exclude(pk__in=self._seen_items).select_related("paragraph"))
+        for item in stale:
+            has_manual = item.content_blocks.filter(text_source="manual").exists()
+            if has_manual or item.progress.exists():
+                self.result.warnings.append(
+                    f"§{item.paragraph.number} п.{item.number}: немає в JSON, але має прогрес/ручні правки — не видалено")
+                continue
+            item.delete()
+            self.result.count("Item", "deleted", 1)
 
     def _section(self, sec: dict[str, Any]) -> None:
         number = sec["index"] or int(sec["number"])
@@ -252,6 +271,7 @@ class TextbookImporter:
             number_i = int(it["number"])
             item = self._structural(Item, {"paragraph": paragraph, "number": number_i}, "content",
                                     it["title"], it["title"], f"пункт {number_i}")
+            self._seen_items.add(item.pk)
             self._lesson_blocks(item, "item", it["blocks"])
 
     def _structural(self, model, lookup, name_field, new_name, title, label):

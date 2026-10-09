@@ -96,6 +96,16 @@ class ImporterTests(TestCase):
         self.assertTrue(any("перепідв" in w for w in res.warnings))
         self.assertEqual((Exercise.objects.count(), Section.objects.count()), (1, 1))
 
+    def test_stale_item_not_in_json_is_pruned(self):
+        """Пункт, що переїхав в інший параграф, не лишає по собі дубліката."""
+        self.imp()
+        keep = Item.objects.get()
+        stale = Item.objects.create(paragraph=keep.paragraph, number=99, content="Застарілий")
+        res = self.imp()
+        self.assertFalse(Item.objects.filter(pk=stale.pk).exists())
+        self.assertTrue(Item.objects.filter(pk=keep.pk).exists())
+        self.assertEqual(res.as_stats()["Item"]["deleted"], 1)
+
     # ------------------------------------------------------------------ 0762
     def test_one_changed_exercise(self):
         self.imp()

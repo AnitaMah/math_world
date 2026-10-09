@@ -22,7 +22,7 @@ LAYER_CONF = 99.0       # текстовий шар — не «впевнені�
 class PdfTextEngine:
     """Рушій, що читає текстовий шар. Один екземпляр тримає відкритий PDF (створюється в кожному процесі)."""
 
-    VERSION = "1"
+    VERSION = "3"
 
     def __init__(self, pdf_path: str | Path):
         self.pdf_path = Path(pdf_path)
@@ -45,18 +45,52 @@ class PdfTextEngine:
         rect = pdf_page.rect
         sx, sy = page.width / rect.width, page.height / rect.height
         words: list[Word] = []
-        for x0, y0, x1, y1, text, block, line, idx in pdf_page.get_text("words", sort=True):
-            parts = text.replace("\xa0", " ").split()
-            if not parts:
+        raw = pdf_page.get_text("rawdict")
+        for block_no, block in enumerate(raw["blocks"]):
+            if block.get("type") != 0:
                 continue
-            total = sum(len(p) for p in parts) or 1
-            cursor = x0
-            for k, part in enumerate(parts):      # «6 учнів» з нерозривним пробілом → два слова
-                x_end = x1 if k == len(parts) - 1 else cursor + (x1 - x0) * len(part) / total
-                words.append(Word(
-                    text=part,
-                    bbox=BBox(int(cursor * sx), int(y0 * sy), max(int(cursor * sx), round(x_end * sx)),
-                              max(int(y0 * sy), round(y1 * sy))),
-                    conf=LAYER_CONF, block_no=block, par_no=0, line_no=line, word_no=idx + k))
-                cursor = x_end
+            for line_no, line in enumerate(block["lines"]):
+                for chars in _split_words(line):
+                    text = "".join(c for c, _ in chars)
+                    x0 = min(b[0] for _, b in chars)
+                    y0 = min(b[1] for _, b in chars)
+                    x1 = max(b[2] for _, b in chars)
+                    y1 = max(b[3] for _, b in chars)
+                    words.append(Word(
+                        text=text,
+                        bbox=BBox(int(x0 * sx), int(y0 * sy), max(int(x0 * sx), round(x1 * sx)),
+                                  max(int(y0 * sy), round(y1 * sy))),
+                        conf=LAYER_CONF, block_no=block_no, par_no=0, line_no=line_no, word_no=len(words)))
         return words
+
+
+_SUPERSCRIPT = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
+
+
+def _split_words(line: dict) -> list[list[tuple[str, tuple]]]:
+    """Рядок rawdict → слова (списки (символ, bbox)); цифри верхнього індексу стають «²», «³» …
+
+    Верхній індекс — фрагмент дрібніший за 75% найбільшого кеглю рядка (показник 6 pt проти 10 pt)
+    і піднятий над базовою лінією. Прапорець superscript не беремо: його мають і чисельники дробів (9 pt).
+    «26²» інакше читалось би як «262» і ламало обчислення.
+    """
+    spans = line["spans"]
+    biggest = max((sp["size"] for sp in spans), default=0)
+    baseline = max((sp["origin"][1] for sp in spans), default=0)
+    words: list[list[tuple[str, tuple]]] = []
+    current: list[tuple[str, tuple]] = []
+    for sp in spans:
+        sup = sp["size"] < biggest * 0.75 and sp["origin"][1] < baseline - sp["size"] * 0.25
+        for ch in sp["chars"]:
+            c = ch["c"]
+            if c.isspace():
+                if current:
+                    words.append(current)
+                    current = []
+                continue
+            if sup and c.isdigit():
+                c = c.translate(_SUPERSCRIPT)
+            current.append((c, ch["bbox"]))
+    if current:
+        words.append(current)
+    return words

@@ -23,6 +23,8 @@ from .datatypes import BBox, Node
 
 # --------------------------------------------------------------------------- токени
 
+SUP_DIGITS = str.maketrans("⁰¹²³⁴⁵⁶⁷⁸⁹", "0123456789")
+MAX_EXPONENT = 20
 MINUS_CHARS = "−–—"
 MUL_CHARS = "·×*∙"
 DIV_CHARS = ":÷/"
@@ -31,6 +33,7 @@ SUSPECT_MUL = "°"            # OCR так читає «·»
 _TOKEN_RE = re.compile(r"""
     (?P<grouped>\d{1,3}(?:[  ]\d{3})+(?![\d,]))   # 24 564 — число з пробілами-тисячами
   | (?P<number>\d+(?:,\d+)?)                          # 238, 3,5
+  | (?P<sup>[⁰¹²³⁴⁵⁶⁷⁸⁹]+)                          # показник степеня з текстового шару: 26²
   | (?P<op>[+\-−–—·×*∙:÷/°])
   | (?P<lparen>[(\[])
   | (?P<rparen>[)\]])
@@ -66,6 +69,8 @@ def tokenize_expr(text: str, trusted_text: bool = False) -> list[Token]:
                                 suspect="grouped_number"))
         elif kind == "number":
             tokens.append(Token("number", raw.replace(",", "."), raw))
+        elif kind == "sup":
+            tokens.append(Token("sup", raw, raw))
         elif kind == "op":
             if raw == "+":
                 tokens.append(Token("op", "+", raw))
@@ -102,6 +107,9 @@ def check_tokens(tokens: list[Token]) -> list[str]:
             if not expect_operand:
                 problems.append("missing_operator")      # «24 564» без знака, «12:5-4 1»
             expect_operand = False
+        elif tok.kind == "sup":
+            if expect_operand:
+                problems.append("stray_superscript")     # степінь без основи: «+ ²»
         elif tok.kind == "op":
             if expect_operand:
                 problems.append("double_operator")       # «43--24»
@@ -163,6 +171,16 @@ class _Parser:
         return value
 
     def factor(self) -> Fraction:
+        value = self.primary()
+        while (tok := self.peek()) and tok.kind == "sup":
+            self.take()
+            exponent = int(tok.value.translate(SUP_DIGITS))
+            if exponent > MAX_EXPONENT:
+                raise ValueError("завеликий показник степеня")
+            value = value ** exponent
+        return value
+
+    def primary(self) -> Fraction:
         tok = self.peek()
         if tok is None:
             raise ValueError("вираз обірвався")
@@ -232,7 +250,10 @@ def analyze_expression(text: str, natural_numbers: bool = True, trusted_text: bo
     if any(t.kind == "var" for t in tokens):
         return ExprResult("not_expression", core, issues=["has_variable"])
 
-    pretty = " ".join(_PRETTY.get(t.value, t.value) if t.kind == "op" else t.value for t in tokens)
+    pretty = ""
+    for t in tokens:
+        piece = _PRETTY.get(t.value, t.value) if t.kind == "op" else t.value
+        pretty += piece if t.kind == "sup" or not pretty else " " + piece
     pretty = pretty.replace("( ", "(").replace(" )", ")")
     problems = check_tokens(tokens)
     if problems:
