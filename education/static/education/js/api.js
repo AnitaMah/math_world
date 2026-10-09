@@ -38,8 +38,13 @@ export async function postJSON(url, body) {
 
 // --- Режим моків ----------------------------------------------------------------------
 
-/** "" (реальний API) | "1" | "demo" | "states". */
-export function mockMode(search = globalThis.location?.search ?? "") {
+/**
+ * "" (реальний API) | "1" | "demo" | "states". Моки працюють лише в розробці: на сторінці з
+ * `<html data-debug="1">` (settings.DEBUG) — у продакшні `?mock=1` нічого не підмінює (фаза 17).
+ * У node (тести) документа немає — дозволено.
+ */
+export function mockMode(search = globalThis.location?.search ?? "", debug = isDebugPage()) {
+  if (!debug) return "";
   const fromUrl = new URLSearchParams(search).get("mock");
   if (fromUrl !== null) return fromUrl === "0" ? "" : (fromUrl || "1");
   try {
@@ -47,6 +52,11 @@ export function mockMode(search = globalThis.location?.search ?? "") {
   } catch {
     return "";   // приватне вікно, заблоковане сховище
   }
+}
+
+function isDebugPage() {
+  const html = globalThis.document?.documentElement;
+  return html ? html.dataset.debug === "1" : true;
 }
 
 function mockUser(search = globalThis.location?.search ?? "") {
@@ -110,7 +120,8 @@ async function mockSolution(exId, solution) {
     progress: { solved: 4, total: 4, points: 12, stars: correct ? 3 : 2 } } };
 }
 
-// --- Фолбеки, поки бекенд не віддає всіх полів контракту -------------------------------
+// --- Колишні фолбеки (фаза 6). З фази 17 бекенд віддає `state` і `tasks` (контракт), тож
+// normalizeMap їх не викликає; функції й тести лишаються на випадок відкату бекенду. ------------
 
 /** Стан уроку, якщо в відповіді немає `state`. `locked` фронтенд не вигадує — це правило бекенду. */
 export function deriveState(lesson, current) {
@@ -158,14 +169,12 @@ export function normalizeMap(raw) {
       section.paragraphIdx.push(paraIdx);
       const items = p.items?.length ? p.items.map((it) => ({ ...it, kind: "item" })) : [{ ...p, kind: "paragraph" }];
       for (const it of items) {
-        const tasks = deriveTasks(it);
-        const total = it.total ?? (tasks.auto + tasks.ai);
+        const tasks = { auto: it.tasks?.auto ?? 0, ai: it.tasks?.ai ?? 0, approx: false };
         const lesson = {
           id: it.id, kind: it.kind, number: it.number, title: it.title, sectionIdx, paraIdx,
-          stars: it.stars ?? 0, solved: it.solved ?? 0, total, tasks, blocks: it.blocks ?? [],
-          map: it.map ?? { x: null, y: null },
+          stars: it.stars ?? 0, solved: it.solved ?? 0, total: it.total ?? 0, tasks, blocks: it.blocks ?? [],
+          map: it.map ?? { x: null, y: null }, state: it.state ?? "soon",
         };
-        lesson.state = deriveState({ ...it, total }, current);
         paragraph.lessonIdx.push(lessons.length);
         lessons.push(lesson);
       }

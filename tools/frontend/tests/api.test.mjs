@@ -69,3 +69,8 @@ test("mockMode з URL", () => {
   assert.equal(mockMode("?mock=0"), "");
   assert.equal(mockMode(""), "");   // у node немає localStorage — тихо ""
 });
+
+test("mockMode: поза DEBUG моки вимкнені (фаза 17)", () => {
+  assert.equal(mockMode("?mock=1", false), "");
+  assert.equal(mockMode("?mock=demo", true), "demo");
+});

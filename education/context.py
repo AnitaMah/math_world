@@ -4,4 +4,4 @@ from django.conf import settings
 
 def ui_flags(request):
     """Прапорці інтерфейсу, доступні в усіх шаблонах: ``{% if NEW_UI %}…{% endif %}``."""
-    return {"NEW_UI": getattr(settings, "NEW_UI", False)}
+    return {"NEW_UI": getattr(settings, "NEW_UI", False), "UI_DEBUG": settings.DEBUG}

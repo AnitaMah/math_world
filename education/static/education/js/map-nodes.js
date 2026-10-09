@@ -80,6 +80,18 @@ function lockSvg() {
  * Малює вузли в контейнері layer. Повертає API: select(i), selected().
  * onSelect(i, lesson) — для панелі уроку (фаза 10).
  */
+/**
+ * Де поставити ярлик «Ти тут», щоб він не закрив сусідній вузол чи його зірки:
+ * над вузлом → під ним → праворуч → ліворуч (перша вільна сторона; координати viewBox).
+ */
+export function tagSide(pos, all) {
+  const near = (dx, dy) => all.some((o) => o !== pos && Math.abs(o.x - pos.x - dx) < 48 && Math.abs(o.y - pos.y - dy) < 40);
+  if (!near(0, -62)) return "above";
+  if (!near(0, 62)) return "below";
+  if (!near(70, 0)) return "right";
+  return "left";
+}
+
 export function renderNodes(layer, map, L, { onSelect } = {}) {
   layer.replaceChildren();
   const pct = (v, total) => `${((v / total) * 100).toFixed(3)}%`;
@@ -100,7 +112,7 @@ export function renderNodes(layer, map, L, { onSelect } = {}) {
       ring.className = "node__ring";
       ring.setAttribute("aria-hidden", "true");
       const tag = document.createElement("span");
-      tag.className = "node__tag";
+      tag.className = `node__tag node__tag--${tagSide(pos, L.nodes)}`;
       tag.setAttribute("aria-hidden", "true");
       tag.textContent = "Ти тут";
       wrap.append(ring, tag);

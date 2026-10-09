@@ -9,9 +9,15 @@ export const PRAISE = ["Чудово!", "Правильно!", "Так трим�
 
 export const praise = (rand = Math.random) => PRAISE[Math.floor(rand() * PRAISE.length) % PRAISE.length];
 
-/** Спершу нерозв’язані, потім розв’язані (повторення); всередині — порядок уроку. */
+/**
+ * Спершу нерозв’язані, потім розв’язані (повторення). Серед них — спершу завдання з автоперевіркою,
+ * потім ШІ-задачі (бекенд віддає ШІ першими, а починати урок легше з коротких відповідей).
+ * Далі — порядок уроку.
+ */
 export function orderTasks(tasks) {
-  return tasks.map((_, i) => i).sort((a, b) => (tasks[a].solved - tasks[b].solved) || (a - b));
+  const ai = (t) => (t.kind === "ai" ? 1 : 0);
+  return tasks.map((_, i) => i).sort((a, b) =>
+    (tasks[a].solved - tasks[b].solved) || (ai(tasks[a]) - ai(tasks[b])) || (a - b));
 }
 
 export function solvedCount(tasks) {

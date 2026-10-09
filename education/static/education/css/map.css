@@ -130,6 +130,10 @@
   background: var(--ring); color: var(--ink);
   font-size: calc(12px * var(--s, 1)); font-weight: var(--fw-heavy); white-space: nowrap; pointer-events: none;
 }
+/* сторона ярлика — tagSide() у map-nodes.js: не закривати сусідній вузол */
+.node__tag--below { top: calc(48px * var(--s, 1)); }
+.node__tag--right { top: 0; translate: 0 -50%; left: calc(40px * var(--s, 1)); }
+.node__tag--left { top: 0; translate: -100% -50%; left: calc(-40px * var(--s, 1)); }
 
 /* --- Панель уроку (фаза 10) -------------------------------------------------------------- */
 .lesson-panel { display: flex; flex-direction: column; gap: var(--sp-5); }

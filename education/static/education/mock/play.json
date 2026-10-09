@@ -1,27 +1,98 @@
 {
-  "lesson": {"id": 119, "kind": "item", "number": 3, "title": "3. Відрізок. Довжина відрізка"},
+  "lesson": {
+    "id": 119,
+    "kind": "item",
+    "number": 3,
+    "title": "3. Відрізок. Довжина відрізка",
+    "grade": 5,
+    "section_number": 1,
+    "paragraph_number": 1,
+    "island": 1,
+    "state": "current"
+  },
   "tasks": [
-    {"id": "s9001", "kind": "auto", "points": 2, "solved": false,
-     "exercise": {"id": 801, "number": "78", "difficulty": "preparatory",
-                  "condition": "Знайдіть довжину відрізка AC, якщо AB = 8 см, BC = 5 см і точка B лежить між точками A і C.",
-                  "condition_tail": "", "figures": []},
-     "sub": {"id": 9001, "number": "1", "text": "AC = ? (у сантиметрах)"}},
-    {"id": "s9002", "kind": "auto", "points": 3, "solved": false,
-     "exercise": {"id": 802, "number": "84", "difficulty": "sufficient",
-                  "condition": "Обчисліть довжину ламаної ABCD, якщо її ланки дорівнюють:",
-                  "condition_tail": "Відповідь запишіть у міліметрах.", "figures": []},
-     "sub": {"id": 9002, "number": "2", "text": "AB = 2 см 3 мм, BC = 1 см 8 мм, CD = 4 см."}},
-    {"id": "s9003", "kind": "auto", "points": 2, "solved": true,
-     "exercise": {"id": 803, "number": "80", "difficulty": "medium",
-                  "condition": "Скільки відрізків зображено на рисунку, якщо на прямій позначено 4 точки?",
-                  "condition_tail": "", "figures": []},
-     "sub": {"id": 9003, "number": "1", "text": "Кількість відрізків"}},
-    {"id": "e804", "kind": "ai", "points": 5, "solved": false,
-     "exercise": {"id": 804, "number": "95", "difficulty": "high",
-                  "condition": "Відрізок MK на 7 см довший за відрізок KN, а їхня сума дорівнює 25 см. Точка K лежить на відрізку MN. Знайдіть довжини відрізків MK і KN.",
-                  "condition_tail": "", "figures": []},
-     "sub": null}
+    {
+      "id": "s9001",
+      "kind": "auto",
+      "points": 2,
+      "solved": false,
+      "exercise": {
+        "id": 801,
+        "number": 78,
+        "difficulty": "preparatory",
+        "condition": "Знайдіть довжину відрізка AC, якщо AB = 8 см, BC = 5 см і точка B лежить між точками A і C.",
+        "condition_tail": "",
+        "figures": []
+      },
+      "sub": {
+        "id": 9001,
+        "number": "1",
+        "text": "AC = ? (у сантиметрах)"
+      }
+    },
+    {
+      "id": "s9002",
+      "kind": "auto",
+      "points": 3,
+      "solved": false,
+      "exercise": {
+        "id": 802,
+        "number": 84,
+        "difficulty": "sufficient",
+        "condition": "Обчисліть довжину ламаної ABCD, якщо її ланки дорівнюють:",
+        "condition_tail": "Відповідь запишіть у міліметрах.",
+        "figures": []
+      },
+      "sub": {
+        "id": 9002,
+        "number": "2",
+        "text": "AB = 2 см 3 мм, BC = 1 см 8 мм, CD = 4 см."
+      }
+    },
+    {
+      "id": "s9003",
+      "kind": "auto",
+      "points": 2,
+      "solved": true,
+      "exercise": {
+        "id": 803,
+        "number": 80,
+        "difficulty": "medium",
+        "condition": "Скільки відрізків зображено на рисунку, якщо на прямій позначено 4 точки?",
+        "condition_tail": "",
+        "figures": []
+      },
+      "sub": {
+        "id": 9003,
+        "number": "1",
+        "text": "Кількість відрізків"
+      }
+    },
+    {
+      "id": "e804",
+      "kind": "ai",
+      "points": 5,
+      "solved": false,
+      "exercise": {
+        "id": 804,
+        "number": 95,
+        "difficulty": "high",
+        "condition": "Відрізок MK на 7 см довший за відрізок KN, а їхня сума дорівнює 25 см. Точка K лежить на відрізку MN. Знайдіть довжини відрізків MK і KN.",
+        "condition_tail": "",
+        "figures": []
+      },
+      "sub": null
+    }
   ],
-  "progress": {"solved": 1, "total": 4, "points": 2, "stars": 1},
-  "_mock_answers": {"9001": "13", "9002": "81", "9003": "6"}
+  "progress": {
+    "solved": 1,
+    "total": 4,
+    "points": 2,
+    "stars": 1
+  },
+  "_mock_answers": {
+    "9001": "13",
+    "9002": "81",
+    "9003": "6"
+  }
 }

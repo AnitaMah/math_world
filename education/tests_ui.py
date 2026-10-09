@@ -102,7 +102,7 @@ class BaseTemplateTests(TestCase):
     @override_settings(DEBUG=True)
     def test_base_skeleton(self):
         html = self.client.get("/ui/kit/").content.decode()
-        self.assertIn('<html lang="uk">', html)
+        self.assertIn('<html lang="uk"', html)
         self.assertIn("viewport-fit=cover", html)
         self.assertIn('<title>UI-кіт · Математичний світ</title>', html)
         # skip link — перший елемент body, веде на <main id="main">
@@ -643,3 +643,13 @@ class PolishTests(TestCase):
         self.assertNotIn("{{", html)
         self.assertIn('lang="uk"', html)
         self.assertIn('href="/"', html)
+
+
+class RealApiTests(TestCase):
+    """Перехід на реальний API (фаза 17)."""
+
+    def test_debug_flag_for_mocks(self):
+        with self.settings(DEBUG=True):
+            self.assertIn('<html lang="uk" data-debug="1">', self.client.get("/progress/").content.decode())
+        with self.settings(DEBUG=False):
+            self.assertIn('<html lang="uk">', self.client.get("/progress/").content.decode())

@@ -12,6 +12,10 @@ test("orderTasks: спершу нерозв’язані, порядок уро�
   assert.deepEqual(orderTasks([auto(true), auto(false), auto(true), auto(false)]), [1, 3, 0, 2]);
 });
 
+test("orderTasks: ШІ-задачі після авто-завдань (бекенд віддає їх першими)", () => {
+  assert.deepEqual(orderTasks([ai, ai, auto(false), auto(true), auto(false)]), [2, 4, 0, 1, 3]);
+});
+
 test("progressPct", () => {
   assert.equal(progressPct([]), 0);
   assert.equal(progressPct([auto(true), auto(false), auto(false)]), 33);

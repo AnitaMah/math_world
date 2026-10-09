@@ -49,3 +49,12 @@ test("fogRegions: у реальному стані хмари над §2–§5, 
   const demo = load("grade-5.demo.json");
   assert.equal(fogRegions(demo, layoutGrade(demo)).fog.length, 0);
 });
+
+test("tagSide: ярлик «Ти тут» не закриває сусідні вузли (фаза 17)", async () => {
+  const { tagSide } = await import("../../../education/static/education/js/map-nodes.js");
+  const me = { x: 100, y: 200 };
+  assert.equal(tagSide(me, [me]), "above");
+  assert.equal(tagSide(me, [me, { x: 100, y: 120 }]), "below");                       // вузол над ним
+  assert.equal(tagSide(me, [me, { x: 100, y: 120 }, { x: 100, y: 285 }]), "right");   // і під ним
+  assert.equal(tagSide(me, [me, { x: 100, y: 120 }, { x: 100, y: 285 }, { x: 180, y: 200 }]), "left");
+});
