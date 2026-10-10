@@ -109,3 +109,39 @@ class ResumeAfterInterruptTests(unittest.TestCase):
         meta.write_text("{", encoding="utf-8")
         res = self.go(InterruptingOcr(), to_stage="images")
         self.assertEqual(res.failed_pages, {})
+
+
+class PageImageCacheTests(unittest.TestCase):
+    """0870: у пам'яті тримається не більше кількох сторінок, а не вся книга."""
+
+    def setUp(self):
+        import cv2
+        import numpy as np
+        self.tmp = tempfile.TemporaryDirectory()
+        self.paths = {}
+        for n in range(1, 8):
+            p = Path(self.tmp.name) / f"p{n}.png"
+            cv2.imwrite(str(p), np.full((20, 20, 3), n, dtype=np.uint8))
+            self.paths[n] = p
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_keeps_at_most_size_pages_and_reuses_recent(self):
+        from education.pdf_pipeline.preprocess import PageImageCache
+        cache = PageImageCache(self.paths, size=3)
+        for n in range(1, 8):
+            self.assertEqual(int(cache.get(n)[0, 0, 0]), n)
+        self.assertEqual(len(cache._items), 3)
+        self.assertEqual(cache.loads, 7)
+        cache.get(7), cache.get(6)                     # свіжі сторінки — з пам'яті
+        self.assertEqual(cache.loads, 7)
+        cache.get(1)                                   # давно витіснена — читаємо знову
+        self.assertEqual(cache.loads, 8)
+
+    def test_unknown_page_is_none(self):
+        from education.pdf_pipeline.preprocess import PageImageCache
+        cache = PageImageCache(self.paths)
+        self.assertIsNone(cache.get(99))
+        self.assertIsNone(cache.get(None))
+        self.assertIn(3, cache)

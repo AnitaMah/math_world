@@ -298,6 +298,34 @@ def load_image(path: str | Path) -> Image:
     return img
 
 
+class PageImageCache:
+    """Невеликий LRU-кеш декодованих сторінок: тримає не більше `size` картинок (кожна ~10–30 МБ у пам'яті),
+    а не всю книгу. Порядок звернень майже завжди посторінковий, тож повторних читань з диска мало."""
+
+    def __init__(self, paths: dict, size: int = 3):
+        from collections import OrderedDict
+        self.paths = dict(paths or {})
+        self.size = max(1, size)
+        self._items: "OrderedDict[int, Image]" = OrderedDict()
+        self.loads = 0                       # скільки разів читали з диска (для тестів)
+
+    def __contains__(self, page) -> bool:
+        return page in self.paths
+
+    def get(self, page):
+        if page is None or page not in self.paths:
+            return None
+        if page in self._items:
+            self._items.move_to_end(page)
+            return self._items[page]
+        img = load_image(self.paths[page])
+        self.loads += 1
+        self._items[page] = img
+        while len(self._items) > self.size:
+            self._items.popitem(last=False)
+        return img
+
+
 def save_image(path: str | Path, img: Image) -> None:
     """Записує PNG (теж безпечно для кириличних шляхів)."""
     ok, buf = cv2.imencode(".png", img)

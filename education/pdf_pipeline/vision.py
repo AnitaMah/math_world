@@ -440,7 +440,6 @@ def run_vision(root: Node, page_images: Mapping[int, Path | np.ndarray], client:
     dry_run — нічого не відправляє, лише показує список зон і оцінку токенів.
     Бюджет вичерпано посеред прогону → зупиняємось, решта вправ лишається як була.
     """
-    from .preprocess import load_image
 
     template = PROMPTS[prompt_version]
     targets = select_targets(root, layouts)
@@ -448,15 +447,17 @@ def run_vision(root: Node, page_images: Mapping[int, Path | np.ndarray], client:
     if limit is not None:
         targets = targets[:limit]
     stats.selected = len(targets)
-    images: dict[int, np.ndarray] = {}
+    from .preprocess import PageImageCache
+    arrays = {p: v for p, v in page_images.items() if isinstance(v, np.ndarray)}     # готові картинки (тести)
+    images = PageImageCache({p: v for p, v in page_images.items() if p not in arrays})
     for target in targets:
         src = target.source
-        if src.pdf_page not in images:
-            img = page_images.get(src.pdf_page)
-            if img is None:
-                continue
-            images[src.pdf_page] = img if isinstance(img, np.ndarray) else load_image(img)
-        png = crop_png(images[src.pdf_page], src.bbox)
+        page_img = arrays.get(src.pdf_page)
+        if page_img is None:
+            page_img = images.get(src.pdf_page)
+        if page_img is None:
+            continue
+        png = crop_png(page_img, src.bbox)
         stats.estimated_tokens += estimate_tokens(src.bbox.width + 2 * CROP_PAD, src.bbox.height + 2 * CROP_PAD)
         ocr_text = exercise_ocr_text(target.exercise)
         stats.planned.append({"exercise": target.exercise.number, "page": src.pdf_page,

@@ -279,15 +279,11 @@ def enrich_exercises(
     for layout in layouts:
         for line in layout.body_lines:
             by_key[(layout.pdf_page, line.line_id)] = line
-    images: dict[int, np.ndarray] = {}
+    from .preprocess import PageImageCache
+    images = PageImageCache(page_images)
 
     def image_for(page: int) -> np.ndarray | None:
-        if not page_images or page not in page_images:
-            return None
-        if page not in images:
-            from .preprocess import load_image
-            images[page] = load_image(page_images[page])
-        return images[page]
+        return images.get(page)
 
     stats = EnrichStats()
     parent_block_type = {id(ex): block.data.get("block_type")

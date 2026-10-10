@@ -73,19 +73,14 @@ def crop_png_b64(image: np.ndarray, box: BBox, pad: int = CROP_PAD, max_width: i
 
 
 class _Images:
-    """Ліниве завантаження сторінок (кожна читається з диска один раз)."""
+    """Ліниве завантаження сторінок (в пам'яті лишається кілька останніх)."""
 
     def __init__(self, page_images: Mapping[int, Path] | None):
-        self.paths = dict(page_images or {})
-        self.cache: dict[int, np.ndarray] = {}
+        from .preprocess import PageImageCache
+        self._cache = PageImageCache(page_images)
 
     def get(self, page: int | None) -> np.ndarray | None:
-        if page is None or page not in self.paths:
-            return None
-        if page not in self.cache:
-            from .preprocess import load_image
-            self.cache[page] = load_image(self.paths[page])
-        return self.cache[page]
+        return self._cache.get(page)
 
 
 # --------------------------------------------------------------------------- секції
