@@ -102,3 +102,71 @@ class ImportCommandBackupTests(SimpleTestCase):
             with self.assertRaisesRegex(CommandError, "Бекап не вдався"):
                 call_command("import_textbook", "--json", __file__, stdout=io.StringIO())
         imp.from_file.assert_not_called()
+
+
+class RestoreTests(BackupTests):
+    """Відкат: спершу зберігає поточну базу, потім повертає вміст копії."""
+
+    def count(self, path=None):
+        return sqlite3.connect(path or self.db).execute("select count(*) from t").fetchone()[0]
+
+    def prepare(self, rows_in_backup=3):
+        # check_backup шукає education_exercise → додамо таблицю до бази й копії
+        sqlite3.connect(self.db).executescript("create table education_exercise (id integer);"
+                                               "insert into education_exercise values (1);")
+        bk = backup.make_backup()
+        con = sqlite3.connect(self.db)
+        con.execute("insert into t values (99)")
+        con.commit(); con.close()
+        return bk
+
+    def test_restore_returns_old_content_and_keeps_safety_copy(self):
+        bk = self.prepare()
+        self.assertEqual(self.count(), 4)
+        safety = backup.restore(bk)
+        self.assertEqual(self.count(), 3)                       # повернулась стара база
+        self.assertEqual(self.count(safety), 4)                 # а поточну збережено
+        self.assertTrue(safety.name.startswith("before_restore_"))
+        self.assertNotIn(safety, backup.list_backups())         # не бере участі в ротації автобекапів
+
+    def test_resolve_latest_and_by_name(self):
+        bk = self.prepare()
+        self.assertEqual(backup.resolve_backup(), bk)
+        self.assertEqual(backup.resolve_backup(bk.name), bk)
+        with self.assertRaises(backup.BackupError):
+            backup.resolve_backup("nope.sqlite3")
+
+    def test_bad_file_rejected_and_db_untouched(self):
+        bad = self.tmp / "bad.sqlite3"
+        bad.write_bytes(b"not a database at all")
+        with self.assertRaises(backup.BackupError):
+            backup.restore(bad)
+        self.assertEqual(self.count(), 3)
+
+    def test_safety_copies_rotate(self):
+        bk = self.prepare()
+        for _ in range(5):
+            backup.restore(bk)
+        self.assertEqual(len(list(backup.backup_dir().glob("before_restore_*"))), backup.SAFETY_KEEP)
+
+    def test_command_dry_then_yes(self):
+        bk = self.prepare()
+        out = io.StringIO()
+        call_command("restore_db", "--latest", stdout=out)
+        self.assertIn("Нічого не змінено", out.getvalue())
+        self.assertEqual(self.count(), 4)
+        out = io.StringIO()
+        call_command("restore_db", "--file", bk.name, "--yes", stdout=out)
+        self.assertIn("Базу відкочено", out.getvalue())
+        self.assertEqual(self.count(), 3)
+
+    def test_command_list_and_errors(self):
+        out = io.StringIO()
+        call_command("restore_db", stdout=out)
+        self.assertIn("немає копій", out.getvalue())
+        with self.assertRaises(CommandError):
+            call_command("restore_db", "--latest", stdout=io.StringIO())
+        self.prepare()
+        out = io.StringIO()
+        call_command("restore_db", stdout=out)
+        self.assertIn("db_", out.getvalue())

@@ -10,7 +10,7 @@ import dataclasses
 import time
 from pathlib import Path
 
-from ..cache import load_json, save_json, short_hash
+from ..cache import load_json_or_none, save_json, short_hash
 from ..datatypes import PageOcr
 from ..preprocess import PreparedPage
 from .base import FakeOcrEngine, OcrEngine, OcrParams, words_to_lines
@@ -31,7 +31,12 @@ def ocr_page(prepared: PreparedPage, engine: OcrEngine, params: OcrParams | None
     params = params or OcrParams()
     out = ocr_cache_path(prepared, engine, params)
     if not force and out.exists():
-        return PageOcr.from_dict(load_json(out))
+        cached = load_json_or_none(out)
+        if cached is not None:
+            try:
+                return PageOcr.from_dict(cached)
+            except (KeyError, TypeError, ValueError):
+                pass                      # зіпсований кеш — розпізнаємо наново
 
     started = time.perf_counter()
     if hasattr(engine, "recognize_page"):       # текстовий шар PDF: координати вже в системі оригіналу

@@ -19,7 +19,7 @@ from typing import Any
 import cv2
 import numpy as np
 
-from .cache import load_json, save_json, short_hash
+from .cache import load_json, load_json_or_none, save_json, short_hash
 from .datatypes import BBox, PageImage
 
 Image = np.ndarray
@@ -341,7 +341,12 @@ def preprocess_page(page: PageImage, spec: PreprocessSpec | None = None, force: 
     out = prepared_path(page, spec)
     meta = out.with_suffix(".json")
     if not force and out.exists() and meta.exists():
-        return PreparedPage.from_dict(load_json(meta))
+        cached = load_json_or_none(meta)
+        if cached is not None:
+            try:
+                return PreparedPage.from_dict(cached)
+            except (KeyError, TypeError, ValueError):
+                pass                      # зіпсований кеш — обробимо наново
 
     img, transform = apply(load_image(page.path), spec)
     save_image(out, img)

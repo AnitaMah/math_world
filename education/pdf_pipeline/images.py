@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pymupdf
 
-from .cache import load_json, save_json
+from .cache import load_json_or_none, save_json
 from .config import PipelineConfig
 from .datatypes import PageImage
 from .pdf_inspect import FULL_PAGE_COVERAGE, LOW_RES_PPI, open_pdf, pdf_sha256
@@ -142,7 +142,12 @@ def _get_page_image(
     out = page_image_path(cfg.cache_dir, sha, pdf_page, force_dpi)
     meta = _meta_path(out)
     if not force and out.exists() and meta.exists():
-        return PageImage.from_dict(load_json(meta))
+        cached = load_json_or_none(meta)
+        if cached is not None:
+            try:
+                return PageImage.from_dict(cached)
+            except (KeyError, TypeError, ValueError):
+                pass                      # зіпсований кеш — рендеримо наново
 
     out.parent.mkdir(parents=True, exist_ok=True)
     page = doc[pdf_page - 1]

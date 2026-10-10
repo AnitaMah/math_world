@@ -33,6 +33,14 @@ def load_json(path: str | Path) -> Any:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def load_json_or_none(path: str | Path) -> Any:
+    """Читає кеш; обрізаний чи зіпсований файл (диск, вимкнули світло) вважаємо відсутнім — його перерахують."""
+    try:
+        return load_json(path)
+    except (OSError, ValueError):
+        return None
+
+
 def short_hash(*parts: Any, length: int = 12) -> str:
     """Короткий стабільний хеш від будь-яких JSON-сумісних частин (для імен папок кешу)."""
     payload = json.dumps(parts, sort_keys=True, ensure_ascii=False, default=str)
