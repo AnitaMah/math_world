@@ -270,3 +270,67 @@ class ParagraphHeadingInHeaderBandTests(unittest.TestCase):
                    self._header_page(6, "§ 1. Натуральні числа", "Ще текст.")]
         root = parse_structure(M5, layouts, toc=toc).root
         self.assertEqual([p.number for p in kinds(root, "paragraph")], ["1"])
+
+
+class FirstExerciseTests(unittest.TestCase):
+    """Прогін частини книги: нумерація вправ починається не з 1 (пробні стор. 20–30 Тарасенкової: №188...)."""
+
+    PAGES = [
+        page(26, ("§ 1. ДІЛЬНИКИ І КРАТНІ НАТУРАЛЬНОГО ЧИСЛА", 20), "Теорія."),
+        page(29, "Застосуйте на практиці",
+             "188. Уздовж дороги від міста стояли стовпи.", "189. Довжина відрізка дорівнює 24 см.",
+             "190°. Знайдіть три числа."),
+    ]
+
+    def numbers(self, **kw):
+        res = parse_structure(T6, self.PAGES, T6_TOC, **kw)
+        return [int(e.number) for e in kinds(res.root, "exercise")]
+
+    def test_default_start_finds_nothing_mid_book(self):
+        self.assertEqual(self.numbers(), [])               # очікувано 1, знайшли 188 — не вправи
+
+    def test_first_exercise_makes_them_exercises(self):
+        self.assertEqual(self.numbers(first_exercise=188), [188, 189, 190])
+
+
+class NoisyTarasenkovaTests(unittest.TestCase):
+    """Реальні рядки OCR стор. 28–29 Тарасенкової: заголовок із сміттям і зіпсовані номери."""
+
+    PAGES = [
+        page(26, ("§ 1. ДІЛЬНИКИ І КРАТНІ НАТУРАЛЬНОГО ЧИСЛА", 20), "Теорія."),
+        page(27, "ПРИГАДАЙТЕ ГОЛОВНЕ", "Що таке дільник числа?"),
+        page(28, "stash У РОЗВ'ЯЖІТЬ ЗАДАЧІ |",
+             "11337762\". Назвіть числа.", "163\". Знайдіть дільники.", "1657. Запишіть числа.",
+             "766\". Обчисліть значення.", "167°. Порівняйте числа.", "є 768\". Знайдіть суму.",
+             "169°. Знайдіть різницю.", "1707. Запишіть добуток.", "7717. Розкладіть число.",
+             "1727. Знайдіть частку."),
+        page(29, "А 174°. Обчисліть вираз.", "а. 780. Знайдіть НСК.", "Ж 182. Знайдіть НСД."),
+    ]
+
+    def numbers(self):
+        res = parse_structure(T6, self.PAGES, T6_TOC, first_exercise=162)
+        return [int(e.number) for e in kinds(res.root, "exercise")]
+
+    def test_noisy_heading_opens_exercise_block(self):
+        nums = self.numbers()
+        self.assertTrue(nums, "заголовок із сміттям має відкрити блок вправ")
+        self.assertIn(163, nums)
+
+    def test_garbled_numbers_are_repaired(self):
+        nums = self.numbers()
+        for n in (165, 166, 168, 170, 171, 172, 174):
+            self.assertIn(n, nums)
+
+    def test_number_fixable_icon_read_as_digit(self):
+        self.assertTrue(number_fixable("1657", 165))
+        self.assertTrue(number_fixable("7717", 171))
+        self.assertTrue(number_fixable("766", 166))
+        self.assertFalse(number_fixable("1957", 165))
+
+
+class BookPageOffsetTests(unittest.TestCase):
+    def test_tarasenkova_book_page_equals_pdf_page(self):
+        self.assertEqual(T6.book_page_offset, 0)
+
+    def test_merzlyak_has_no_offset(self):
+        self.assertIsNone(get_profile("math_merzlyak_5").book_page_offset)

@@ -250,8 +250,42 @@ def crop_figure(image: np.ndarray, box: BBox, pad: int = PAD, bottom_limit: int 
     return image[max(box.y0 - pad, 0):y1, max(box.x0 - pad, 0):min(box.x1 + pad, w)].copy()
 
 
+STRICT_TEXT_COVER = 0.25     # частка площі «рисунка», зайнята рядками OCR: більше — це формула/рамка з текстом
+STRICT_ICON_SIDE = 0.12      # обидві сторони менші за стільки ширини сторінки — значок-іконка
+STRICT_TOP_BAND = 0.12       # верхня смуга сторінки — оздоба колонтитула
+
+
+def text_cover(box: BBox, lines: Iterable[Line]) -> float:
+    """Яку частку площі box перекривають рядки OCR (будь-якої впевненості)."""
+    area = max(box.width * box.height, 1)
+    covered = 0
+    for ln in lines:
+        if not ln.words:
+            continue
+        b = ln.bbox
+        w = min(b.x1, box.x1) - max(b.x0, box.x0)
+        h = min(b.y1, box.y1) - max(b.y0, box.y0)
+        if w > 0 and h > 0:
+            covered += w * h
+    return covered / area
+
+
+def is_decoration(box: BBox, layout: PageLayout, image_shape: tuple[int, ...]) -> bool:
+    """Чи це не рисунок задачі, а формула / рамка з текстом / значок / оздоба верху сторінки.
+
+    Для кольорових підручників (Тарасенкова): «чорнило» там — це й кольорові рамки,
+    й будиночки домашнього завдання, й двоповерхові дроби, які OCR читає як рядки.
+    """
+    h_img, w_img = image_shape[:2]
+    if text_cover(box, [*layout.body_lines, *layout.figure_lines]) >= STRICT_TEXT_COVER:
+        return True
+    if box.width < w_img * STRICT_ICON_SIDE and box.height < w_img * STRICT_ICON_SIDE:
+        return True
+    return box.y0 < h_img * STRICT_TOP_BAND
+
+
 def extract_page_figures(image: np.ndarray, layout: PageLayout, out_dir: Path | None = None,
-                         overwrite: bool = True) -> list[Figure]:
+                         overwrite: bool = True, strict: bool = False) -> list[Figure]:
     """Усі рисунки сторінки з номерами; якщо out_dir — вирізає і зберігає PNG.
 
     overwrite=False — наявний PNG не перезаписуємо (повторний прогін оркестратора: запис
@@ -267,6 +301,8 @@ def extract_page_figures(image: np.ndarray, layout: PageLayout, out_dir: Path | 
         caption_box.setdefault(number, box)
     figures = []
     for box, number in group_by_captions(regions, captions, text_lines, text_height):
+        if strict and number is None and is_decoration(box, layout, image.shape):
+            continue
         cap = caption_box.get(number) if number else None
         if box.height < 2 * text_height:
             # Тонкий рисунок (відрізок з точками): літери-підписи A, B, C — над і під лінією.
@@ -355,13 +391,13 @@ def attach_figures(root: Node, figures: Sequence[Figure], page_window: int = 4) 
 
 
 def extract_all_figures(layouts: Iterable[PageLayout], page_images: Mapping[int, Path],
-                        out_dir: Path | None = None, overwrite: bool = True) -> list[Figure]:
-    """Рисунки з усіх сторінок."""
+                        out_dir: Path | None = None, overwrite: bool = True, strict: bool = False) -> list[Figure]:
+    """Рисунки з усіх сторінок (strict — відкинути формули, рамки, значки й оздобу)."""
     from .preprocess import load_image
     figures: list[Figure] = []
     for layout in layouts:
         path = page_images.get(layout.pdf_page)
         if path is None:
             continue
-        figures += extract_page_figures(load_image(path), layout, out_dir, overwrite)
+        figures += extract_page_figures(load_image(path), layout, out_dir, overwrite, strict)
     return figures

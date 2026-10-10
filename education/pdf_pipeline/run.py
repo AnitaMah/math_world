@@ -128,7 +128,8 @@ def run_pipeline(pdf_path: str | Path, profile_code: str, pages: Iterable[int], 
                  out_dir: str | Path = "pipeline_out", from_stage: str | None = None, to_stage: str | None = None,
                  force: bool = False, workers: int = 1, engine_factory: EngineFactory = default_engine,
                  ocr_params: OcrParams | None = None, vision_limit: int = 0, vision_dry_run: bool = False,
-                 vision_client: Any = None, report: bool = True, ocr_engine: str | None = None) -> RunResult:
+                 vision_client: Any = None, report: bool = True, ocr_engine: str | None = None,
+                 first_exercise: int = 1) -> RunResult:
     from .profiles import get_profile
 
     pdf_path = Path(pdf_path)
@@ -232,6 +233,9 @@ def run_pipeline(pdf_path: str | Path, profile_code: str, pages: Iterable[int], 
             from .normalize import normalize_lines
             ocr_results = [state["ocr"][p] for p in alive(state["ocr"])]
             layouts, headers = analyze_document(ocr_results)
+            if profile.book_page_offset is not None:
+                for lay in layouts:
+                    lay.book_page = lay.pdf_page + profile.book_page_offset
             norm = Counter()
             for lay in layouts:
                 lay.body_lines, counts = normalize_lines(lay.body_lines)
@@ -243,7 +247,7 @@ def run_pipeline(pdf_path: str | Path, profile_code: str, pages: Iterable[int], 
 
     if enabled("structure"):
         with stage("structure"):
-            _run_structure(profile, res, state, overwrite_figures=forced("structure"))
+            _run_structure(profile, res, state, overwrite_figures=forced("structure"), first_exercise=first_exercise)
 
     if enabled("vision") and (vision_limit > 0 or vision_dry_run):
         with stage("vision"):
@@ -326,7 +330,8 @@ def _run_ocr(prepared: dict[int, PreparedPage], todo: list[int], cfg: PipelineCo
     return results
 
 
-def _run_structure(profile: Any, res: RunResult, state: dict[str, Any], overwrite_figures: bool = False) -> None:
+def _run_structure(profile: Any, res: RunResult, state: dict[str, Any], overwrite_figures: bool = False,
+                   first_exercise: int = 1) -> None:
     from .answers import answer_lines_from_layouts, attach_answers, parse_answer_lines, summarize
     from .exercises import enrich_exercises, flag_difficulty_order
     from .figures import attach_figures, extract_all_figures
@@ -344,7 +349,7 @@ def _run_structure(profile: Any, res: RunResult, state: dict[str, Any], overwrit
     skip = set(profile.skip_pages) | answer_pages
     body = [lay for lay in res.layouts if lay.pdf_page not in skip]
 
-    parsed = parse_structure(profile, body)
+    parsed = parse_structure(profile, body, first_exercise=first_exercise)
     root = parsed.root
     state["parse_issues"] = parsed.issues
     engines = {o.engine for o in state.get("ocr", {}).values()}
@@ -363,7 +368,8 @@ def _run_structure(profile: Any, res: RunResult, state: dict[str, Any], overwrit
     math = enrich_math(root, natural_numbers=natural, fraction_bars=bars,
                       trusted_text=trusted_text)
 
-    figures = extract_all_figures(body, page_paths, res.out_dir / "figures", overwrite=overwrite_figures)
+    figures = extract_all_figures(body, page_paths, res.out_dir / "figures", overwrite=overwrite_figures,
+                                   strict=profile.strict_figures)
     fig_stats = attach_figures(root, figures)
     state["figure_ids"] = [f.figure_id for f in figures]
 
@@ -443,6 +449,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--vision-dry-run", action="store_true", help="показати, що піде у vision, без запитів")
     parser.add_argument("--no-report", action="store_true")
     parser.add_argument("--ocr-engine", choices=["tesseract", "pdftext"], help="за замовчуванням — з профілю")
+    parser.add_argument("--first-exercise", type=int, default=1,
+                        help="номер першої вправи на цих сторінках (якщо --pages починається не з початку книги)")
     parser.add_argument("-v", "--verbose", action="count", default=0, help="-v — по сторінках, -vv — debug")
     args = parser.parse_args(argv)
 
@@ -461,7 +469,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         res = run_pipeline(args.pdf, args.profile, pages, cfg, out_dir=args.out, from_stage=args.from_stage,
                            to_stage=args.to_stage, force=args.force, workers=args.workers,
                            vision_limit=args.vision_limit, vision_dry_run=args.vision_dry_run,
-                           report=not args.no_report, ocr_engine=args.ocr_engine)
+                           report=not args.no_report, ocr_engine=args.ocr_engine,
+                           first_exercise=args.first_exercise)
     except PipelineError as exc:
         print(f"\nПОМИЛКА: {exc}", file=sys.stderr)
         return 2

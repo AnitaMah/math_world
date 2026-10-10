@@ -23,25 +23,27 @@ PROFILE = TextbookProfile(
     paragraph_re=re.compile(r"^§\s*(?P<num>\d{1,2})\.\s*(?P<title>.+)$"),
     item_re=None,
     # «35′. Назвіть…», «40°. Із чисел…», «63. Перемалюйте…», «72*. Запишіть…» — значок ПЕРЕД крапкою.
-    exercise_re=re.compile(r"^(?P<num>\d{1,4})\s*(?P<mark>[′'’`°o*])?\s*\.\s*(?P<rest>\S.*)$"),
+    exercise_re=re.compile(r"^(?P<num>\d{1,4})\s*(?P<mark>[′'’`°o*\"”])?\s*[.,]\s*(?P<rest>\S.*)$"),
     block_markers=(
         BlockMarker("worked_example", ("Задача",), whole_line=False),      # «Задача. Знайдіть…» + «Розв'язання.»
         BlockMarker("rule", ("Запам'ятайте",)),
         BlockMarker("note", ("Зверніть увагу",)),
         BlockMarker("extra_reading", ("Дізнайтеся більше",)),
-        BlockMarker("self_check", ("Пригадайте головне",)),
-        BlockMarker("exercise", ("Розв'яжіть задачі",)),
-        BlockMarker("applied_exercise", ("Застосуйте на практиці",)),
-        BlockMarker("review_exercise", ("Задачі на повторення",)),
+        BlockMarker("self_check", ("Пригадайте головне",), threshold=80, partial=True),
+        BlockMarker("exercise", ("Розв'яжіть задачі",), threshold=80, partial=True),
+        BlockMarker("applied_exercise", ("Застосуйте на практиці",), threshold=80, partial=True),
+        BlockMarker("review_exercise", ("Задачі на повторення",), threshold=80, partial=True),
     ),
     difficulty_marks={
         "′": "preparatory", "'": "preparatory", "’": "preparatory", "`": "preparatory",  # штрих
-        "°": "medium", "o": "medium",                                                   # кружечок
+        "°": "medium", "o": "medium", '"': "medium", "”": "medium",                                                  # кружечок
         "*": "high",                                                                    # зірочка
     },
     default_difficulty="sufficient",     # без значка — достатній рівень
     homework_marker="margin_icon",       # будиночок на полі зліва від номера
     toc_path="data/6_class_ukr.txt",
+    strict_figures=True,
+    book_page_offset=0,                  # стор. друкована = стор. PDF
     skip_pages=frozenset({1, 2, 3}),
     answers_pages=(287, 299),
     notes=(

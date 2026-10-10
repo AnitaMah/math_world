@@ -66,6 +66,7 @@ class BlockMarker:
     phrases: tuple[str, ...]
     threshold: int = 85
     whole_line: bool = True
+    partial: bool = False     # рубрика може стояти всередині рядка з сміттям OCR («stash У РОЗВ'ЯЖІТЬ ЗАДАЧІ |»)
 
     def score(self, line_text: str) -> float:
         """Наскільки рядок схожий на цю рубрику (0–100)."""
@@ -75,7 +76,9 @@ class BlockMarker:
         best = 0.0
         for phrase in self.phrases:
             target = normalize_marker_text(phrase)
-            if self.whole_line:
+            if self.whole_line and self.partial:
+                score = fuzz.partial_ratio(text, target)
+            elif self.whole_line:
                 score = fuzz.ratio(text, target)
             else:
                 score = fuzz.ratio(text[: len(target)], target)
@@ -134,6 +137,8 @@ class TextbookProfile:
     difficulty_from_image: bool = False  # значок складності шукати на картинці (OCR його губить)
 
     toc_path: str | None = None
+    strict_figures: bool = False          # кольоровий підручник: відкидати «рисунки», що є формулами/рамками/значками
+    book_page_offset: int | None = None   # друкований номер = номер PDF + зсув (OCR колонтитула ненадійний)
     skip_pages: frozenset[int] = frozenset()      # обкладинка, передмова, зміст…
     answers_pages: tuple[int, int] | None = None  # (перша, остання) сторінка PDF з відповідями
     ocr_engine: str = "tesseract"       # "tesseract" або "pdftext" (вбудований текстовий шар PDF)

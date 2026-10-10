@@ -26,6 +26,8 @@ class Command(BaseCommand):
         parser.add_argument("--vision-limit", type=int, default=0)
         parser.add_argument("--vision-dry-run", action="store_true")
         parser.add_argument("--no-report", action="store_true")
+        parser.add_argument("--first-exercise", type=int, default=1,
+                            help="номер першої вправи на цих сторінках (якщо --pages починається не з початку книги)")
         parser.add_argument("--ocr-engine", choices=["tesseract", "pdftext"],
                             help="pdftext — вбудований текстовий шар PDF (за замовчуванням — з профілю)")
 
@@ -53,7 +55,8 @@ class Command(BaseCommand):
                                from_stage=opts["from_stage"], to_stage=opts["to_stage"], force=opts["force"],
                                workers=opts["workers"], engine_factory=self.engine_factory,
                                vision_limit=opts["vision_limit"], vision_dry_run=opts["vision_dry_run"],
-                               report=not opts["no_report"], ocr_engine=opts["ocr_engine"])
+                               report=not opts["no_report"], ocr_engine=opts["ocr_engine"],
+                               first_exercise=opts["first_exercise"])
         except PipelineError as exc:
             raise CommandError(str(exc)) from exc
 

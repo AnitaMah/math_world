@@ -66,6 +66,12 @@ def number_fixable(raw: str, expected: int) -> bool:
     target = str(expected)
     if raw == target:
         return True
+    if len(raw) > len(target):       # значок прочитано цифрою І цифру сплутано: «7717» → 171, «766» → 166
+        for i in range(len(raw)):
+            rest = raw[:i] + raw[i + 1:]
+            if len(rest) == len(target) and sum(a != b for a, b in zip(rest, target)) == 1 \
+                    and all(a == b or _CONFUSABLE_DIGITS.get(a) == b for a, b in zip(rest, target)):
+                return True
     for i in range(len(raw)):
         if raw[:i] + raw[i + 1:] == target:                                   # зайва цифра
             return True
@@ -73,6 +79,7 @@ def number_fixable(raw: str, expected: int) -> bool:
         if swapped and raw[:i] + swapped + raw[i + 1:] == target:            # сплутана цифра
             return True
     return False
+_LEADING_JUNK_RE = re.compile(r"^[A-Za-zА-Яа-яІіЇїЄєҐґ]{1,2}\.?\s+(?=\d)")
 _CAPTION_RE = re.compile(r"^(?:Рис|Мал|Puc)\.?\s*\d+", re.IGNORECASE)
 
 
@@ -162,7 +169,7 @@ class ParseResult:
 class StructureParser:
     """Скінченний автомат над потоком рядків. Використання: ``StructureParser(profile).parse(layouts)``."""
 
-    def __init__(self, profile: TextbookProfile, toc: Sequence[TocEntry] | None = None):
+    def __init__(self, profile: TextbookProfile, toc: Sequence[TocEntry] | None = None, first_exercise: int = 1):
         self.profile = profile
         self.toc = list(toc) if toc is not None else profile.toc()
         self.root = Node("textbook", title=profile.title,
@@ -177,7 +184,7 @@ class StructureParser:
         self.block: Node | None = None
         self.exercise: Node | None = None
 
-        self.expected_exercise = 1          # наскрізна нумерація вправ
+        self.expected_exercise = first_exercise      # наскрізна нумерація вправ (не з 1, якщо прогін почато з середини книги)
         self.block_counter = 0              # нумерація всередині блоку (усні вправи з 1)
         self._page_medians: dict[int, float] = {}
 
@@ -256,6 +263,7 @@ class StructureParser:
         зайва цифра) → невеликий стрибок уперед (пропущена вправа) → інакше це не вправа.
         """
         expected = self._expected_number()
+        text = _LEADING_JUNK_RE.sub("", text)       # «є 768".», «А 174°.», «а. 780.»
         parsed = self.profile.parse_exercise_start(text)
         loose = None if parsed else _LOOSE_EXERCISE_RE.match(text)
         if parsed:
@@ -465,9 +473,11 @@ class StructureParser:
 
 
 def parse_structure(profile: TextbookProfile, layouts: Iterable[PageLayout],
-                    toc: Sequence[TocEntry] | None = None) -> ParseResult:
-    """Зручна функція: профіль + розмічені сторінки → дерево і список проблем."""
-    return StructureParser(profile, toc).parse(layouts)
+                    toc: Sequence[TocEntry] | None = None, first_exercise: int = 1) -> ParseResult:
+    """Зручна функція: профіль + розмічені сторінки → дерево і список проблем.
+
+    first_exercise — номер першої вправи на цих сторінках (для прогону частини книги, напр. стор. 20–30)."""
+    return StructureParser(profile, toc, first_exercise).parse(layouts)
 
 
 def outline(node: Node, indent: int = 0, max_text: int = 60) -> str:

@@ -142,3 +142,40 @@ class AttachTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StrictFiguresTests(unittest.TestCase):
+    """Кольоровий підручник (Тарасенкова): формули, рамки, значки й оздоба — не рисунки."""
+
+    def page(self):
+        img = np.full((1000, 800), 255, np.uint8)
+        # велика діаграма в середині — справжній рисунок
+        cv2.line(img, (200, 500), (500, 700), 0, 3)
+        cv2.line(img, (200, 700), (500, 500), 0, 3)
+        cv2.rectangle(img, (200, 500), (500, 700), 0, 2)
+        # значок-будиночок (мала пляма) на полі
+        cv2.rectangle(img, (40, 400), (80, 450), 0, -1)
+        # оздоба вгорі сторінки
+        cv2.rectangle(img, (500, 20), (700, 90), 0, 3)
+        cv2.line(img, (500, 20), (700, 90), 0, 3)
+        # формула, яку OCR прочитав як рядок
+        cv2.rectangle(img, (150, 800), (450, 860), 0, 3)
+        cv2.line(img, (150, 800), (450, 860), 0, 3)
+        formula = text_line("a b c d e", 150, 810, h=40, line_id=5, conf=20.0)
+        return img, PageLayout(pdf_page=28, page_height=1000, body_lines=[formula])
+
+    def test_lenient_mode_keeps_everything(self):
+        img, layout = self.page()
+        self.assertGreaterEqual(len(extract_page_figures(img, layout)), 3)
+
+    def test_strict_keeps_only_the_real_figure(self):
+        img, layout = self.page()
+        figs = extract_page_figures(img, layout, strict=True)
+        self.assertEqual(len(figs), 1)
+        self.assertTrue(figs[0].bbox.y0 >= 450 and figs[0].bbox.y1 <= 750)
+
+    def test_text_cover(self):
+        from education.pdf_pipeline.figures import text_cover
+        ln = text_line("aa bb", 10, 10, h=20)
+        self.assertGreater(text_cover(BBox(0, 0, 150, 40), [ln]), 0.2)
+        self.assertEqual(text_cover(BBox(500, 500, 600, 600), [ln]), 0.0)
