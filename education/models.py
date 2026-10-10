@@ -239,6 +239,7 @@ class Exercise(SourceMixin):
     answer_check = models.CharField(max_length=10, choices=ANSWER_CHECK_CHOICES, default="unchecked")
     ocr_text = models.TextField(blank=True)
     flags = models.JSONField(default=list, blank=True)
+    review_skipped = models.BooleanField(default=False, help_text="Пропущено на /review/: не ігрова, у черзі не показується")
     figures = models.ManyToManyField("Figure", blank=True, related_name="exercises")
 
     class Meta:
@@ -274,6 +275,7 @@ class SubExercise(models.Model):
     needs_review = models.BooleanField(default=False, db_index=True)
     text_source = models.CharField(max_length=10, choices=TEXT_SOURCE_CHOICES, default="ocr")
     ocr_text = models.TextField(blank=True)
+    review_skipped = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["exercise", "order"]
@@ -475,3 +477,38 @@ class LessonProgress(models.Model):
 
     def __str__(self):
         return f"{self.player}: {self.item or self.paragraph} {'★' * self.stars}"
+
+
+class ManualEdit(models.Model):
+    """Журнал ручної перевірки (/review/): хто, коли, що було і що стало.
+
+    Ключ запису не залежить від pk (textbook + тип блоку + номер вправи + сторінка + підпункт), тож журнал
+    можна вивантажити в JSON і застосувати до свіжої БД (export_manual_edits / import_manual_edits).
+    """
+
+    ACTIONS = [
+        ("edit", "Виправлено текст"),
+        ("confirm", "Підтверджено без змін"),
+        ("skip", "Пропущено / не ігрова"),
+        ("unskip", "Повернуто в чергу"),
+    ]
+
+    user = models.ForeignKey("auth.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="manual_edits")
+    created_at = models.DateTimeField(auto_now_add=True)
+    action = models.CharField(max_length=10, choices=ACTIONS)
+    textbook = models.ForeignKey(Textbook, on_delete=models.CASCADE, related_name="manual_edits")
+    kind = models.CharField(max_length=12, choices=[("exercise", "Вправа"), ("subexercise", "Підпункт")])
+    block_type = models.CharField(max_length=30, blank=True)
+    exercise_number = models.PositiveIntegerField()
+    source_page = models.PositiveIntegerField(null=True, blank=True)
+    sub_number = models.CharField(max_length=5, blank=True)
+    old_text = models.TextField(blank=True)
+    new_text = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-pk"]
+        indexes = [models.Index(fields=["textbook", "exercise_number"])]
+
+    def __str__(self):
+        sub = f" {self.sub_number})" if self.sub_number else ""
+        return f"{self.get_action_display()}: №{self.exercise_number}{sub} (стор. {self.source_page})"

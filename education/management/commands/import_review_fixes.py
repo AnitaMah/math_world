@@ -13,7 +13,8 @@ from pathlib import Path
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from education.models import Answer, Exercise, SubExercise
+from education.models import Exercise, SubExercise
+from education.review import apply_text
 
 YES = {"1", "так", "x", "х", "yes", "y", "+", "ok"}
 
@@ -65,22 +66,4 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"{prefix}виправлено {changed}, підтверджено {reviewed}, "
                                              f"пропущено {skipped}, помилок {len(errors)}"))
 
-    @staticmethod
-    def apply_text(obj, new_text):
-        if isinstance(obj, Exercise):
-            obj.condition = new_text
-            return
-        obj.text = new_text
-        exercise = obj.exercise
-        if exercise.task_verb != "compute":
-            return
-        from education.pdf_pipeline.math_text import analyze_expression
-        result = analyze_expression(new_text, natural_numbers=exercise.textbook.grade.number <= 5)
-        obj.expr, obj.expr_status, obj.expr_issues = result.expression, result.status, result.issues
-        Answer.objects.filter(exercise=exercise, subexercise=obj, kind="computed").delete()
-        if result.answer is not None:
-            Answer.objects.create(exercise=exercise, subexercise=obj, kind="computed", text=result.answer)
-            book = Answer.objects.filter(exercise=exercise, subexercise=obj, kind="book").first()
-            if book is not None:
-                obj.answer_check = "verified" if book.value_numeric == Answer.objects.get(
-                    exercise=exercise, subexercise=obj, kind="computed").value_numeric else "mismatch"
+    apply_text = staticmethod(apply_text)
