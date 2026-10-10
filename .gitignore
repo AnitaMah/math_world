@@ -20,6 +20,8 @@ ENV/
 
 # Django
 /db.sqlite3
+/backups/
+db.backup*.sqlite3
 /staticfiles/
 /media/
 *.log

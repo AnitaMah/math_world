@@ -93,6 +93,10 @@ DATABASES = {
     }
 }
 
+# Автобекап БД перед import_textbook (education/backup.py): куди класти копії й скільки останніх тримати
+DB_BACKUP_DIR = config('DB_BACKUP_DIR', default=str(BASE_DIR / 'backups'))
+DB_BACKUP_KEEP = int(config('DB_BACKUP_KEEP', default='10'))
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators

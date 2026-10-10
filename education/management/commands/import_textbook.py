@@ -1,5 +1,8 @@
 """textbook.json → БД (ідемпотентно; ручні правки не перезаписуються).
 
+Перед записом (не в --dry-run) автоматично робиться копія SQLite-бази в backups/ (див. education/backup.py);
+вимкнути — --no-backup, скільки копій тримати — --backup-keep N (за замовчуванням DB_BACKUP_KEEP = 10).
+
     python manage.py import_textbook --json pipeline_out/math_merzlyak_5/textbook.json --dry-run
     python manage.py import_textbook --json pipeline_out/math_merzlyak_5/textbook.json
 """
@@ -8,6 +11,7 @@ from pathlib import Path
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 
+from education import backup
 from education.importers.textbook_json import MODELS, TextbookImporter
 
 COLUMNS = ("created", "updated", "deleted", "unchanged", "kept_manual")
@@ -19,12 +23,23 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--json", required=True, help="шлях до textbook.json")
         parser.add_argument("--dry-run", action="store_true", help="порахувати зміни і нічого не записати")
+        parser.add_argument("--no-backup", action="store_true", help="не робити копію БД перед імпортом")
+        parser.add_argument("--backup-keep", type=int, default=None, help="скільки останніх копій лишати")
         parser.add_argument("--reset", action="store_true", help="перестворити блоки уроків з JSON (ручні — лишаються)")
 
     def handle(self, *args, **opts):
         path = Path(opts["json"])
         if not path.is_file():
             raise CommandError(f"Файл не знайдено: {path}")
+        if not opts["dry_run"] and not opts["no_backup"]:
+            try:
+                copy = backup.make_backup(keep=opts["backup_keep"])
+            except backup.BackupError as exc:
+                raise CommandError(f"Бекап не вдався: {exc}. Імпорт скасовано (або додай --no-backup)") from exc
+            if copy is None:
+                self.stdout.write(self.style.NOTICE("Бекап пропущено: база не є файлом SQLite"))
+            else:
+                self.stdout.write(f"Бекап БД: {copy}")
         try:
             result = TextbookImporter.from_file(path, dry_run=opts["dry_run"], reset=opts["reset"]).run()
         except ValidationError as exc:
