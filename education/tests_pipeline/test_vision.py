@@ -129,6 +129,12 @@ class RunVisionTests(unittest.TestCase):
         self.assertEqual([s.data.get("answer") for s in subs], ["61", "59", "72"])  # перераховано
         self.assertFalse(ex.needs_review)
 
+    def test_typographic_apostrophe_is_canonical(self):
+        root, ex, _ = ex3_tree()
+        good = {**GOOD, "text": "Знайдіть від\u2019ємник:"}
+        run_vision(root, {9: PAGE}, FakeVisionClient([good]))
+        self.assertEqual(ex.data["condition"], "Знайдіть від'ємник:")
+
     def test_rejected_keeps_ocr_and_review(self):
         root, ex, _ = ex3_tree()
         run_vision(root, {9: PAGE}, FakeVisionClient([{"text": "Про яблука і груші в саду", "subitems": [], "confidence": 0.9}]))
@@ -186,3 +192,19 @@ class RunVisionTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class VisionEnvTests(unittest.TestCase):
+    def test_key_is_read_from_env_file_and_real_env_wins(self):
+        import os
+        from unittest import mock
+        from education.pdf_pipeline.vision import vision_env
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / ".env"
+            env_file.write_text("GEMINI_API_KEY=from-file\nGEMINI_MODEL='m-1'\n", encoding="utf-8")
+            with mock.patch.dict(os.environ, {}, clear=False):
+                os.environ.pop("GEMINI_API_KEY", None)
+                self.assertEqual(vision_env(env_file)["GEMINI_API_KEY"], "from-file")
+                self.assertEqual(vision_env(env_file)["GEMINI_MODEL"], "m-1")
+            with mock.patch.dict(os.environ, {"GEMINI_API_KEY": "from-env"}):
+                self.assertEqual(vision_env(env_file)["GEMINI_API_KEY"], "from-env")

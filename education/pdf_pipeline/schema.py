@@ -73,7 +73,7 @@ DEFINITIONS: dict[str, Any] = {
         "book_answer_parts": {"type": "object", "additionalProperties": _STR},
         "figure_ids": _STRS, "figure_refs": _STRS, "missing_figures": _STRS,
         "text_source": {"$ref": "#/definitions/text_source"},
-        "ocr_text": _NSTR, "vision_text": _NSTR, "vision_status": _NSTR,
+        "ocr_text": _NSTR, "vision_text": _NSTR, "vision_status": _NSTR, "vision_reason": _NSTR,
         "flags": _STRS,
         "needs_review": _BOOL,
         "source": {"$ref": "#/definitions/nullable_source"},

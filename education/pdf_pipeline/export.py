@@ -133,6 +133,7 @@ class _Exporter:
             _put(out, "ocr_text", d.get("ocr_text"))
             _put(out, "vision_text", d.get("vision_text"))
             _put(out, "vision_status", d.get("vision_status"))
+            _put(out, "vision_reason", d.get("vision_reason"))
         _put(out, "flags", [f for f in EXERCISE_FLAGS if d.get(f)])
         return out
 

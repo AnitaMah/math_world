@@ -329,6 +329,12 @@ def validate_response(response: Any, schema: Mapping[str, Any] = RESPONSE_SCHEMA
     return None
 
 
+def _canon_apostrophes(text: str) -> str:
+    """Модель повертає типографський апостроф («від’ємник»); у проєкті він один (як після normalize)."""
+    from .normalize import APOSTROPHES, CANON_APOSTROPHE
+    return "".join(CANON_APOSTROPHE if ch in APOSTROPHES else ch for ch in text)
+
+
 def vision_full_text(response: Mapping[str, Any]) -> str:
     lines = [response.get("text", "")] + [f"{s['n']}) {s['text']}" for s in response.get("subitems", [])]
     return "\n".join(line for line in lines if line)
@@ -381,7 +387,7 @@ def apply_response(ex: Node, response: Mapping[str, Any], decision: Decision,
         return
 
     ex.data["text_source"] = "vision"
-    ex.data["condition"] = response["text"].strip()
+    ex.data["condition"] = _canon_apostrophes(response["text"].strip())
     subs = {s.number: s for s in _written_subitems(ex)}
     compute = ex.data.get("task_verb") == "compute"
     for item in response["subitems"]:
@@ -390,7 +396,7 @@ def apply_response(ex: Node, response: Mapping[str, Any], decision: Decision,
         if sub is None:
             continue
         sub.data["ocr_text"] = sub.text
-        sub.text = item["text"].strip()
+        sub.text = _canon_apostrophes(item["text"].strip())
         sub.data["text_source"] = "vision"
         if compute:
             result = analyze_expression(sub.text, natural_numbers=natural_numbers)
@@ -478,9 +484,17 @@ def run_vision(root: Node, page_images: Mapping[int, Path | np.ndarray], client:
     return stats
 
 
+def vision_env(env_file: str | Path = ".env") -> dict[str, str]:
+    """Налаштування для Gemini: файл .env, поверх нього справжні змінні середовища.
+
+    `manage.py` сам .env у os.environ не кладе, тому без цього ключ з .env «не задано»."""
+    from .config import read_env_file
+    return {**read_env_file(env_file), **os.environ}
+
+
 def make_client(cache_dir: Path, daily_budget: int = DEFAULT_DAILY_BUDGET,
                 environ: Mapping[str, str] | None = None) -> CachedClient:
-    env = dict(os.environ if environ is None else environ)
+    env = vision_env() if environ is None else dict(environ)
     inner = GeminiVisionClient(api_key=env.get("GEMINI_API_KEY"), model=env.get("GEMINI_MODEL"))
     return CachedClient(inner, Path(cache_dir) / "vision", DailyBudget(Path(cache_dir) / "vision_budget.json", daily_budget))
 
