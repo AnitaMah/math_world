@@ -437,6 +437,13 @@ class ExerciseRecoveryTests(unittest.TestCase):
         _, res = run_exercises(["100. Перша.", "1017. Друга."], first=100)
         self.assertTrue(self._review(res)[101])
 
+    def test_words_before_a_number_are_not_junk(self):
+        # «на рисунку 138.» — це продовження речення, а не початок вправи
+        nums, _ = run_exercises(["377. Прямокутник розрізали на квадрати так, як показано",
+                                 "на рисунку 138. Сторона найменшого квадрата дорівнює 4 см.",
+                                 "378. Накресліть прямокутник.", "379. Знайдіть."], first=377)
+        self.assertEqual(nums, [377, 378, 379])
+
     def test_stall_is_resynced(self):
         # Втрачено 20 вправ поспіль: без перевірки наперед парсер завис би на очікуваному номері
         nums, _ = run_exercises(["100. Перша.", "125. Друга.", "126. Третя."], first=100)

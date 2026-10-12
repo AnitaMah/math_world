@@ -84,7 +84,9 @@ def number_fixable(raw: str, expected: int) -> bool:
         if swapped and raw[:i] + swapped + raw[i + 1:] == target:            # сплутана цифра
             return True
     return False
-_LEADING_JUNK_RE = re.compile(r"^(?:[^\w\s§]|[A-Za-zА-Яа-яІіЇїЄєҐґ]{1,2}\.?|\s){1,8}?(?=\d)")
+# Сміття перед номером: розділові знаки та окремі 1–2-літерні «слова» (fy, &). Літери не мають бути частиною
+# довшого слова, інакше «на рисунку 138.» читалося б як сміття + номер 138.
+_LEADING_JUNK_RE = re.compile(r"^(?:[^\w\s§]|(?<![^\W\d_])[^\W\d_]{1,2}(?![^\W\d_])\.?|\s){1,8}?(?=\d)")
 _MARK_SEVEN_RE = re.compile(r"^(?P<junk>[^\d]{0,8}?)(?P<num>\d{2,4})7(?=\s*[.,])")
 
 
@@ -337,7 +339,7 @@ class StructureParser:
         («5707.» = 570′, «1727.» = 172′)."""
         self._fix_kind = self._fix_raw = None
         found = self._match_exercise_once(text)
-        if found is None:
+        if found is None and self.profile.noisy_numbers:
             stripped = _mark_as_seven(text)
             if stripped != text:
                 found = self._match_exercise_once(stripped)
@@ -354,7 +356,9 @@ class StructureParser:
         зайва цифра) → невеликий стрибок уперед (пропущена вправа) → інакше це не вправа.
         """
         expected = self._expected_number()
-        text = _LEADING_JUNK_RE.sub("", text)       # «є 768".», «А 174°.», «а. 780.»
+        noisy = self.profile.noisy_numbers
+        if noisy:
+            text = _LEADING_JUNK_RE.sub("", text)   # «є 768".», «А 174°.», «а. 780.»
         parsed = self.profile.parse_exercise_start(text)
         loose = None if parsed else _LOOSE_EXERCISE_RE.match(text)
         if parsed:
@@ -382,7 +386,7 @@ class StructureParser:
             self._fix_kind, self._fix_raw = "digits", raw
             return expected, level if parsed else "unknown", rest, True
         if parsed and self._number_plausible(num, expected):
-            if num > expected and self._upcoming_between(expected, num):
+            if noisy and num > expected and self._upcoming_between(expected, num):
                 # «667» одразу перед «663», «664»… — це зіпсований 662, а не стрибок уперед
                 self._fix_kind, self._fix_raw = "between", raw
                 return expected, level, rest, True
@@ -393,9 +397,9 @@ class StructureParser:
             if raw != str(ahead) and number_fixable(raw, ahead):
                 self._fix_kind, self._fix_raw = "digits", raw
                 return ahead, level if parsed else "unknown", rest, True
-        if parsed and self._confirmed_jump(num, expected):
+        if noisy and parsed and self._confirmed_jump(num, expected):
             return num, level, rest, False
-        if rest and self._upcoming_has(expected + 1, lines=10):
+        if noisy and rest and self._upcoming_has(expected + 1, lines=10):
             # Номер непрочитний, але далі чисто йде наступна вправа → це й є очікувана вправа.
             self._fix_kind, self._fix_raw = "inferred", raw if parsed or loose else None
             return expected, "unknown", rest, True

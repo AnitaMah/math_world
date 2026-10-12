@@ -137,6 +137,7 @@ class TextbookProfile:
     difficulty_from_image: bool = False  # значок складності шукати на картинці (OCR його губить)
 
     toc_path: str | None = None
+    noisy_numbers: bool = False           # скан із шумним OCR: відновлювати зіпсовані номери вправ (fy 66", 5707. тощо)
     strict_figures: bool = False          # кольоровий підручник: відкидати «рисунки», що є формулами/рамками/значками
     book_page_offset: int | None = None   # друкований номер = номер PDF + зсув (OCR колонтитула ненадійний)
     skip_pages: frozenset[int] = frozenset()      # обкладинка, передмова, зміст…

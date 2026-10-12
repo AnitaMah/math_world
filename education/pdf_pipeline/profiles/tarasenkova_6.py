@@ -43,6 +43,7 @@ PROFILE = TextbookProfile(
     homework_marker="margin_icon",       # будиночок на полі зліва від номера
     toc_path="data/6_class_ukr.txt",
     strict_figures=True,
+    noisy_numbers=True,
     book_page_offset=0,                  # стор. друкована = стор. PDF
     skip_pages=frozenset({1, 2, 3, *range(300, 306)}),   # 300–301 покажчик, 302–305 зміст
     answers_pages=(287, 299),
