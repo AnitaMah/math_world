@@ -260,7 +260,8 @@ def run_pipeline(pdf_path: str | Path, profile_code: str, pages: Iterable[int], 
                                 natural_numbers=state["natural_numbers"])
             res.counts["vision"] = {"candidates": vstats.candidates, "selected": vstats.selected,
                                     "sent": vstats.sent, "cached": vstats.cached, "errors": vstats.errors,
-                                    "budget_stopped": vstats.budget_stopped, "by_status": vstats.by_status,
+                                    "budget_stopped": vstats.budget_stopped, "aborted": vstats.aborted,
+                                    "by_status": vstats.by_status,
                                     "estimated_tokens": vstats.estimated_tokens, "dry_run": vision_dry_run}
 
     if enabled("validate"):

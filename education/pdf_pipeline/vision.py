@@ -37,6 +37,7 @@ from .datatypes import BBox, Node, SourceRef
 
 PROMPT_VERSION = "v1"
 DEFAULT_DAILY_BUDGET = 200
+MAX_CONSECUTIVE_ERRORS = 5    # стільки помилок поспіль → зупиняємо прогін (квота / немає мережі), а не чекаємо на кожну зону
 MAX_LENGTH_RATIO = 2.0
 MAX_AUTO_CER = 0.5
 MIN_LENGTH_BASE = 20          # для дуже коротких OCR-текстів порівнюємо з 20 символами
@@ -107,7 +108,8 @@ class VisionClient(Protocol):
 
 def _retryable(exc: Exception) -> bool:
     message = str(exc)
-    return any(code in message for code in ("429", "503", "UNAVAILABLE", "RESOURCE_EXHAUSTED"))
+    return any(code in message for code in ("429", "503", "UNAVAILABLE", "RESOURCE_EXHAUSTED",
+                                            "getaddrinfo", "Server disconnected", "timed out"))
 
 
 def call_with_backoff(fn: Callable[[], Any], retries: int = 3, base_delay: float = 5.0,
@@ -152,6 +154,13 @@ class DailyBudget:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.path.write_text(json.dumps(state), encoding="utf-8")
 
+    def refund(self) -> None:
+        """Невдалий запит бюджет не витрачає: повертаємо витрачену одиницю."""
+        state = self._state()
+        if state["count"] > 0:
+            state["count"] -= 1
+            self.path.write_text(json.dumps(state), encoding="utf-8")
+
 
 def cache_key(image_png: bytes, prompt: str, model: str, schema: Mapping[str, Any]) -> str:
     """sha вирізки + повний промпт (в ньому версія і OCR-підказка) + модель + схема."""
@@ -182,7 +191,11 @@ class CachedClient:
             return json.loads(path.read_text(encoding="utf-8"))
         self.last_from_cache = False
         self.budget.spend()
-        result = self.inner.transcribe(image_png, prompt, schema)
+        try:
+            result = self.inner.transcribe(image_png, prompt, schema)
+        except Exception:
+            self.budget.refund()
+            raise
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         tmp = path.with_suffix(".tmp")
         tmp.write_text(json.dumps(result, ensure_ascii=False), encoding="utf-8")
@@ -427,6 +440,7 @@ class VisionStats:
     cached: int = 0
     estimated_tokens: int = 0
     budget_stopped: bool = False
+    aborted: bool = False          # MAX_CONSECUTIVE_ERRORS помилок поспіль
     errors: int = 0
     by_status: dict[str, int] = field(default_factory=dict)
     planned: list[dict[str, Any]] = field(default_factory=list)
@@ -450,6 +464,7 @@ def run_vision(root: Node, page_images: Mapping[int, Path | np.ndarray], client:
     from .preprocess import PageImageCache
     arrays = {p: v for p, v in page_images.items() if isinstance(v, np.ndarray)}     # готові картинки (тести)
     images = PageImageCache({p: v for p, v in page_images.items() if p not in arrays})
+    streak = 0
     for target in targets:
         src = target.source
         page_img = arrays.get(src.pdf_page)
@@ -471,9 +486,14 @@ def run_vision(root: Node, page_images: Mapping[int, Path | np.ndarray], client:
             break
         except Exception as exc:  # noqa: BLE001 — одна зона з помилкою не валить прогін
             stats.errors += 1
+            streak += 1
             target.exercise.data["vision_status"] = "error"
             target.exercise.data["vision_reason"] = str(exc)[:200]
+            if streak >= MAX_CONSECUTIVE_ERRORS:
+                stats.aborted = True
+                break
             continue
+        streak = 0
         if getattr(client, "last_from_cache", False):
             stats.cached += 1
         else:

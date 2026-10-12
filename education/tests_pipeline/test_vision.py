@@ -1,4 +1,5 @@
 """Фаза 15: vision-LLM корекція — лише з FakeVisionClient (без мережі)."""
+from unittest import mock
 import json
 import tempfile
 import unittest
@@ -158,6 +159,37 @@ class RunVisionTests(unittest.TestCase):
         fake = FakeVisionClient([GOOD])
         stats = run_vision(root, {9: PAGE}, fake, limit=1)
         self.assertEqual((stats.candidates, stats.selected, len(fake.calls)), (2, 1, 1))
+
+    def test_failed_request_refunds_budget(self):
+        def boom(png, prompt):
+            raise RuntimeError("429 RESOURCE_EXHAUSTED")
+        with tempfile.TemporaryDirectory() as tmp:
+            client = CachedClient(FakeVisionClient(boom), Path(tmp) / "c", DailyBudget(Path(tmp) / "b.json", limit=5))
+            with self.assertRaises(RuntimeError):
+                client.transcribe(b"x", "p", {})
+            self.assertEqual(client.budget.used, 0)
+
+    def test_network_errors_are_retried(self):
+        calls, sleeps = [], []
+
+        def fn():
+            calls.append(1)
+            if len(calls) < 2:
+                raise RuntimeError("[Errno 11001] getaddrinfo failed")
+            return "ok"
+        self.assertEqual(call_with_backoff(fn, sleep=sleeps.append), "ok")
+
+    def test_consecutive_errors_abort_run(self):
+        root, ex, ok = ex3_tree()
+        ok.needs_review = True
+
+        def boom(png, prompt):
+            raise RuntimeError("429 RESOURCE_EXHAUSTED")
+        with mock.patch("education.pdf_pipeline.vision.MAX_CONSECUTIVE_ERRORS", 1):
+            fake = FakeVisionClient(boom)
+            stats = run_vision(root, {9: PAGE}, fake)
+        self.assertTrue(stats.aborted)
+        self.assertEqual((stats.errors, len(fake.calls)), (1, 1))
 
     def test_budget_exhausted_mid_run(self):
         root, ex, ok = ex3_tree()

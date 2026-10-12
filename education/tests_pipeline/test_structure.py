@@ -420,6 +420,23 @@ class ExerciseRecoveryTests(unittest.TestCase):
         nums, _ = run_exercises(["100. Перша.", "11337762\". Друга.", "102. Третя.", "103. Четверта."], first=100)
         self.assertEqual(nums, [100, 101, 102, 103])
 
+    def _review(self, res):
+        return {int(e.number): e.needs_review for e in kinds(res.root, "exercise")}
+
+    def test_fixed_number_between_neighbours_is_confirmed(self):
+        # «1O1» → 101 виправлено типовою помилкою OCR, сусіди 100 і 102 підтверджують
+        _, res = run_exercises(["100. Перша.", "1017. Друга.", "102. Третя."], first=100)
+        review = self._review(res)
+        self.assertFalse(review[101])
+
+    def test_inferred_number_stays_on_review(self):
+        _, res = run_exercises(["100. Перша.", "11337762\". Друга.", "102. Третя.", "103. Четверта."], first=100)
+        self.assertTrue(self._review(res)[101])
+
+    def test_fixed_number_without_next_neighbour_stays_on_review(self):
+        _, res = run_exercises(["100. Перша.", "1017. Друга."], first=100)
+        self.assertTrue(self._review(res)[101])
+
     def test_stall_is_resynced(self):
         # Втрачено 20 вправ поспіль: без перевірки наперед парсер завис би на очікуваному номері
         nums, _ = run_exercises(["100. Перша.", "125. Друга.", "126. Третя."], first=100)
