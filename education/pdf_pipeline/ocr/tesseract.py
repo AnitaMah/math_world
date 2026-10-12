@@ -21,9 +21,12 @@ class TesseractNotAvailable(RuntimeError):
 class TesseractEngine:
     """Обгортка над Tesseract. Налаштування (шлях, моделі) береться з PipelineConfig."""
 
-    def __init__(self, cfg: PipelineConfig, timeout: float = 120):
+    RETRY_FACTOR = 3     # сторінка, що не вклалась у ліміт, отримує ще одну спробу з довшим
+
+    def __init__(self, cfg: PipelineConfig, timeout: float | None = None):
         self.cfg = cfg
-        self.timeout = timeout
+        # Складні кольорові сторінки (стор. 68–69 Тарасенкової) при двох воркерах не вкладаються у 120 с.
+        self.timeout = timeout if timeout is not None else float(os.environ.get("TESSERACT_TIMEOUT") or 120)
         if cfg.tesseract_cmd:
             pytesseract.pytesseract.tesseract_cmd = cfg.tesseract_cmd
         if cfg.tessdata_dir:
@@ -55,13 +58,21 @@ class TesseractEngine:
         """Розпізнає картинку; координати — у пікселях саме цієї картинки."""
         if isinstance(image, Path):
             image = str(image)
-        data = pytesseract.image_to_data(
-            image,
-            lang=params.lang,
-            config=self.build_config(params),
-            output_type=pytesseract.Output.DICT,
-            timeout=self.timeout,
-        )
+        def run(timeout: float):
+            return pytesseract.image_to_data(
+                image,
+                lang=params.lang,
+                config=self.build_config(params),
+                output_type=pytesseract.Output.DICT,
+                timeout=timeout,
+            )
+
+        try:
+            data = run(self.timeout)
+        except RuntimeError as exc:
+            if "timeout" not in str(exc).lower():
+                raise
+            data = run(self.timeout * self.RETRY_FACTOR)
         return parse_tesseract_data(data)
 
 

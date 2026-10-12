@@ -23,7 +23,7 @@ PROFILE = TextbookProfile(
     paragraph_re=re.compile(r"^§\s*(?P<num>\d{1,2})\.\s*(?P<title>.+)$"),
     item_re=None,
     # «35′. Назвіть…», «40°. Із чисел…», «63. Перемалюйте…», «72*. Запишіть…» — значок ПЕРЕД крапкою.
-    exercise_re=re.compile(r"^(?P<num>\d{1,4})\s*(?P<mark>[′'’`°o*\"”])?\s*[.,]\s*(?P<rest>\S.*)$"),
+    exercise_re=re.compile(r"^(?P<num>\d{1,8})\s*(?P<mark>[′'’`°o*\"”])?\s*[.,]\s*(?P<rest>.*)$"),
     block_markers=(
         BlockMarker("worked_example", ("Задача",), whole_line=False),      # «Задача. Знайдіть…» + «Розв'язання.»
         BlockMarker("rule", ("Запам'ятайте",)),
@@ -44,7 +44,7 @@ PROFILE = TextbookProfile(
     toc_path="data/6_class_ukr.txt",
     strict_figures=True,
     book_page_offset=0,                  # стор. друкована = стор. PDF
-    skip_pages=frozenset({1, 2, 3}),
+    skip_pages=frozenset({1, 2, 3, *range(300, 306)}),   # 300–301 покажчик, 302–305 зміст
     answers_pages=(287, 299),
     notes=(
         "«?» на полі — питання в теорії, лишається частиною теорії.",

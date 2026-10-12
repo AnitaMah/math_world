@@ -286,8 +286,9 @@ class FirstExerciseTests(unittest.TestCase):
         res = parse_structure(T6, self.PAGES, T6_TOC, **kw)
         return [int(e.number) for e in kinds(res.root, "exercise")]
 
-    def test_default_start_finds_nothing_mid_book(self):
-        self.assertEqual(self.numbers(), [])               # очікувано 1, знайшли 188 — не вправи
+    def test_default_start_resyncs_when_sequence_confirms(self):
+        # очікували 1, знайшли 188, але одразу йдуть 189 і 190 — це послідовність, а не випадковий збіг
+        self.assertEqual(self.numbers(), [188, 189, 190])
 
     def test_first_exercise_makes_them_exercises(self):
         self.assertEqual(self.numbers(first_exercise=188), [188, 189, 190])
@@ -334,3 +335,105 @@ class BookPageOffsetTests(unittest.TestCase):
 
     def test_merzlyak_has_no_offset(self):
         self.assertIsNone(get_profile("math_merzlyak_5").book_page_offset)
+
+
+T6_TOC_FULL = [
+    TocEntry("section", "1", "Подільність натуральних чисел"),
+    TocEntry("paragraph", "1", "Дільники і кратні натурального числа"),
+    TocEntry("paragraph", "2", "Ознаки подільності на 2, 10, 5"),
+    TocEntry("paragraph", "3", "Ознаки подільності на 9, 3"),
+    TocEntry("paragraph", "4", "Розкладання чисел на множники. Найбільший спільний дільник"),
+    TocEntry("paragraph", "5", "Найменше спільне кратне"),
+    TocEntry("paragraph", "6", "Основна властивість дробу. Скорочення дробу"),
+    TocEntry("paragraph", "7", "Зведення дробів до спільного знаменника"),
+    TocEntry("paragraph", "11", "Перетворення звичайного дробу в десятковий"),
+    TocEntry("paragraph", "29", "Ділення раціональних чисел"),
+    TocEntry("paragraph", "30", "Вирази та їх спрощення"),
+    TocEntry("paragraph", "31", "Рівняння. Основні властивості рівнянь"),
+]
+
+
+class GarbledHeadingTests(unittest.TestCase):
+    """Реальні рядки OCR заголовків § Тарасенкової."""
+
+    def parser(self, current):
+        p = StructureParser(T6, T6_TOC_FULL)
+        p.paragraph = type("N", (), {"number": str(current)})()
+        return p
+
+    def match(self, text, current, line_id=0):
+        pl = type("PL", (), {"line": type("L", (), {"line_id": line_id})()})()
+        entry = self.parser(current)._match_paragraph(text, pl)
+        return entry.number if entry else None
+
+    def test_cases_from_real_ocr(self):
+        cases = [
+            ("side § 29. ДІЛЕННЯ РАЦІОНАЛЬНИХ ЧИСЕЛ", 28, "29"),         # сміття перед §
+            ("§ 239.ДІЛЕННЯ РАЦІОНАЛЬНИХ ЧИСЕЛ", 28, "29"),               # зайва цифра в номері
+            ("5 30. BHPASH TA IX СПРОЩЕННЯ", 29, "30"),                  # назва латинськими
+            ("9531.РІВНЯННЯ. |", 30, "31"),                              # «§ 31.» як 9531
+            ("511. ПЕРЕТВОРЕННЯ ЗВИЧАЙНОГО ПА ПРИ", 10, "11"),           # зіпсований хвіст назви
+            ("All § 4. РОЗКЛАДАННЯ ЧИСЕЛ", 3, "4"),                      # назва на кількох рядках
+            ("Основна властивість дробу", 5, "6"),                       # номер зовсім відсутній
+            ("7. ЗВЕДЕННЯ ДРОБІВ ДО СПІЛЬНОГО ЗНАМЕННИКА", 6, "7"),      # § прочитано як цифра
+        ]
+        for text, current, want in cases:
+            with self.subTest(text=text):
+                self.assertEqual(self.match(text, current), want)
+
+    def test_ordinary_text_is_not_a_heading(self):
+        for text in ("Основна властивість дробу використовують часто", "3. Знайдіть суму чисел", "§ 40. Щось інше"):
+            with self.subTest(text=text):
+                self.assertIsNone(self.match(text, 1, line_id=9))
+
+    def test_unnumbered_title_only_near_page_top(self):
+        self.assertIsNone(self.match("Основна властивість дробу", 5, line_id=12))
+
+
+def run_exercises(lines, first=1, block="Розв'яжіть задачі"):
+    pages = [page(26, ("§ 1. ДІЛЬНИКИ І КРАТНІ НАТУРАЛЬНОГО ЧИСЛА", 20), "Теорія."),
+             page(27, block, *lines)]
+    res = parse_structure(T6, pages, T6_TOC, first_exercise=first)
+    return [int(e.number) for e in kinds(res.root, "exercise")], res
+
+
+class ExerciseRecoveryTests(unittest.TestCase):
+    def test_mark_read_as_seven(self):
+        nums, _ = run_exercises(["570. Складіть.", "5717. Знайдіть.", "5727. Обчисліть."], first=570)
+        self.assertEqual(nums, [570, 571, 572])
+
+    def test_leading_dashes_and_letters(self):
+        nums, _ = run_exercises(["————- 64. Дано числа.", "& 65. Знайдіть.", "fy 66\". Порівняйте."], first=64)
+        self.assertEqual(nums, [64, 65, 66])
+
+    def test_number_alone_on_a_line(self):
+        nums, res = run_exercises(["559°.", "Чи можна скласти пропорцію з чисел:", "560°.", "Складіть."], first=559)
+        self.assertEqual(nums, [559, 560])
+
+    def test_garbled_number_before_following_sequence(self):
+        # «667» — це зіпсований 662: одразу далі йдуть 663, 664
+        nums, _ = run_exercises(["661. Перша друкарка.", "667. Перша бригада.", "663. Для розчину.", "664. Для напою."],
+                                first=661)
+        self.assertEqual(nums, [661, 662, 663, 664])
+
+    def test_unreadable_number_between_neighbours(self):
+        nums, _ = run_exercises(["100. Перша.", "11337762\". Друга.", "102. Третя.", "103. Четверта."], first=100)
+        self.assertEqual(nums, [100, 101, 102, 103])
+
+    def test_stall_is_resynced(self):
+        # Втрачено 20 вправ поспіль: без перевірки наперед парсер завис би на очікуваному номері
+        nums, _ = run_exercises(["100. Перша.", "125. Друга.", "126. Третя."], first=100)
+        self.assertEqual(nums, [100, 125, 126])
+
+    def test_hidden_exercise_heading(self):
+        pages = [page(26, ("§ 1. ДІЛЬНИКИ І КРАТНІ НАТУРАЛЬНОГО ЧИСЛА", 20), "Теорія."),
+                 page(27, "ПРИГАДАЙТЕ ГОЛОВНЕ", "Що таке дільник?", "920\". На малюнку подано ескіз.", "921\". Яку температуру.")]
+        res = parse_structure(T6, pages, T6_TOC, first_exercise=920)
+        self.assertEqual([int(e.number) for e in kinds(res.root, "exercise")], [920, 921])
+        self.assertIn("exercise_block_inferred", [i.code for i in res.issues])
+
+    def test_exercise_like_numbers_in_theory_are_not_exercises(self):
+        pages = [page(26, ("§ 1. ДІЛЬНИКИ І КРАТНІ НАТУРАЛЬНОГО ЧИСЛА", 20), "Теорія.", "3. Приклад із теорії."),
+                 page(27, "ПРИГАДАЙТЕ ГОЛОВНЕ", "1. Що таке дільник?")]
+        res = parse_structure(T6, pages, T6_TOC, first_exercise=100)
+        self.assertEqual(kinds(res.root, "exercise"), [])

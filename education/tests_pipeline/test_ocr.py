@@ -174,3 +174,39 @@ class RealTesseractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TesseractTimeoutRetryTests(unittest.TestCase):
+    def engine(self, timeout=10):
+        engine = TesseractEngine.__new__(TesseractEngine)
+        engine.cfg = PipelineConfig(None, None, Path("c"))
+        engine.timeout = timeout
+        return engine
+
+    def test_timeout_is_retried_with_longer_limit(self):
+        from unittest import mock
+        calls = []
+
+        def fake(image, lang, config, output_type, timeout):
+            calls.append(timeout)
+            if len(calls) == 1:
+                raise RuntimeError("Tesseract process timeout")
+            return {"level": [], "text": []}
+
+        with mock.patch("pytesseract.image_to_data", fake):
+            self.assertEqual(self.engine().recognize("x.png", OcrParams()), [])
+        self.assertEqual(calls, [10, 30])
+
+    def test_other_errors_are_not_retried(self):
+        from unittest import mock
+        with mock.patch("pytesseract.image_to_data", side_effect=RuntimeError("boom")) as m:
+            with self.assertRaises(RuntimeError):
+                self.engine().recognize("x.png", OcrParams())
+        self.assertEqual(m.call_count, 1)
+
+    def test_timeout_from_env(self):
+        import os
+        from unittest import mock
+        with mock.patch.dict(os.environ, {"TESSERACT_TIMEOUT": "300"}), \
+                mock.patch("pytesseract.get_tesseract_version", return_value="5"):
+            self.assertEqual(TesseractEngine(PipelineConfig(None, None, Path("c"))).timeout, 300.0)
