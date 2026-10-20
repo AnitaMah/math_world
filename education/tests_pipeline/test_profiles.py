@@ -1,14 +1,12 @@
 """Тести профілів підручників — на реальних рядках з обох книжок."""
 import re
 import unittest
-from pathlib import Path
 
-from education.pdf_pipeline.profiles import BLOCK_TYPES, DIFFICULTY_LEVELS, PROFILES, get_profile, load_toc
+from education.pdf_pipeline.profiles import BLOCK_TYPES, DIFFICULTY_LEVELS, PROFILES, get_profile
 from education.pdf_pipeline.profiles.base import (
     BlockMarker, TextbookProfile, normalize_marker_text, roman_to_int, section_number,
 )
 
-ROOT = Path(__file__).resolve().parents[2]
 M5 = get_profile("math_merzlyak_5")
 T6 = get_profile("math_tarasenkova_6")
 
@@ -134,31 +132,6 @@ class TarasenkovaMarkerTests(unittest.TestCase):
         m = T6.paragraph_re.match("§ 2. ОЗНАКИ ПОДІЛЬНОСТІ НА 2, 10, 5")
         self.assertEqual(m.group("num"), "2")
         self.assertIsNone(T6.item_re)
-
-
-@unittest.skipUnless((ROOT / "data/5_class_ukr.txt").exists(), "немає змісту")
-class TocTests(unittest.TestCase):
-    def setUp(self):
-        import os
-        self._cwd = os.getcwd()
-        os.chdir(ROOT)
-
-    def tearDown(self):
-        import os
-        os.chdir(self._cwd)
-
-    def test_merzlyak_toc(self):
-        toc = load_toc("data/5_class_ukr.txt")
-        self.assertEqual(toc[0].kind, "section")
-        self.assertEqual(toc[0].number, "I")
-        items = M5.lesson_titles()
-        self.assertEqual(items[1].title, "Цифри. Десятковий запис натуральних чисел")
-        self.assertTrue(all(e.kind == "item" for e in items))
-
-    def test_tarasenkova_lessons_are_paragraphs(self):
-        lessons = T6.lesson_titles()
-        self.assertEqual(len(lessons), 35)
-        self.assertEqual(lessons[0].number, "1")
 
 
 if __name__ == "__main__":

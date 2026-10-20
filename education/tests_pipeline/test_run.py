@@ -55,7 +55,14 @@ def make_pdf(path: Path, pages: int = 7) -> None:
     doc.save(path)
 
 
+_TOC_PATH = Path(__file__).resolve().parents[2] / "data" / "5_class_ukr.txt"
+
+
+@unittest.skipUnless(_TOC_PATH.exists(), "немає змісту (авторське право — лише локально)")
 class RunPipelineTests(unittest.TestCase):
+    """Заголовки § і пунктів структурний парсер підтверджує звіркою зі змістом книги (structure.py),
+    тому навіть на синтетичному PDF з фейковим OCR потрібна реальна (локальна, не в репозиторії) data/5_class_ukr.txt."""
+
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
