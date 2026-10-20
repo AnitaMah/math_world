@@ -70,3 +70,5 @@ review/
 # Локально файли лишаються — пайплайн і тести з ними працюють, без них тести пропускаються.
 *.pdf
 education/tests_pipeline/fixtures/golden/*.txt
+/data/*.txt
+/data/*.py
