@@ -191,7 +191,10 @@ class TextbookProfile:
         return int(m.group("num")), level, m.group("rest").strip()
 
     def toc(self) -> list[TocEntry]:
-        return load_toc(self.toc_path) if self.toc_path else []
+        """Зміст книги, якщо його локальна копія є (авторське право — не публікуємо, див. .gitignore)."""
+        if not self.toc_path or not Path(self.toc_path).exists():
+            return []
+        return load_toc(self.toc_path)
 
     def lesson_titles(self) -> list[TocEntry]:
         """Записи змісту, що є «уроками» (пункти або параграфи — залежно від lesson_level)."""
