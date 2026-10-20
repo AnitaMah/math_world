@@ -29,12 +29,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-+8y=roo78zo(rb+k0l_rk37&non*4kb083mr@i6!s9-cngwyo_'
+# Береться з .env (див. .env.example). Запасний ключ — лише для локальної розробки.
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-local-dev-only-change-me')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = str(config('DEBUG', default='True')).lower() in ('1', 'true', 'yes')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h.strip() for h in str(config('ALLOWED_HOSTS', default='')).split(',') if h.strip()]
 
 
 

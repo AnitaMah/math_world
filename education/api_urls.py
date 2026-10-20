@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import api
+from . import api, api_schools
 
 urlpatterns = [
     path("csrf/", api.csrf, name="api_csrf"),
@@ -20,4 +20,8 @@ urlpatterns = [
     path("play/items/<int:pk>/", api.play, {"kind": "item"}, name="api_play_item"),
     path("play/paragraphs/<int:pk>/", api.play, {"kind": "paragraph"}, name="api_play_paragraph"),
     path("me/", api.me, name="api_me"),
+    path("schools/", api_schools.register, name="api_school_register"),
+    path("schools/mine/", api_schools.my_schools, name="api_my_schools"),
+    path("schools/<int:pk>/staff/", api_schools.staff, name="api_school_staff"),
+    path("schools/<int:pk>/staff/<int:user_id>/", api_schools.staff_member, name="api_school_staff_member"),
 ]
