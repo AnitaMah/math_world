@@ -1,0 +1,69 @@
+{% extends "education/base.html" %}
+{% load static ui %}
+{# Черга ручної перевірки /review/ (needs_review). Контекст — education/views_review.py:review_index. #}
+{% block title %}Перевірка{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'education/css/review.css' %}">{% endblock %}
+{% block topbar %}{% endblock %}
+{% block bottom_nav %}{% endblock %}
+{% block content %}
+<div class="page">
+  <header class="review-head">
+    <h1>Перевірка</h1>
+    <a class="review-head__back" href="{% url 'home' %}">{% icon "map" size=16 %}На мапу</a>
+  </header>
+
+  <form class="review-filters" method="get" action="{% url 'review_index' %}">
+    <input type="hidden" name="p" value="{{ f.p }}">
+    <select name="tb" aria-label="Підручник">
+      <option value=""{% if not f.tb %} selected{% endif %}>Усі підручники</option>
+      {% for t in textbooks %}
+        <option value="{{ t.pk }}"{% if f.tb == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.title }}</option>
+      {% endfor %}
+    </select>
+    <select name="kind" aria-label="Тип">
+      <option value=""{% if not f.kind %} selected{% endif %}>Вправи й підпункти</option>
+      <option value="exercise"{% if f.kind == "exercise" %} selected{% endif %}>Лише вправи</option>
+      <option value="subexercise"{% if f.kind == "subexercise" %} selected{% endif %}>Лише підпункти</option>
+    </select>
+    <label><input type="checkbox" name="skipped" value="1"{% if f.skipped %} checked{% endif %}> Пропущені</label>
+    <button class="btn btn--secondary btn--sm" type="submit">Застосувати</button>
+    {% if first_url %}<a class="btn btn--primary btn--sm" href="{{ first_url }}">{% icon "play" size=16 %}Почати перевірку</a>{% endif %}
+  </form>
+
+  {% if counters %}
+  <nav class="review-paragraphs" aria-label="Параграфи з чергою">
+    <a class="chip{% if not f.p %} is-active{% endif %}" href="?tb={{ f.tb }}&kind={{ f.kind }}{% if f.skipped %}&skipped=1{% endif %}">Усі §</a>
+    {% for paragraph, n in counters %}
+      <a class="chip{% if f.p == paragraph.pk|stringformat:"s" %} is-active{% endif %}"
+         href="?tb={{ f.tb }}&kind={{ f.kind }}{% if f.skipped %}&skipped=1{% endif %}&p={{ paragraph.pk }}">
+        Розділ {{ paragraph.section.number }} · § {{ paragraph.number }} {{ paragraph.name_uk }}
+        <span class="chip__sub">{{ n }}</span>
+      </a>
+    {% endfor %}
+  </nav>
+  {% endif %}
+
+  <p class="muted">Показано {{ shown }} з {{ total }}.</p>
+
+  {% if rows %}
+  <div class="review-rows">
+    {% for row in rows %}
+      <a class="card review-row" href="{{ row.url }}">
+        <div class="review-row__body">
+          <div class="review-row__head">
+            <span class="tag">{% if row.kind == "exercise" %}Вправа{% else %}Підпункт{% endif %} №{{ row.ex.number }}{% if row.kind == "subexercise" %}.{{ row.obj.number }}{% endif %}</span>
+            {% if row.ex.difficulty %}<span class="diff diff--{{ row.ex.difficulty }}">{{ row.ex.get_difficulty_display }}</span>{% endif %}
+            <span class="tag">{{ row.ex.block.get_block_type_display }}</span>
+          </div>
+          <p class="review-row__text">{{ row.text|default:"(порожньо)" }}</p>
+          <p class="review-row__meta">{{ row.ex.textbook.title }} · стор. {{ row.ex.source_page|default:"—" }}</p>
+        </div>
+        {% icon "chevron-right" size=18 %}
+      </a>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="empty-note">{% if f.skipped %}Нічого пропущеного за цим фільтром.{% else %}Черга порожня — усе перевірено 🎉{% endif %}</p>
+  {% endif %}
+</div>
+{% endblock %}

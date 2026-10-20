@@ -1,0 +1,79 @@
+{% extends "education/base.html" %}
+{% load static ui %}
+{# Один елемент черги /review/ (вправа або підпункт). Контекст — education/views_review.py:review_detail. #}
+{% block title %}№{{ ex.number }} · Перевірка{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'education/css/review.css' %}">{% endblock %}
+{% block topbar %}{% endblock %}
+{% block bottom_nav %}{% endblock %}
+{% block content %}
+<div class="page">
+  <header class="review-head">
+    <a class="review-head__back" href="{{ back }}">{% icon "chevron-left" size=16 %}До черги</a>
+    <span class="chip">Залишилось: {{ remaining }}</span>
+  </header>
+
+  <div class="stack stack--gap-4">
+    <div class="card stack stack--gap-3">
+      <div class="review-row__head">
+        <span class="tag">{% if kind == "exercise" %}Вправа{% else %}Підпункт{% endif %} №{{ ex.number }}{% if kind == "subexercise" %}.{{ obj.number }}{% endif %}</span>
+        {% if ex.difficulty %}<span class="diff diff--{{ ex.difficulty }}">{{ ex.get_difficulty_display }}</span>{% endif %}
+        <span class="tag">{{ ex.block.get_block_type_display }}</span>
+        {% if obj.review_skipped %}<span class="status status--locked">Пропущено</span>{% endif %}
+      </div>
+      <p class="muted">
+        Розділ {{ paragraph.section.number }} · § {{ paragraph.number }} {{ paragraph.name_uk }}
+        · {{ ex.textbook.title }} · стор. {{ ex.source_page|default:"—" }}
+      </p>
+
+      {% if has_crop %}
+        <img class="review-crop" src="{{ crop_url }}" alt="Скан сторінки {{ ex.source_page }}">
+      {% endif %}
+
+      {% if subs %}
+      <div class="review-subs">
+        {% for sub in subs %}
+          <div class="review-sub{% if kind == "subexercise" and sub.pk == obj.pk %} is-current{% endif %}">
+            <span class="review-sub__num">{{ sub.number }})</span>
+            <span>{{ sub.text }}</span>
+          </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <form class="card stack stack--gap-3" method="post">
+      {% csrf_token %}
+      <input type="hidden" name="tb" value="{{ f.tb }}">
+      <input type="hidden" name="p" value="{{ f.p }}">
+      <input type="hidden" name="kind" value="{{ f.kind }}">
+      {% if f.skipped %}<input type="hidden" name="skipped" value="1">{% endif %}
+      <label for="review-text" class="label-caps">Текст</label>
+      <textarea class="review-textarea" id="review-text" name="text">{{ text }}</textarea>
+      <div class="review-actions">
+        <button class="btn btn--primary" type="submit" name="action" value="save">{% icon "check" size=18 %}Зберегти</button>
+        <button class="btn btn--secondary" type="submit" name="action" value="confirm">Підтвердити без змін</button>
+        {% if obj.review_skipped %}
+          <button class="btn btn--secondary" type="submit" name="action" value="unskip">{% icon "repeat" size=18 %}Повернути в чергу</button>
+        {% else %}
+          <button class="btn btn--muted" type="submit" name="action" value="skip">{% icon "close" size=18 %}Не ігрова (пропустити)</button>
+        {% endif %}
+      </div>
+    </form>
+
+    {% if history %}
+    <div class="card stack stack--gap-2">
+      <span class="label-caps">Історія</span>
+      <div class="review-history">
+        {% for h in history %}
+          <p class="review-history__row">
+            <strong>{{ h.get_action_display }}</strong> · {{ h.created_at|date:"d.m.Y H:i" }}
+            {% if h.user %} · {{ h.user.get_username }}{% endif %}
+            {% if h.action == "edit" %}<br>«{{ h.old_text|truncatechars:80 }}» → «{{ h.new_text|truncatechars:80 }}»{% endif %}
+          </p>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

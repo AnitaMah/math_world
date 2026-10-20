@@ -1,0 +1,66 @@
+/* Сторінка /review/ (ручна перевірка needs_review) — службовий інструмент для персоналу,
+   без ігрової верхньої панелі й нижньої навігації (див. блоки topbar/bottom_nav у шаблонах). */
+
+.review-head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  margin-bottom: var(--sp-6); flex-wrap: wrap;
+}
+.review-head h1 { font: var(--fw-heavy) var(--fs-22)/1.2 var(--font-display); margin: 0; }
+.review-head__back {
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  color: var(--text-2); text-decoration: none; font-weight: var(--fw-bold);
+}
+.review-head__back:hover { color: var(--text); }
+
+/* --- Фільтри (index) ------------------------------------------------------------ */
+.review-filters {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  margin-bottom: var(--sp-4);
+}
+.review-filters select {
+  background: var(--card-2); color: var(--text); border: 1px solid var(--line-2);
+  border-radius: var(--r-md); padding: 8px 12px; font: var(--fw-bold) var(--fs-14)/1.2 var(--font-body);
+}
+.review-filters label { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); font-size: var(--fs-14); }
+
+.review-paragraphs { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-4); }
+.review-paragraphs .chip { text-decoration: none; color: var(--text); }
+.review-paragraphs .chip.is-active { background: var(--acc); color: var(--ink); border-color: transparent; }
+
+/* --- Черга (index) --------------------------------------------------------------- */
+.review-rows { display: flex; flex-direction: column; gap: var(--sp-3); }
+.review-row {
+  display: flex; align-items: center; gap: var(--sp-3);
+  text-decoration: none; color: inherit;
+}
+.review-row:hover { border-color: var(--line-strong); }
+.review-row__body { min-width: 0; flex: 1; }
+.review-row__head { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: 4px; flex-wrap: wrap; }
+.review-row__text {
+  color: var(--text-2); font-size: var(--fs-14);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.review-row__meta { color: var(--muted-2); font-size: var(--fs-12); margin-top: 2px; }
+
+/* --- Деталі (detail) -------------------------------------------------------------- */
+.review-crop {
+  display: block; width: 100%; max-height: 420px; object-fit: contain;
+  background: var(--surface-2); border-radius: var(--r-lg); border: 1px solid var(--line-3);
+}
+.review-subs { display: flex; flex-direction: column; gap: var(--sp-2); }
+.review-sub { display: flex; gap: var(--sp-2); align-items: baseline; font-size: var(--fs-14); }
+.review-sub.is-current { color: var(--text); font-weight: var(--fw-bold); }
+.review-sub__num { color: var(--muted-2); flex-shrink: 0; }
+
+.review-textarea {
+  width: 100%; min-height: 120px; resize: vertical;
+  background: var(--card-2); color: var(--text); border: 1px solid var(--line-2);
+  border-radius: var(--r-md); padding: var(--sp-3); font: var(--fw-body) var(--fs-15)/1.5 var(--font-body);
+}
+.review-textarea:focus { outline: 2px solid var(--focus); outline-offset: 1px; }
+
+.review-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+
+.review-history { display: flex; flex-direction: column; gap: var(--sp-2); }
+.review-history__row { font-size: var(--fs-13); color: var(--muted-2); }
+.review-history__row strong { color: var(--text-2); }
