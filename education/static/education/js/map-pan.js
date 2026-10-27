@@ -24,8 +24,20 @@ export function clampState(state, bounds) {
   return { scale: state.scale, tx: clampAxis(state.tx, w, bounds.viewportWidth), ty: clampAxis(state.ty, h, bounds.viewportHeight) };
 }
 
+/**
+ * Яку частку полотна зараз видно (0–1 по кожній осі) — для рамки на мінімапі (фаза 20, FE-0635).
+ * У частках, не в пікселях viewBox: мінімапа знає свій viewBox, а цей модуль — ні.
+ */
+export function visibleRect(state, bounds) {
+  const w = bounds.contentWidth * state.scale, h = bounds.contentHeight * state.scale;
+  const clip = (v) => Math.min(1, Math.max(0, v));
+  const x0 = clip(-state.tx / w), x1 = clip((bounds.viewportWidth - state.tx) / w);
+  const y0 = clip(-state.ty / h), y1 = clip((bounds.viewportHeight - state.ty) / h);
+  return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+}
+
 /** Підключає колесо (зум до курсора), перетягування мишею й подвійний клік (зум/скидання) до stage. */
-export function mountPanZoom(stage, canvas, { min = 1, max = 3 } = {}) {
+export function mountPanZoom(stage, canvas, { min = 1, max = 3, onChange = () => {} } = {}) {
   let state = { scale: min, tx: 0, ty: 0 };
   let drag = null;
 
@@ -36,8 +48,16 @@ export function mountPanZoom(stage, canvas, { min = 1, max = 3 } = {}) {
   const apply = () => {
     canvas.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
     stage.classList.toggle("is-zoomed", state.scale > min);
+    onChange(visibleRect(state, bounds()));
   };
   const reset = () => { state = { scale: min, tx: 0, ty: 0 }; apply(); };
+  /** Центрує в’юпорт на точці (fx, fy) — частках полотна 0–1 (клік/перетягування мінімапи). */
+  const panToFraction = (fx, fy) => {
+    const b = bounds();
+    const w = b.contentWidth * state.scale, h = b.contentHeight * state.scale;
+    state = clampState({ scale: state.scale, tx: b.viewportWidth / 2 - fx * w, ty: b.viewportHeight / 2 - fy * h }, b);
+    apply();
+  };
 
   stage.addEventListener("wheel", (e) => {
     e.preventDefault();
@@ -72,5 +92,5 @@ export function mountPanZoom(stage, canvas, { min = 1, max = 3 } = {}) {
 
   new ResizeObserver(() => { state = clampState(state, bounds()); apply(); }).observe(stage);
 
-  return { reset };
+  return { reset, panToFraction };
 }

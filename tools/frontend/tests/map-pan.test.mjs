@@ -1,7 +1,7 @@
 // Тести чистих функцій js/map-pan.js (node:test): масштабування й панорамування мапи (фаза 20, FE-0634).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { zoomAt, panBy, clampState } from "../../../education/static/education/js/map-pan.js";
+import { zoomAt, panBy, clampState, visibleRect } from "../../../education/static/education/js/map-pan.js";
 
 const bounds = (over = { contentWidth: 1000, contentHeight: 800, viewportWidth: 1000, viewportHeight: 800 }) =>
   ({ min: 1, max: 3, ...over });
@@ -43,4 +43,16 @@ test("zoomAt: зум у довільній точці (не в центрі) р�
   const z = zoomAt(s0, 1.5, 100, 100, b);
   // px = (100-0)/1 = 100; новий tx = 100 - 100*1.5 = -50
   assert.deepEqual(z, { scale: 1.5, tx: -50, ty: -50 });
+});
+
+test("visibleRect: без зуму видно все полотно (для рамки мінімапи, фаза 20, FE-0635)", () => {
+  assert.deepEqual(visibleRect({ scale: 1, tx: 0, ty: 0 }, bounds()), { x: 0, y: 0, w: 1, h: 1 });
+});
+
+test("visibleRect: зум ×2 у центрі — видно середню чверть полотна", () => {
+  assert.deepEqual(visibleRect({ scale: 2, tx: -500, ty: -400 }, bounds()), { x: 0.25, y: 0.25, w: 0.5, h: 0.5 });
+});
+
+test("visibleRect: зум ×2 без зсуву — видно верхній лівий кут", () => {
+  assert.deepEqual(visibleRect({ scale: 2, tx: 0, ty: 0 }, bounds()), { x: 0, y: 0, w: 0.5, h: 0.5 });
 });

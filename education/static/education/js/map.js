@@ -15,13 +15,59 @@ const canvas = document.getElementById("mapCanvas");
 const sea = document.getElementById("sea");
 const nodesLayer = document.getElementById("mapNodes");
 const fogHint = document.getElementById("fogHint");
+const minimap = document.getElementById("mapMinimap");
+const minimapSvg = document.getElementById("mapMinimapSvg");
+const minimapViewport = document.getElementById("mapMinimapViewport");
 const show = (id) => {
   for (const el of ["mapLoading", "mapError", "mapEmpty"]) document.getElementById(el).hidden = el !== id;
   canvas.hidden = id !== null;
 };
+
+/** Рамка «ти тут» на мінімапі — частки (0–1) видимого в'юпорта (фаза 20, FE-0635). */
+function updateMinimapViewport(rect) {
+  minimapViewport.style.left = `${(rect.x * 100).toFixed(2)}%`;
+  minimapViewport.style.top = `${(rect.y * 100).toFixed(2)}%`;
+  minimapViewport.style.width = `${(rect.w * 100).toFixed(2)}%`;
+  minimapViewport.style.height = `${(rect.h * 100).toFixed(2)}%`;
+}
+
 // Масштаб/панорамування на десктопі (фаза 20, FE-0634) — одне підключення на весь час життя сторінки
 // (load() може виконатись повторно після «Спробувати ще раз»); кожне нове завантаження скидає вигляд.
-const panZoom = mountPanZoom(stage, canvas);
+const panZoom = mountPanZoom(stage, canvas, { onChange: updateMinimapViewport });
+
+/** Острови й «ти тут» на мінімапі, тим самим viewBox, що й основна мапа. */
+function renderMinimap(map, L) {
+  minimapSvg.setAttribute("viewBox", L.viewBox);
+  const idx = map.lessons.findIndex((l) => l.state === "current");
+  const dot = idx >= 0 ? L.nodes[idx] : null;
+  const r = Math.max(L.width, L.height) * 0.02;
+  minimapSvg.innerHTML = L.islands.map((i) => `<path class="map-minimap__land" d="${i.d}"/>`).join("")
+    + (dot ? `<circle class="map-minimap__dot" cx="${dot.x}" cy="${dot.y}" r="${r}"/>` : "");
+}
+
+/** Клік або перетягування по мінімапі переносить в'юпорт туди (масштаб лишається той самий). */
+function mountMinimapNav() {
+  const fraction = (e) => {
+    const r = minimap.getBoundingClientRect();
+    return { fx: (e.clientX - r.left) / r.width, fy: (e.clientY - r.top) / r.height };
+  };
+  let dragging = false;
+  minimap.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    minimap.setPointerCapture(e.pointerId);
+    const { fx, fy } = fraction(e);
+    panZoom.panToFraction(fx, fy);
+  });
+  minimap.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const { fx, fy } = fraction(e);
+    panZoom.panToFraction(fx, fy);
+  });
+  const stop = () => { dragging = false; };
+  minimap.addEventListener("pointerup", stop);
+  minimap.addEventListener("pointercancel", stop);
+}
+mountMinimapNav();
 
 /** Екранування тексту для вставки в розмітку. */
 export function esc(s) {
@@ -122,6 +168,8 @@ async function load() {
   const L = layoutGrade(map);
   sea.setAttribute("viewBox", L.viewBox);
   canvas.style.setProperty("--ar", (L.width / L.height).toFixed(4));
+  stage.style.setProperty("--ar", (L.width / L.height).toFixed(4));   // мінімапа — сестра canvas, читає з stage
+  renderMinimap(map, L);
   const { fog, biggest } = fogRegions(map, L);
   const fogIds = fog.map((r) => map.paragraphs[r.paraIdx].id);
   const revealedIds = newlyRevealed(loadSeenFog(map.grade), fogIds);
