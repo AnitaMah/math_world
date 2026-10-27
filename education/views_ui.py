@@ -86,13 +86,11 @@ def progress_page(request):
 
 
 def profile_page(request):
-    """`/profile/` — заглушка вкладки «Профіль»: ім’я і вхід/вихід уже працюють."""
-    return render(request, "education/stub_page.html", {
-        "stub_icon": "user",
-        "stub_title": "Профіль",
-        "stub_text": "Скоро тут будуть налаштування і нагороди за серію днів.",
-        "show_account": True,
-    })
+    """`/profile/` — вкладка «Профіль» (фаза 20, беклог FE-0631): ім’я, серія днів, вхід/вихід.
+
+    Серію заповнює `js/me.js` з `/api/me/` (той самий `[data-me]`, що й у верхній панелі).
+    """
+    return render(request, "education/profile.html")
 
 
 def ui_api(request):

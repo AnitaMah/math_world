@@ -208,7 +208,7 @@ class ComponentIncludeTests(SimpleTestCase):
 
 
 class TopbarAndNavTests(TestCase):
-    """Верхня панель, нижня навігація, заглушки «Прогрес»/«Профіль» (фаза 5)."""
+    """Верхня панель, нижня навігація (фаза 5)."""
 
     @classmethod
     def setUpTestData(cls):
@@ -259,7 +259,7 @@ class TopbarAndNavTests(TestCase):
         self.assertIn('href="/profile/" aria-current="page"', nav)
         self.assertNotIn('href="/progress/" aria-current="page"', nav)
 
-    def test_stub_pages(self):
+    def test_profile_account_actions(self):
         guest = self.client.get("/profile/")
         self.assertContains(guest, "Зареєструватися")
         self.client.force_login(User.objects.create_user("olia", password="pw-12345678"))
@@ -405,6 +405,28 @@ class ProgressPageTests(TestCase):
         self.assertEqual(len(data["history"]), 7)
         self.assertEqual({tuple(sorted(d)) for d in data["history"]}, {("date", "points")})
         self.assertEqual(sum(d["points"] for d in data["history"]), 0)
+
+
+class ProfilePageTests(TestCase):
+    """`/profile/` — ім’я, серія днів, вхід/вихід (фаза 20, беклог FE-0631)."""
+
+    def test_guest_sees_login_and_signup(self):
+        html = self.client.get("/profile/").content.decode()
+        self.assertIn('data-me="streak"', html)
+        self.assertIn('data-me="streak_word"', html)
+        self.assertIn("education/js/me.js", html)
+        self.assertIn("Гість", html)
+        self.assertIn('href="/accounts/login/?next=/profile/"', html)
+        self.assertIn("Зареєструватися", html)
+        self.assertNotIn("Вийти", html)
+
+    def test_authenticated_user_sees_name_and_logout(self):
+        self.client.force_login(User.objects.create_user("olia", password="pw-12345678"))
+        html = self.client.get("/profile/").content.decode()
+        self.assertIn("olia", html)
+        self.assertIn('action="/accounts/logout/"', html)
+        self.assertNotIn("Увійти", html)
+        self.assertNotIn("Зареєструватися", html)
 
 
 class LessonPageTests(TestCase):

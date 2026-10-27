@@ -30,12 +30,12 @@ python tools/frontend/run_tests.py --no-visual # швидко, без брауз
 
 | Де | Що |
 |---|---|
-| `education/views_ui.py` | тонкі view нового UI: «Світ», мапа, урок, сторінка §, гра, заглушки «Прогрес»/«Профіль», службові `/ui/…` |
+| `education/views_ui.py` | тонкі view нового UI: «Світ», мапа, урок, сторінка §, гра, «Прогрес», «Профіль», службові `/ui/…` |
 | `education/views.py` | точки входу за старими іменами URL, 301-редиректи зі старих адрес, реєстрація, `_blocks_context` |
 | `education/templatetags/ui.py` | `{% icon %}`, `{% topbar %}`, `{% auth_field %}`, фільтри `uk_plural`, `block_name`, `block_icon`, `difficulty_name`, `reflow` |
 | `education/context.py` | `UI_DEBUG` → `<html data-debug="1">` (моки лише в DEBUG) |
 | `templates/education/base.html` | каркас: шрифти, токени, спрайт іконок, верхня панель, нижня навігація |
-| `templates/education/` | `world`, `map`, `lesson` (+ `_lesson_blocks`), `play`, `stub_page`, `ui_*`; фрагменти `_topbar`, `_bottom_nav`, `_icons`, `_stars`, `_progress` |
+| `templates/education/` | `world`, `map`, `lesson`, `progress`, `profile` (+ `_lesson_blocks`), `play`, `ui_*`; фрагменти `_topbar`, `_bottom_nav`, `_icons`, `_stars`, `_progress` |
 | `templates/registration/` | вхід і реєстрація (`_auth_base`, `_field`) |
 | `templates/404.html`, `500.html` | сторінки помилок (500 — статичний HTML без тегів) |
 

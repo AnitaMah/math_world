@@ -1,0 +1,12 @@
+/* Екран «Профіль» (фаза 20, беклог FE-0631): ім'я, серія, вхід/вихід. */
+.profile-card__head { display: flex; align-items: center; gap: var(--sp-3); }
+.profile-card__avatar {
+  flex-shrink: 0; width: 56px; height: 56px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--card-2); color: var(--text-2);
+}
+.profile-card__name { font: var(--fw-bold) var(--fs-20)/1.2 var(--font-display); }
+.profile-card__streak {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--muted-2); font-size: var(--fs-14); font-weight: var(--fw-bold);
+}
