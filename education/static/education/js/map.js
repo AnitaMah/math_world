@@ -2,7 +2,10 @@
 // Вузли уроків — фаза 9, панель уроку — фаза 10, телефон — фаза 11.
 import { api, normalizeMap } from "./api.js";
 import { layoutGrade } from "./map-layout.js";
-import { renderNodes, fogRegions, initialIndex, newlyRevealed, loadSeenFog, saveSeenFog } from "./map-nodes.js";
+import {
+  renderNodes, fogRegions, initialIndex, newlyRevealed, loadSeenFog, saveSeenFog,
+  consumeJustFinished, walkSteps, findByHash,
+} from "./map-nodes.js";
 import { lessonListModel } from "./lesson-panel.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -78,6 +81,29 @@ function fitChips() {
   }
 }
 
+const WALK_HOP_MS = 420;
+
+/** Прохід стежкою від одного вузла до іншого — кілька «кроків» по позиції (фаза 20, FE-0633). */
+async function walkTo(map, L, fromIndex, toIndex) {
+  if (globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;   // без руху — одразу обираємо toIndex нижче
+  const steps = walkSteps(map.lessons, fromIndex, toIndex).map((i) => L.nodes[i]).filter(Boolean);
+  if (steps.length < 2) return;
+  const pct = (v, total) => `${((v / total) * 100).toFixed(3)}%`;
+  const walker = document.createElement("div");
+  walker.className = `map-walker isl-${map.paragraphs[map.lessons[toIndex].paraIdx].isl}`;
+  walker.setAttribute("aria-hidden", "true");
+  walker.style.setProperty("--x", pct(steps[0].x, L.width));
+  walker.style.setProperty("--y", pct(steps[0].y, L.height));
+  nodesLayer.append(walker);
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));   // застосувати старт до першого переходу
+  for (const pos of steps.slice(1)) {
+    walker.style.setProperty("--x", pct(pos.x, L.width));
+    walker.style.setProperty("--y", pct(pos.y, L.height));
+    await new Promise((r) => setTimeout(r, WALK_HOP_MS));
+  }
+  walker.remove();
+}
+
 async function load() {
   show("mapLoading");
   const grade = Number(stage.dataset.grade);
@@ -120,6 +146,17 @@ async function load() {
   });
   renderLessonList(map);
   stage.dispatchEvent(new CustomEvent("map:ready", { detail: { map, layout: L, nodes } }));
+
+  // щойно пройшов урок і відкрив наступний (play.js, finish()) — пройти стежкою до нього на очах
+  const finishedHash = consumeJustFinished(grade);
+  if (finishedHash) {
+    const fromIndex = findByHash(map.lessons, finishedHash);
+    const toIndex = map.lessons.findIndex((l) => l.state === "current");
+    if (fromIndex >= 0 && toIndex >= 0 && toIndex !== fromIndex && map.lessons[fromIndex].state === "done") {
+      await walkTo(map, L, fromIndex, toIndex);
+      nodes.select(toIndex, { focus: true });
+    }
+  }
 }
 
 /** Прихований для очей список усіх уроків — текстова альтернатива мапи для скрінрідера. */

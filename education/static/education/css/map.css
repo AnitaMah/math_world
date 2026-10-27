@@ -97,6 +97,20 @@
   position: absolute; left: var(--x); top: var(--y);
   width: 0; height: 0;               /* точка-якір; усе всередині центроване відносно неї */
 }
+
+/* Прохід стежкою після фіналу уроку (фаза 20, FE-0633): точка стрибає від вузла до вузла до
+   щойно відкритого уроку. `transition` на left/top — сам «крок»; `prefers-reduced-motion`
+   (base.css) скорочує тривалість до майже нуля, тож точка одразу опиняється в кінці. */
+.map-walker {
+  position: absolute; left: var(--x); top: var(--y); width: 0; height: 0;
+  transition: left .38s ease, top .38s ease;
+  z-index: 2;
+}
+.map-walker::before {
+  content: ""; position: absolute; left: 0; top: 0; translate: -50% -50%;
+  width: calc(14px * var(--s, 1)); height: calc(14px * var(--s, 1)); border-radius: 50%;
+  background: var(--acc); box-shadow: 0 0 0 calc(6px * var(--s, 1)) color-mix(in srgb, var(--acc) 35%, transparent);
+}
 .node {
   position: absolute; left: 0; top: 0; translate: -50% -50%;
   width: calc(var(--node-size) * var(--s, 1)); height: calc(var(--node-size) * var(--s, 1));

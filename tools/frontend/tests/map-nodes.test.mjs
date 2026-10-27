@@ -6,7 +6,7 @@ import { normalizeMap } from "../../../education/static/education/js/api.js";
 import { layoutGrade } from "../../../education/static/education/js/map-layout.js";
 import {
   starsText, nodeLabel, playUrl, canPlay, lessonHash, findByHash, initialIndex, fogRegions,
-  newlyRevealed, loadSeenFog, saveSeenFog,
+  newlyRevealed, loadSeenFog, saveSeenFog, markJustFinished, consumeJustFinished, walkSteps,
 } from "../../../education/static/education/js/map-nodes.js";
 
 const load = (name) => normalizeMap(JSON.parse(readFileSync(
@@ -80,6 +80,40 @@ test("loadSeenFog/saveSeenFog: округлення по класах, пере�
   } finally {
     delete globalThis.localStorage;
   }
+});
+
+test("markJustFinished/consumeJustFinished: без sessionStorage (Node) — тихо null", () => {
+  assert.equal(consumeJustFinished(5), null);
+  assert.doesNotThrow(() => markJustFinished(5, "#lesson-120"));
+});
+
+test("markJustFinished/consumeJustFinished: одноразовий прапорець, клас має збігтись", () => {
+  const store = new Map();
+  globalThis.sessionStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, v),
+    removeItem: (k) => store.delete(k),
+  };
+  try {
+    markJustFinished(5, "#lesson-120");
+    assert.equal(consumeJustFinished(6), null);            // інший клас — не той прапорець
+    assert.equal(store.size, 0);                            // consumeJustFinished прибрав його й для чужого класу
+    markJustFinished(5, "#lesson-120");
+    assert.equal(consumeJustFinished(5), "#lesson-120");
+    assert.equal(consumeJustFinished(5), null);             // другий раз — уже нема
+  } finally {
+    delete globalThis.sessionStorage;
+  }
+});
+
+test("walkSteps: від і до, пропускає «у хмарах» проміжні, обмежує задовгі переходи", () => {
+  const L = (states) => states.map((state) => ({ state }));
+  assert.deepEqual(walkSteps(L(["done", "current"]), 0, 1), [0, 1]);
+  assert.deepEqual(walkSteps(L(["done", "soon", "soon", "current"]), 0, 3), [0, 3]);   // пропущені хмари
+  assert.deepEqual(walkSteps(L(["done", "open", "current"]), 0, 2), [0, 1, 2]);        // проміжний не в хмарі — лишається
+  assert.deepEqual(walkSteps(L(["current", "done"]), 1, 0), [1, 0]);                   // напрямок назад
+  const long = L(Array.from({ length: 10 }, () => "open"));
+  assert.deepEqual(walkSteps(long, 0, 9), [0, 9]);                                     // забагато кроків — лише кінці
 });
 
 test("tagSide: ярлик «Ти тут» не закриває сусідні вузли (фаза 17)", async () => {

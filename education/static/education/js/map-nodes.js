@@ -223,3 +223,43 @@ export function saveSeenFog(grade, ids) {
     /* приватне вікно — переживемо без пам'яті між візитами, просто без анімації */
   }
 }
+
+// --- Прохід стежкою від старого вузла до нового після фіналу (фаза 20, FE-0633) ------------
+
+const JUST_FINISHED_KEY = "mw_just_finished";
+
+/** Викликає play.js перед переходом на мапу, якщо урок щойно приніс нову зірку. Одноразово. */
+export function markJustFinished(grade, lessonHash) {
+  try {
+    globalThis.sessionStorage?.setItem(JUST_FINISHED_KEY, JSON.stringify({ grade, lessonHash }));
+  } catch {
+    /* приватне вікно — переживемо без анімації проходу */
+  }
+}
+
+/** Читає й одразу прибирає прапорець — спрацьовує рівно раз, навіть якщо клас не збігся. */
+export function consumeJustFinished(grade) {
+  try {
+    const raw = globalThis.sessionStorage?.getItem(JUST_FINISHED_KEY);
+    globalThis.sessionStorage?.removeItem(JUST_FINISHED_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return data.grade === grade ? data.lessonHash : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Індекси вузлів, якими «пройти» від `fromIndex` до `toIndex`: проміжні уроки «у хмарах»
+ * пропускаємо (вони не на стежці по суті), а якщо кроків усе одно забагато — лише початок і кінець.
+ */
+export function walkSteps(lessons, fromIndex, toIndex) {
+  const dir = fromIndex < toIndex ? 1 : -1;
+  const steps = [fromIndex];
+  for (let i = fromIndex + dir; i !== toIndex; i += dir) {
+    if (lessons[i]?.state !== "soon") steps.push(i);
+  }
+  steps.push(toIndex);
+  return steps.length > 6 ? [fromIndex, toIndex] : steps;
+}

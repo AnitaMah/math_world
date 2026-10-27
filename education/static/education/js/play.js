@@ -2,16 +2,26 @@
 // Стани: loading → answer ⇄ busy → next → … → finish. Колір — острів уроку (isl-N на body).
 import { api } from "./api.js";
 import { errorFeedback, feedbackFor, finishModel, orderTasks, progressPct, taskView } from "./play-core.js";
+import { markJustFinished } from "./map-nodes.js";
 
 const root = document.getElementById("play");
 const $ = (id) => document.getElementById(id);
 const stage = $("stage"), actions = $("actions");
 const fb = $("feedback"), fbIcon = $("feedbackIcon"), fbTitle = $("feedbackTitle"), fbText = $("feedbackText");
-const { kind, lesson: lessonId, map: mapUrl, theory: theoryUrl, next: nextUrl } = root.dataset;
+const { kind, lesson: lessonId, map: mapUrl, theory: theoryUrl, next: nextUrl, grade } = root.dataset;
+const lessonHash = `#lesson-${kind === "paragraph" ? "p" : ""}${lessonId}`;
 
 const AUTO_SKIP_MS = 2500;
 let tasks = [], order = [], pos = 0, state = "loading", sessionPoints = 0, progress = null, startStars = 0;
+let justEarnedStar = false;
 let mainBtn = $("mainBtn"), skipBtn = $("skipBtn");
+
+// нова зірка на фіналі могла відкрити наступний урок — мапа покаже прохід стежкою до нього
+// (map.js, фаза 20, FE-0633); спрацьовує з обох виходів на мапу — кнопки й хрестика вгорі
+function maybeMarkFinished() {
+  if (justEarnedStar && grade) markJustFinished(Number(grade), lessonHash);
+}
+$("closeBtn")?.addEventListener("click", maybeMarkFinished);
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const icon = (name, size = 20, cls = "") =>
@@ -158,10 +168,12 @@ function finish() {
     </section>`;
   actions.innerHTML = [
     m.next ? `<a class="btn btn--ok btn--block" href="${esc(nextUrl)}">${icon("play", 18)}Наступний урок</a>` : "",
-    `<a class="btn btn--primary btn--block" href="${esc(mapUrl)}">${icon("map", 18)}На мапу</a>`,
+    `<a class="btn btn--primary btn--block" id="finishMapLink" href="${esc(mapUrl)}">${icon("map", 18)}На мапу</a>`,
     m.retry ? `<button class="btn btn--secondary btn--block" type="button" id="retryBtn">${icon("repeat", 18)}Ще раз — нерозв’язані</button>` : "",
   ].join("");
   $("retryBtn")?.addEventListener("click", retryUnsolved);
+  justEarnedStar = Boolean(m.newStar);
+  $("finishMapLink")?.addEventListener("click", maybeMarkFinished);
   $("finishTitle").focus({ preventScroll: true });
 }
 
