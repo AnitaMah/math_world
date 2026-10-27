@@ -17,7 +17,14 @@
   position: relative;
   width: min(100cqw - 2 * var(--sp-3), (100cqh - 2 * var(--sp-3)) * var(--ar, 1.317));
   aspect-ratio: var(--ar, 1.317);
+  transform-origin: 0 0;
+  transition: transform .15s ease-out;
+  touch-action: none;   /* колесо/перетягування для зуму й панорамування (фаза 20, FE-0634) — не скрол сторінки */
 }
+/* Під час перетягування — без згладжування (інакше курсор «відстає» від вузла) */
+.map-stage.is-panning .map-canvas { transition: none; }
+.map-stage.is-zoomed { cursor: grab; }
+.map-stage.is-panning { cursor: grabbing; }
 .sea { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 
 .lesson-panel {

@@ -7,6 +7,7 @@ import {
   consumeJustFinished, walkSteps, findByHash,
 } from "./map-nodes.js";
 import { lessonListModel } from "./lesson-panel.js";
+import { mountPanZoom } from "./map-pan.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const stage = document.getElementById("mapStage");
@@ -18,6 +19,9 @@ const show = (id) => {
   for (const el of ["mapLoading", "mapError", "mapEmpty"]) document.getElementById(el).hidden = el !== id;
   canvas.hidden = id !== null;
 };
+// Масштаб/панорамування на десктопі (фаза 20, FE-0634) — одне підключення на весь час життя сторінки
+// (load() може виконатись повторно після «Спробувати ще раз»); кожне нове завантаження скидає вигляд.
+const panZoom = mountPanZoom(stage, canvas);
 
 /** Екранування тексту для вставки в розмітку. */
 export function esc(s) {
@@ -106,6 +110,7 @@ async function walkTo(map, L, fromIndex, toIndex) {
 
 async function load() {
   show("mapLoading");
+  panZoom.reset();
   const grade = Number(stage.dataset.grade);
   const res = await api.gradeMap(grade);
   if (!res.ok) {
