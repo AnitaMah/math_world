@@ -137,6 +137,15 @@ class MeStarsTests(MapFixture):
         record_answer(self.player, self.s21, "1396")
         self.assertEqual(self.client.get(reverse("api_me")).json()["stars"], 1)
 
+    def test_me_history_counts_todays_points_only(self):
+        self.bind_client_to_player()
+        record_answer(self.player, self.s21, "1396")
+        history = self.client.get(reverse("api_me")).json()["history"]
+        self.assertEqual(len(history), 7)
+        self.assertEqual(sum(d["points"] for d in history[:-1]), 0)
+        self.assertEqual(history[-1]["points"], self.player.points)
+        self.assertGreater(history[-1]["points"], 0)
+
 
 class PlayLockTests(MapFixture):
     def test_locked_lesson_is_403_for_guest(self):

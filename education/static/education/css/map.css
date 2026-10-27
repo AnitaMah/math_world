@@ -149,14 +149,6 @@
 
 .panel-islands { border-top: 1px solid var(--line); padding-top: 14px; }
 .panel-islands__list { margin: 0; }
-.score-row__btn {
-  display: flex; flex-direction: column; gap: var(--sp-1); width: 100%;
-  padding: 4px 6px; margin: -4px -6px; border: 0; border-radius: var(--r-sm);
-  background: none; text-align: left; cursor: pointer; box-sizing: content-box;
-}
-.score-row__btn:hover { background: var(--card); }
-.score-row__btn .progress { display: block; }
-.score-row__btn .progress__fill { display: block; }
 
 /* --- Телефон: один острів на екран (фаза 11) ---------------------------------------------- */
 .map-mobile { display: none; }

@@ -5,6 +5,30 @@ import { plural } from "./ui.js";
 import { api } from "./api.js";
 
 const DAYS = ["день", "дні", "днів"];
+const WEEKDAY_LETTERS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
+
+/** Стовпчик за день: висота — бали дня відносно найбільшого дня тижня. */
+function renderHistory(container, history) {
+  if (!history?.length) return;
+  const max = Math.max(1, ...history.map((d) => d.points));
+  container.replaceChildren(...history.map((d) => {
+    const [y, m, day] = d.date.split("-").map(Number);
+    const weekday = WEEKDAY_LETTERS[(new Date(y, m - 1, day).getDay() + 6) % 7];
+    const bar = document.createElement("div");
+    bar.className = "week-chart__bar";
+    bar.style.setProperty("--p", `${Math.round((d.points / max) * 100)}%`);
+    const value = document.createElement("span");
+    value.className = "week-chart__value";
+    value.textContent = d.points;
+    const label = document.createElement("span");
+    label.className = "week-chart__day";
+    label.textContent = weekday;
+    bar.append(value, label);
+    return bar;
+  }));
+  const total = history.reduce((s, d) => s + d.points, 0);
+  container.setAttribute("aria-label", `Бали за останні 7 днів: усього ${total}`);
+}
 
 export function fill(me) {
   const set = (key, value) => {
@@ -17,6 +41,10 @@ export function fill(me) {
   }
   if ("stars" in me) set("stars", me.stars);
   if ("max_stars" in me) set("max_stars", me.max_stars);
+  if ("history" in me) {
+    const chart = document.querySelector('[data-me="history"]');
+    if (chart) renderHistory(chart, me.history);
+  }
 }
 
 export async function loadMe() {

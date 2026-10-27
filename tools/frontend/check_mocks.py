@@ -74,9 +74,12 @@ def check_all():
                 errors.append(f"grades.json клас {g.get('number')}: немає `{key}`")
     for name in ("me.guest.json", "me.user.json"):
         me = json.loads((MOCK / name).read_text(encoding="utf-8"))
-        for key in ("authenticated", "name", "points", "streak", "stars"):
+        for key in ("authenticated", "name", "points", "streak", "stars", "history"):
             if key not in me:
                 errors.append(f"{name}: немає `{key}`")
+        history = me.get("history") or []
+        if len(history) != 7 or any(set(d) != {"date", "points"} for d in history):
+            errors.append(f"{name}: history має бути 7 записів {{date, points}}")
     return errors
 
 

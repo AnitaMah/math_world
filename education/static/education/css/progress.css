@@ -1,0 +1,25 @@
+/* Екран «Прогрес» (фаза 20, беклог FE-0630): бали за тиждень, зірки по параграфах. */
+.progress-screen__subtitle { font-size: var(--fs-17); }
+
+/* --- Графік балів за тиждень ---------------------------------------------------- */
+.week-chart {
+  display: flex; align-items: flex-end; gap: var(--sp-3);
+  height: 120px; padding-top: var(--sp-4);
+}
+.week-chart__bar {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-end; gap: var(--sp-2); height: 100%;
+}
+.week-chart__bar::before {
+  content: ""; display: block; width: 100%; max-width: 28px;
+  height: var(--p, 0%); min-height: 3px;
+  background: var(--points); border-radius: var(--r-xs) var(--r-xs) 0 0;
+  transition: height var(--dur) ease;
+}
+.week-chart__value { font-size: var(--fs-12); font-weight: var(--fw-bold); color: var(--muted-2); }
+.week-chart__day { font-size: var(--fs-12); font-weight: var(--fw-heavy); color: var(--muted-2); }
+
+/* --- Зірки по параграфах, за класом --------------------------------------------- */
+.progress-grade__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+.progress-grade__meta { font-size: var(--fs-13); font-weight: var(--fw-bold); }
+.progress-grade__list { margin: 0; }

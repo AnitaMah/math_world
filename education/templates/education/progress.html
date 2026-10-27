@@ -1,0 +1,45 @@
+{% extends "education/base.html" %}
+{% load static ui %}
+{% block title %}Прогрес{% endblock %}
+{% block body_class %}page-progress{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'education/css/progress.css' %}">{% endblock %}
+{% block content %}
+<div class="page progress-screen stack">
+  <header>
+    <h1>Прогрес</h1>
+  </header>
+
+  <section class="card stack stack--gap-3">
+    <h2 class="progress-screen__subtitle">Бали за тиждень</h2>
+    <div class="week-chart" data-me="history" role="img" aria-label="Бали за останні 7 днів"></div>
+  </section>
+
+  <div class="stack stack--gap-4">
+    {% for c in cards %}
+    <section class="card progress-grade" data-grade="{{ c.number }}">
+      <div class="progress-grade__head">
+        <div class="stack stack--gap-1">
+          <h2>{{ c.number }} клас</h2>
+          {% if c.author %}<p class="muted-2 progress-grade__meta">{{ c.author }}{% if c.year %}, {{ c.year }}{% endif %}</p>{% endif %}
+        </div>
+        <span class="chip" data-f="stars-chip" hidden>{% icon "star" size=16 %}<span data-f="stars">0</span><span class="chip__sub">&nbsp;/&nbsp;<span data-f="max">0</span></span></span>
+      </div>
+      <ul class="stack stack--gap-2 progress-grade__list" data-f="rows"></ul>
+      <p class="empty-note" data-f="empty" hidden>Зіграй хоч один урок {{ c.number }} класу, щоб тут з’явилися зірки.</p>
+    </section>
+    {% empty %}
+    <p class="empty-note">Мапа ще будується. Повернися пізніше.</p>
+    {% endfor %}
+  </div>
+</div>
+
+<template id="tpl-progress-row">
+  <li class="score-row">
+    <a class="score-row__btn" href="#">
+      <span class="score-row__head"><span class="score-row__label" data-f="label"></span><span class="score-row__score" data-f="score"></span></span>
+      <span class="progress progress--sm" aria-hidden="true"><span class="progress__fill"></span></span>
+    </a>
+  </li>
+</template>
+{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'education/js/progress.js' %}"></script>{% endblock %}

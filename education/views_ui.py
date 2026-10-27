@@ -77,12 +77,12 @@ def ui_kit(request):
 
 
 def progress_page(request):
-    """`/progress/` — заглушка вкладки «Прогрес» (рішення 2026-10-08; повний екран — беклог)."""
-    return render(request, "education/stub_page.html", {
-        "stub_icon": "chart",
-        "stub_title": "Прогрес",
-        "stub_text": "Скоро тут буде твій прогрес: зірки за кожен острів і бали за тиждень.",
-    })
+    """`/progress/` — вкладка «Прогрес» (фаза 20, беклог FE-0630): бали за тиждень, зірки по параграфах.
+
+    Каркас карток класів рендерить сервер (дані з БД, як на «Світі»); зірки по параграфах і графік
+    балів — `js/progress.js` і `js/me.js` з `/api/grades/<n>/map/` і `/api/me/` (або моків).
+    """
+    return render(request, "education/progress.html", {"cards": _grade_cards()})
 
 
 def profile_page(request):

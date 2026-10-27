@@ -10,12 +10,15 @@ from __future__ import annotations
 import functools
 import json
 import time
+from datetime import timedelta
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import EmptyPage, Paginator
 from django.db.models import Prefetch, Sum
+from django.db.models.functions import TruncDate
 from django.http import FileResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 
@@ -316,6 +319,20 @@ def play(request, kind, pk):
     })
 
 
+def _points_history(player) -> list[dict]:
+    """Бали гравця за кожен з останніх 7 днів (найстаріший → сьогодні), для екрана «Прогрес»."""
+    today = timezone.localdate()
+    days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    totals = dict.fromkeys(days, 0)
+    if player is not None:
+        rows = (player.attempts.filter(created_at__date__gte=days[0])
+                .annotate(day=TruncDate("created_at")).values("day").annotate(n=Sum("points")))
+        for row in rows:
+            if row["day"] in totals:
+                totals[row["day"]] = row["n"] or 0
+    return [{"date": d.isoformat(), "points": totals[d]} for d in days]
+
+
 @api_view
 @require_GET
 def me(request):
@@ -324,4 +341,5 @@ def me(request):
     return ok({"authenticated": request.user.is_authenticated,
                "name": request.user.username if request.user.is_authenticated else "Гість",
                "points": player.points if player else 0, "streak": player.streak if player else 0,
-               "stars": player.progress.aggregate(n=Sum("stars"))["n"] or 0 if player else 0})
+               "stars": player.progress.aggregate(n=Sum("stars"))["n"] or 0 if player else 0,
+               "history": _points_history(player)})
