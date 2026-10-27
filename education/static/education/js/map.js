@@ -2,7 +2,7 @@
 // Вузли уроків — фаза 9, панель уроку — фаза 10, телефон — фаза 11.
 import { api, normalizeMap } from "./api.js";
 import { layoutGrade } from "./map-layout.js";
-import { renderNodes, fogRegions, initialIndex } from "./map-nodes.js";
+import { renderNodes, fogRegions, initialIndex, newlyRevealed, loadSeenFog, saveSeenFog } from "./map-nodes.js";
 import { lessonListModel } from "./lesson-panel.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -32,7 +32,7 @@ const ICONS = {
   equation: `<text class="sea__icon-text" font-size="34" font-style="italic">x</text>`,
 };
 
-export function renderSea(map, L, fog = []) {
+export function renderSea(map, L, fog = [], revealed = []) {
   const parts = [`<title id="seaTitle">Мапа ${esc(map.grade)} класу: острови-розділи і стежки уроків</title>`];
   parts.push(`<defs>${L.islands.map((i) => `<clipPath id="isl-clip-${i.sectionIdx}"><path d="${i.d}"/></clipPath>`).join("")}</defs>`);
   // 1–2. вода
@@ -50,6 +50,8 @@ export function renderSea(map, L, fog = []) {
     + `${L.connectors.filter((c) => c.boat).map((c) => `<use class="sea__boat" href="#i-boat" x="${c.boat.x - 16}" y="${c.boat.y - 18}" width="32" height="32"/>`).join("")}</g>`);
   // 9. хмари над параграфами, яких ще немає в БД
   parts.push(`<g aria-hidden="true">${fog.map((r) => `<path class="sea__fog" d="${r.d}"/>`).join("")}</g>`);
+  // 9.5. «острів пройдено»: хмара над щойно імпортованим параграфом — показуємо й одразу розганяємо
+  parts.push(`<g aria-hidden="true">${revealed.map((r) => `<path class="sea__fog sea__fog--reveal" d="${r.d}"/>`).join("")}</g>`);
   // чіпи параграфів / розділів
   parts.push(`<g class="sea__chips">${L.chips.map((c) => {
     const isl = c.isl ? `isl-${c.isl}` : "";
@@ -90,7 +92,13 @@ async function load() {
   sea.setAttribute("viewBox", L.viewBox);
   canvas.style.setProperty("--ar", (L.width / L.height).toFixed(4));
   const { fog, biggest } = fogRegions(map, L);
-  sea.innerHTML = renderSea(map, L, fog);
+  const fogIds = fog.map((r) => map.paragraphs[r.paraIdx].id);
+  const revealedIds = newlyRevealed(loadSeenFog(map.grade), fogIds);
+  const revealed = revealedIds.length
+    ? L.regions.filter((r) => revealedIds.includes(map.paragraphs[r.paraIdx].id))
+    : [];
+  sea.innerHTML = renderSea(map, L, fog, revealed);
+  saveSeenFog(map.grade, fogIds);
   // підказка — одна на мапу, у центрі найбільшої хмари
   fogHint.hidden = !biggest;
   if (biggest) {

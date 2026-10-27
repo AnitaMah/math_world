@@ -194,3 +194,32 @@ export function fogRegions(map, L) {
   const biggest = fog.reduce((best, r) => (!best || r.rx * r.ry > best.rx * best.ry ? r : best), null);
   return { fog, biggest };
 }
+
+// --- «Острів пройдено»: хмара розходиться при першому візиті після імпорту (фаза 20, FE-0632) ---
+
+const fogSeenKey = (grade) => `mw_fog_seen_grade_${grade}`;
+
+/** Id параграфів, що були в хмарі минулого візиту (`loadSeenFog`), а зараз уже ні. */
+export function newlyRevealed(previousIds, currentIds) {
+  if (!previousIds?.length) return [];
+  const current = new Set(currentIds);
+  return previousIds.filter((id) => !current.has(id));
+}
+
+/** Останній запам'ятований набір id параграфів у хмарі для класу. `null` — візит перший. */
+export function loadSeenFog(grade) {
+  try {
+    const raw = globalThis.localStorage?.getItem(fogSeenKey(grade));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;   // приватне вікно, заблоковане сховище, биті дані
+  }
+}
+
+export function saveSeenFog(grade, ids) {
+  try {
+    globalThis.localStorage?.setItem(fogSeenKey(grade), JSON.stringify(ids));
+  } catch {
+    /* приватне вікно — переживемо без пам'яті між візитами, просто без анімації */
+  }
+}

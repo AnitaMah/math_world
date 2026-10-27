@@ -73,6 +73,16 @@
 
 /* --- Хмари (фаза 9) ------------------------------------------------------------------- */
 .sea__fog { fill: var(--fog); stroke: var(--fog-stroke); stroke-width: 10; stroke-dasharray: 2 14; stroke-linecap: round; }
+
+/* «Острів пройдено» (фаза 20, беклог FE-0632): хмара над щойно імпортованим параграфом
+   розходиться при першому візиті після цього — друга копія хмари поверх уже чистого вузла,
+   що згасає й трохи «розкривається». `prefers-reduced-motion` (base.css) скорочує тривалість
+   до майже нуля — хмара одразу щезає, без руху. */
+.sea__fog--reveal { transform-box: fill-box; transform-origin: center; animation: fog-part 1.6s ease-out forwards; }
+@keyframes fog-part {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
 .map-fog-hint {
   position: absolute; left: var(--x); top: var(--y); transform: translate(-50%, -50%);
   max-width: calc(220px * var(--s, 1)); padding: calc(8px * var(--s, 1)) calc(12px * var(--s, 1));

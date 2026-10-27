@@ -6,6 +6,7 @@ import { normalizeMap } from "../../../education/static/education/js/api.js";
 import { layoutGrade } from "../../../education/static/education/js/map-layout.js";
 import {
   starsText, nodeLabel, playUrl, canPlay, lessonHash, findByHash, initialIndex, fogRegions,
+  newlyRevealed, loadSeenFog, saveSeenFog,
 } from "../../../education/static/education/js/map-nodes.js";
 
 const load = (name) => normalizeMap(JSON.parse(readFileSync(
@@ -48,6 +49,37 @@ test("fogRegions: у реальному стані хмари над §2–§5, 
   assert.ok([3, 5].includes(biggest.paraIdx + 1));
   const demo = load("grade-5.demo.json");
   assert.equal(fogRegions(demo, layoutGrade(demo)).fog.length, 0);
+});
+
+test("newlyRevealed: лише ті, що вийшли з хмари; перший візит нічого не показує", () => {
+  assert.deepEqual(newlyRevealed(null, [1, 2]), []);                    // перший візит — немає з чим звіряти
+  assert.deepEqual(newlyRevealed([], [1, 2]), []);
+  assert.deepEqual(newlyRevealed([1, 2, 3], [2]), [1, 3]);              // 1 і 3 вийшли з хмари
+  assert.deepEqual(newlyRevealed([1, 2], [1, 2]), []);                  // нічого не змінилось
+  assert.deepEqual(newlyRevealed([1, 2], [1, 2, 3]), []);               // новий параграф у хмарі — не «вихід»
+});
+
+test("loadSeenFog/saveSeenFog: без localStorage (Node) — тихо null, без винятків", () => {
+  assert.equal(loadSeenFog(5), null);
+  assert.doesNotThrow(() => saveSeenFog(5, [1, 2]));
+});
+
+test("loadSeenFog/saveSeenFog: округлення по класах, переживає биті дані", () => {
+  const store = new Map();
+  globalThis.localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => store.set(k, v),
+  };
+  try {
+    assert.equal(loadSeenFog(5), null);
+    saveSeenFog(5, [10, 11]);
+    assert.deepEqual(loadSeenFog(5), [10, 11]);
+    assert.equal(loadSeenFog(6), null);                  // інший клас — окремий ключ
+    store.set("mw_fog_seen_grade_7", "не json{");
+    assert.equal(loadSeenFog(7), null);                   // биті дані — не падає
+  } finally {
+    delete globalThis.localStorage;
+  }
 });
 
 test("tagSide: ярлик «Ти тут» не закриває сусідні вузли (фаза 17)", async () => {
