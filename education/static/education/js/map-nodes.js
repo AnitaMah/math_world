@@ -92,6 +92,34 @@ export function tagSide(pos, all) {
   return "left";
 }
 
+const OWL_OFFSETS = { above: [0, -70], below: [0, 70], right: [94, 0], left: [-94, 0] };
+
+/**
+ * Де посадити сову, щоб не стояти на ярлику «Ти тут» і не налізти на сусідній вузол: той
+ * самий принцип, що й tagSide(), але з ширшим запасом (сова — персонаж ~40px, не текстовий
+ * ярлик) і сторону ярлика пробуємо останньою (фаза 20, FE-0644).
+ */
+export function owlSide(takenSide, pos, all) {
+  const near = (dx, dy) => all.some((o) => o !== pos && Math.abs(o.x - pos.x - dx) < 60 && Math.abs(o.y - pos.y - dy) < 54);
+  const order = ["right", "left", "above", "below"].filter((s) => s !== takenSide).concat(takenSide);
+  return order.find((s) => !near(...OWL_OFFSETS[s])) ?? order[0];
+}
+
+/** Мудра Сова (фаза 20, беклог FE-0644): повноцінний персонаж, не іконка-контур i-owl зі спрайту. */
+const OWL_SVG = `<svg viewBox="0 0 40 44" aria-hidden="true" focusable="false">
+  <path d="M8 10 L13 1 L16.5 9Z" style="fill: var(--star)"/>
+  <path d="M32 10 L27 1 L23.5 9Z" style="fill: var(--star)"/>
+  <ellipse class="node-owl__wing" cx="9" cy="28" rx="5.5" ry="8"/>
+  <ellipse class="node-owl__wing" cx="31" cy="28" rx="5.5" ry="8"/>
+  <ellipse cx="20" cy="22" rx="16" ry="17" style="fill: var(--star)"/>
+  <ellipse cx="20" cy="27" rx="10.5" ry="12" style="fill: var(--card)"/>
+  <circle cx="14" cy="21" r="6" style="fill: var(--ring)"/>
+  <circle cx="26" cy="21" r="6" style="fill: var(--ring)"/>
+  <circle class="node-owl__pupil" cx="15" cy="21" r="2.6"/>
+  <circle class="node-owl__pupil" cx="25" cy="21" r="2.6"/>
+  <path d="M18 27 L20 31 L22 27Z" style="fill: var(--ink)"/>
+</svg>`;
+
 export function renderNodes(layer, map, L, { onSelect } = {}) {
   layer.replaceChildren();
   const pct = (v, total) => `${((v / total) * 100).toFixed(3)}%`;
@@ -111,11 +139,16 @@ export function renderNodes(layer, map, L, { onSelect } = {}) {
       const ring = document.createElement("span");
       ring.className = "node__ring";
       ring.setAttribute("aria-hidden", "true");
+      const side = tagSide(pos, L.nodes);
       const tag = document.createElement("span");
-      tag.className = `node__tag node__tag--${tagSide(pos, L.nodes)}`;
+      tag.className = `node__tag node__tag--${side}`;
       tag.setAttribute("aria-hidden", "true");
       tag.textContent = "Ти тут";
-      wrap.append(ring, tag);
+      const owl = document.createElement("span");
+      owl.className = `node-owl node-owl--${owlSide(side, pos, L.nodes)}`;
+      owl.setAttribute("aria-hidden", "true");
+      owl.innerHTML = OWL_SVG;
+      wrap.append(ring, tag, owl);
     }
 
     const btn = document.createElement("button");

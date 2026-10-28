@@ -8,7 +8,7 @@
 //
 // Версія в назві кешу — єдиний спосіб примусити оновлення (у проєкті нема збирача з хешами
 // файлів): зміниш список нижче — зміни й VERSION, інакше старий кеш переживе деплой.
-const VERSION = "v3";   // v3 (FE-0643): me.js — значки за серію 7/30 днів
+const VERSION = "v4";   // v4 (FE-0644): map-nodes.js — Мудра Сова біля поточного уроку
 const SHELL_CACHE = `mw-shell-${VERSION}`;
 const RUNTIME_CACHE = `mw-runtime-${VERSION}`;
 
