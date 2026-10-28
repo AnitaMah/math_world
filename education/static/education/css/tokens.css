@@ -88,6 +88,10 @@
                                       навмисно однакове в обох темах (як --ink — завжди темний) */
   --node-selected: 0 0 0 4px var(--bg), 0 0 0 7px var(--focus);
 
+  /* --- Друк (фаза 20, FE-0641): завжди чорне на білому, незалежно від теми ------- */
+  --print-bg: #ffffff;
+  --print-fg: #000000;
+
   /* --- Шрифти --------------------------------------------------------------- */
   --font-display: 'Unbounded', system-ui, sans-serif;
   --font-body: 'Nunito', system-ui, sans-serif;

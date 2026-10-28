@@ -11,6 +11,29 @@
   color: var(--muted-2); font-size: var(--fs-14); font-weight: var(--fw-bold);
 }
 
+/* --- Нагороди за серію (фаза 20, FE-0643) ----------------------------------------- */
+.badges { display: flex; gap: var(--sp-3); }
+.badge {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
+  padding: var(--sp-3); border-radius: var(--r-lg);
+  background: var(--node-locked-bg); border: 1px solid var(--node-locked-border);
+}
+.badge__icon {
+  width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--card-2); color: var(--node-locked-fg);
+}
+.badge__label { font-size: var(--fs-13); font-weight: var(--fw-bold); color: var(--node-locked-fg); text-align: center; }
+.badge--earned { background: var(--card); border-color: transparent; }
+.badge--earned .badge__label { color: var(--text-2); }
+.badge[data-badge="7"].badge--earned .badge__icon {
+  color: var(--streak); background: color-mix(in srgb, var(--streak) 18%, var(--card-2));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--streak) 35%, transparent);
+}
+.badge[data-badge="30"].badge--earned .badge__icon {
+  color: var(--star); background: color-mix(in srgb, var(--star) 18%, var(--card-2));
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--star) 35%, transparent);
+}
+
 /* --- Тема (фаза 20, FE-0636) ----------------------------------------------------- */
 .profile-theme [data-theme-pick][aria-pressed="true"] {
   background: var(--isl-1-acc); color: var(--ink); border-color: transparent;

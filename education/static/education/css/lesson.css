@@ -60,17 +60,17 @@
 /* Друк теорії уроку (FE-0641): лише текст параграфа, без інтерфейсу гри навколо */
 @media print {
   .skip-link, .topbar, .bottom-nav, .lesson__crumbs, .lesson__actions, .lesson-list { display: none; }
-  html, body, .lesson { background: #fff; color: #000; }
+  html, body, .lesson { background: var(--print-bg); color: var(--print-fg); }
   .lesson { max-width: none; padding: 0; gap: var(--sp-4); }
-  .lesson__title { color: #000; }
-  .lesson__kicker, .lesson__kicker * { color: #000; }
-  .lesson__dot { background: #000; }
-  .lblock { background: #fff; border: 1px solid #000; border-top: 1px solid #000; box-shadow: none; break-inside: avoid; }
-  .lblock__icon { background: #fff; color: #000; }
-  .lblock__text, .lex__cond, .lex__sub { color: #000; }
-  .lfigure { background: #fff; border: 1px solid #000; break-inside: avoid; }
+  .lesson__title { color: var(--print-fg); }
+  .lesson__kicker, .lesson__kicker * { color: var(--print-fg); }
+  .lesson__dot { background: var(--print-fg); }
+  .lblock { background: var(--print-bg); border: 1px solid var(--print-fg); box-shadow: none; break-inside: avoid; }
+  .lblock__icon { background: var(--print-bg); color: var(--print-fg); }
+  .lblock__text, .lex__cond, .lex__sub { color: var(--print-fg); }
+  .lfigure { background: var(--print-bg); border: 1px solid var(--print-fg); break-inside: avoid; }
   .lex { break-inside: avoid; }
-  .lex__answer { background: #fff; border-color: #000; color: #000; }
+  .lex__answer { background: var(--print-bg); border-color: var(--print-fg); color: var(--print-fg); }
 }
 
 /* Список уроків на сторінці § (фаза 18) */

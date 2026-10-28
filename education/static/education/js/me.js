@@ -38,6 +38,9 @@ export function fill(me) {
   if ("streak" in me) {
     set("streak", me.streak);
     set("streak_word", plural(me.streak, DAYS));
+    for (const el of document.querySelectorAll("[data-badge]")) {
+      el.classList.toggle("badge--earned", me.streak >= Number(el.dataset.badge));
+    }
   }
   if ("stars" in me) set("stars", me.stars);
   if ("max_stars" in me) set("max_stars", me.max_stars);

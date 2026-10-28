@@ -19,6 +19,7 @@ ICONS = frozenset({
     "chevron-down", "chevron-left", "chevron-right", "book",
     "chat", "pencil", "repeat", "owl", "scroll",
     "sound-on", "sound-off",
+    "badge-flame", "badge-star",
 })
 
 
