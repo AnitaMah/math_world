@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 34 34"><!-- maskable (PWA): суцільний фон на весь квадрат, малюнок зменшено в безпечну зону (~72%),
+     щоб Android не обрізав острів/зірку під час маскування в коло/сквіркл тощо. Ті самі кольори, що й favicon.svg. -->
+<rect width="34" height="34" fill="#131d2f"/>
+<g transform="translate(17 17) scale(0.72) translate(-17 -17)">
+  <path fill="#4dd0e1" d="M7 21c3-6 7-9 11-8s6 4 9 3c-1 5-6 9-11 9-4 0-7-2-9-4z"/>
+  <circle cx="21" cy="11" r="2.5" fill="#ffd166"/>
+</g>
+</svg>

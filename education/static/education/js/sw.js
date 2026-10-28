@@ -8,7 +8,7 @@
 //
 // Версія в назві кешу — єдиний спосіб примусити оновлення (у проєкті нема збирача з хешами
 // файлів): зміниш список нижче — зміни й VERSION, інакше старий кеш переживе деплой.
-const VERSION = "v1";
+const VERSION = "v2";   // v2 (FE-0639): + маніфест і іконки PWA
 const SHELL_CACHE = `mw-shell-${VERSION}`;
 const RUNTIME_CACHE = `mw-runtime-${VERSION}`;
 
@@ -38,6 +38,11 @@ const SHELL_URLS = [
   "/static/education/fonts/nunito-latin-700-normal.woff2",
   "/static/education/fonts/nunito-cyrillic-800-normal.woff2",
   "/static/education/fonts/nunito-latin-800-normal.woff2",
+  "/static/education/manifest.webmanifest",
+  "/static/education/img/favicon.svg",
+  "/static/education/img/apple-touch-icon.png",
+  "/static/education/img/icon-192.png",
+  "/static/education/img/icon-512.png",
 ];
 
 self.addEventListener("install", (event) => {

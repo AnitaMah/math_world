@@ -16,6 +16,8 @@
   <meta name="theme-color" content="#eef3f9" media="(prefers-color-scheme: light)">
   <title>{% block title %}Мапа{% endblock %} · Математичний світ</title>
   <link rel="icon" href="{% static 'education/img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="{% static 'education/img/apple-touch-icon.png' %}">
+  <link rel="manifest" href="{% static 'education/manifest.webmanifest' %}">
   {% block meta %}{% endblock %}
   <link rel="preload" href="{% static 'education/fonts/unbounded-cyrillic-700-normal.woff2' %}" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="{% static 'education/fonts/nunito-cyrillic-600-normal.woff2' %}" as="font" type="font/woff2" crossorigin>

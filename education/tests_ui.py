@@ -473,6 +473,36 @@ class ServiceWorkerTests(TestCase):
         self.assertIn("education/js/sw-register.js", html)
 
 
+class ManifestTests(TestCase):
+    """PWA-маніфест — «Додати на головний екран» (фаза 20, беклог FE-0639)."""
+
+    def test_linked_on_every_page(self):
+        html = self.client.get("/").content.decode()
+        self.assertIn('rel="manifest" href="/static/education/manifest.webmanifest"', html)
+        self.assertIn('rel="apple-touch-icon" href="/static/education/img/apple-touch-icon.png"', html)
+
+    def test_manifest_is_valid_and_icons_exist(self):
+        import json
+        from pathlib import Path
+        static = Path(__file__).resolve().parent / "static" / "education"
+        data = json.loads((static / "manifest.webmanifest").read_text(encoding="utf-8"))
+        for key in ("name", "short_name", "start_url", "scope", "display", "background_color",
+                    "theme_color", "icons"):
+            self.assertIn(key, data)
+        self.assertGreaterEqual(len(data["icons"]), 2)
+        purposes = set()
+        for icon in data["icons"]:
+            path = static / icon["src"].removeprefix("/static/education/")
+            self.assertTrue(path.exists(), f"{icon['src']} не існує")
+            purposes.add(icon.get("purpose", "any"))
+        self.assertIn("maskable", purposes)   # хоч одна іконка для Android, не лише "any"
+
+    def test_apple_touch_icon_exists(self):
+        from pathlib import Path
+        path = Path(__file__).resolve().parent / "static" / "education" / "img" / "apple-touch-icon.png"
+        self.assertTrue(path.exists())
+
+
 class LessonPageTests(TestCase):
     """`/items/<id>/` у новому UI — теорія й вправи уроку (фаза 13)."""
 
