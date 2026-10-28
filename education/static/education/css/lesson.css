@@ -57,6 +57,22 @@
   .lblock { padding: var(--sp-4); }
 }
 
+/* Друк теорії уроку (FE-0641): лише текст параграфа, без інтерфейсу гри навколо */
+@media print {
+  .skip-link, .topbar, .bottom-nav, .lesson__crumbs, .lesson__actions, .lesson-list { display: none; }
+  html, body, .lesson { background: #fff; color: #000; }
+  .lesson { max-width: none; padding: 0; gap: var(--sp-4); }
+  .lesson__title { color: #000; }
+  .lesson__kicker, .lesson__kicker * { color: #000; }
+  .lesson__dot { background: #000; }
+  .lblock { background: #fff; border: 1px solid #000; border-top: 1px solid #000; box-shadow: none; break-inside: avoid; }
+  .lblock__icon { background: #fff; color: #000; }
+  .lblock__text, .lex__cond, .lex__sub { color: #000; }
+  .lfigure { background: #fff; border: 1px solid #000; break-inside: avoid; }
+  .lex { break-inside: avoid; }
+  .lex__answer { background: #fff; border-color: #000; color: #000; }
+}
+
 /* Список уроків на сторінці § (фаза 18) */
 .lesson-list__items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .lesson-list__link {
