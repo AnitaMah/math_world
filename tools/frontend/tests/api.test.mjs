@@ -46,6 +46,8 @@ test("normalizeMap: 5 клас — 38 уроків, 5 параграфів, 2 р
   assert.equal(m.lessons[0].kind, "item");
   assert.equal(m.lessons[0].tasks.auto, 15);
   assert.equal(m.lessons[6].paraIdx, 1);   // урок 7 — у §2
+  assert.equal(m.lessons[0].classPct, 51);        // режим вчителя (фаза 20, беклог FE-0645)
+  assert.equal(m.lessons[6].classPct, null);       // «у хмарах» — немає з чого рахувати
 });
 
 test("normalizeMap: 6 клас — 35 уроків kind: paragraph, кольори островів по колу", () => {

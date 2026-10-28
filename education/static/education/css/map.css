@@ -163,6 +163,18 @@
 .node--done[aria-pressed="true"], .node--current[aria-pressed="true"] { box-shadow: var(--node-selected); }
 .node__lock { width: calc(18px * var(--s, 1)); height: calc(18px * var(--s, 1)); }
 
+/* Режим вчителя (фаза 20, беклог FE-0645): % учнів класу зі зіркою на цьому вузлі.
+   `data-teacher-mode` на <html> — js/teacher-mode.js, перемикач у топбарі. */
+.node__pct {
+  display: none;
+  position: absolute; left: calc(var(--node-size) * .3 * var(--s, 1)); top: calc(var(--node-size) * -.1 * var(--s, 1));
+  padding: 1px 5px; border-radius: var(--r-pill);
+  background: var(--card-2); border: 1px solid var(--line-2); color: var(--text-2);
+  font: var(--fw-heavy) calc(11px * var(--s, 1)) / 1.2 var(--font-body);
+  white-space: nowrap; pointer-events: none;
+}
+:root[data-teacher-mode="1"] .node__pct { display: block; }
+
 .node__stars {
   position: absolute; left: 0; top: calc((var(--node-size) / 2 - 8px) * var(--s, 1)); translate: -50% 0;
   display: flex; gap: 1px; pointer-events: none;

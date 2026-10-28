@@ -35,6 +35,12 @@ def _lesson(lesson, where, errors):
         errors.append(f"{where}: невідомі blocks {set(lesson['blocks']) - BLOCKS}")
     if set(lesson.get("map") or {}) != {"x", "y"}:
         errors.append(f"{where}: map має бути {{x, y}}")
+    if "class_pct" in lesson:  # режим вчителя (FE-0645), контракт з бекендом (FE-0640) ще не зафіксовано
+        pct = lesson["class_pct"]
+        if pct is not None and (not isinstance(pct, int) or isinstance(pct, bool) or not 0 <= pct <= 100):
+            errors.append(f"{where}: class_pct має бути 0–100 або null")
+        if lesson.get("total") == 0 and pct is not None:
+            errors.append(f"{where}: урок без завдань не може мати class_pct")
 
 
 def check_grade_map(data, name):
@@ -72,7 +78,7 @@ def check_all():
                     "stars", "max_stars", "current"):
             if key not in g:
                 errors.append(f"grades.json клас {g.get('number')}: немає `{key}`")
-    for name in ("me.guest.json", "me.user.json"):
+    for name in ("me.guest.json", "me.user.json", "me.teacher.json"):
         me = json.loads((MOCK / name).read_text(encoding="utf-8"))
         for key in ("authenticated", "name", "points", "streak", "stars", "history"):
             if key not in me:
@@ -80,6 +86,11 @@ def check_all():
         history = me.get("history") or []
         if len(history) != 7 or any(set(d) != {"date", "points"} for d in history):
             errors.append(f"{name}: history має бути 7 записів {{date, points}}")
+        if "is_teacher" in me and not isinstance(me["is_teacher"], bool):
+            errors.append(f"{name}: is_teacher має бути bool")
+    teacher = json.loads((MOCK / "me.teacher.json").read_text(encoding="utf-8"))
+    if teacher.get("is_teacher") is not True:
+        errors.append("me.teacher.json: is_teacher має бути true")
     return errors
 
 

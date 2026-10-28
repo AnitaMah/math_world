@@ -23,12 +23,23 @@ def solved_for(stars, total):
     return {3: total, 2: math.ceil(total * 0.75), 1: math.ceil(total * 0.4), 0: 0}[stars]
 
 
-def lesson(id_, number, title, state="soon", stars=0, auto=0, ai=0, blocks=(), solved=None):
+def class_pct_for(id_, stars, state, total):
+    """% учнів класу зі зіркою на цьому вузлі — поки лише вигадане число для верстки режиму
+    вчителя (FE-0645): контракт з бекендом (FE-0640) ще не зафіксовано, тож справжня формула
+    (і те, чи це взагалі рахується на льоту чи кешується) — рішення Partner B. `None`, якщо
+    клас фізично не міг узятись за вправи (немає завдань чи вузол ще в хмарах)."""
+    if not total or state == "soon":
+        return None
+    return (id_ * 29 + stars * 17) % 71 + 15
+
+
+def lesson(id_, number, title, state="soon", stars=0, auto=0, ai=0, blocks=(), solved=None, class_pct=None):
     total = auto + ai
     return {
         "id": id_, "number": number, "title": title, "state": state, "stars": stars,
         "solved": solved_for(stars, total) if solved is None else solved, "total": total,
         "tasks": {"auto": auto, "ai": ai}, "blocks": list(blocks), "map": {"x": None, "y": None},
+        "class_pct": class_pct if class_pct is not None else class_pct_for(id_, stars, state, total),
     }
 
 
@@ -151,8 +162,13 @@ def main():
 
     files["grades.json"] = [summary(files["grade-5.json"]), summary(files["grade-6.json"])]
     stars5 = files["grades.json"][0]["stars"]
-    files["me.guest.json"] = {"authenticated": False, "name": "Гість", "points": 0, "streak": 0, "stars": 0}
-    files["me.user.json"] = {"authenticated": True, "name": "anita", "points": stars5 * 7, "streak": 4, "stars": stars5}
+    files["me.guest.json"] = {"authenticated": False, "name": "Гість", "points": 0, "streak": 0, "stars": 0,
+                               "is_teacher": False}
+    files["me.user.json"] = {"authenticated": True, "name": "anita", "points": stars5 * 7, "streak": 4,
+                              "stars": stars5, "is_teacher": False}
+    # Режим вчителя (фаза 20, беклог FE-0645): перемикач у топбарі бачить лише цей мок
+    # (`?mock_user=teacher`) — звичайний `me.user.json` лишається учнем.
+    files["me.teacher.json"] = {**files["me.user.json"], "name": "вчитель_hanna", "is_teacher": True}
 
     for name, data in files.items():
         (OUT / name).write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

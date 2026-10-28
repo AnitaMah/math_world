@@ -59,8 +59,10 @@ function isDebugPage() {
   return html ? html.dataset.debug === "1" : true;
 }
 
-function mockUser(search = globalThis.location?.search ?? "") {
-  return new URLSearchParams(search).get("mock_user") === "1";
+/** "guest" | "user" | "teacher" — `?mock_user=1` лишається за старою поведінкою ("user"). */
+function mockUserKind(search = globalThis.location?.search ?? "") {
+  const v = new URLSearchParams(search).get("mock_user");
+  return v === "teacher" ? "teacher" : v === "1" ? "user" : "guest";
 }
 
 const mockFile = (name) => getJSON(new URL(name, MOCK_BASE).href);
@@ -69,7 +71,7 @@ const mockFile = (name) => getJSON(new URL(name, MOCK_BASE).href);
 
 export const api = {
   me() {
-    return mockMode() ? mockFile(mockUser() ? "me.user.json" : "me.guest.json") : getJSON("/api/me/");
+    return mockMode() ? mockFile(`me.${mockUserKind()}.json`) : getJSON("/api/me/");
   },
   grades() {
     return mockMode() ? mockFile("grades.json") : getJSON("/api/grades/");
@@ -174,6 +176,7 @@ export function normalizeMap(raw) {
           id: it.id, kind: it.kind, number: it.number, title: it.title, sectionIdx, paraIdx,
           stars: it.stars ?? 0, solved: it.solved ?? 0, total: it.total ?? 0, tasks, blocks: it.blocks ?? [],
           map: it.map ?? { x: null, y: null }, state: it.state ?? "soon",
+          classPct: it.class_pct ?? null,   // режим вчителя (фаза 20, беклог FE-0645) — лише на моках поки що
         };
         paragraph.lessonIdx.push(lessons.length);
         lessons.push(lesson);

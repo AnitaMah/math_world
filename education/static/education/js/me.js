@@ -3,6 +3,7 @@
 //   document.dispatchEvent(new CustomEvent("me:updated", { detail: { points: 60, streak: 5 } }))
 import { plural } from "./ui.js";
 import { api } from "./api.js";
+import { mountTeacherModeToggle } from "./teacher-mode.js";
 
 const DAYS = ["день", "дні", "днів"];
 const WEEKDAY_LETTERS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
@@ -44,6 +45,10 @@ export function fill(me) {
   }
   if ("stars" in me) set("stars", me.stars);
   if ("max_stars" in me) set("max_stars", me.max_stars);
+  if ("is_teacher" in me) {
+    const toggle = document.getElementById("teacherModeToggle");
+    if (toggle) toggle.hidden = !me.is_teacher;
+  }
   if ("history" in me) {
     const chart = document.querySelector('[data-me="history"]');
     if (chart) renderHistory(chart, me.history);
@@ -65,3 +70,6 @@ export async function loadMe() {
 
 document.addEventListener("me:updated", (event) => fill(event.detail || {}));
 if (document.querySelector("[data-me]")) loadMe();
+
+const teacherModeToggle = document.getElementById("teacherModeToggle");
+if (teacherModeToggle) mountTeacherModeToggle(teacherModeToggle);

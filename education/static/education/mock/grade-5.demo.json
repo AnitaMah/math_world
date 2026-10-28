@@ -43,7 +43,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 51
             },
             {
               "id": 118,
@@ -69,7 +70,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 63
             },
             {
               "id": 119,
@@ -95,7 +97,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 38
             },
             {
               "id": 120,
@@ -121,7 +124,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 67
             },
             {
               "id": 121,
@@ -146,7 +150,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 62
             },
             {
               "id": 122,
@@ -171,7 +176,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 54
             }
           ]
         },
@@ -203,7 +209,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 66
             },
             {
               "id": 124,
@@ -228,7 +235,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 41
             },
             {
               "id": 125,
@@ -253,7 +261,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 70
             },
             {
               "id": 126,
@@ -278,7 +287,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 48
             },
             {
               "id": 127,
@@ -303,7 +313,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 77
             },
             {
               "id": 128,
@@ -328,7 +339,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 35
             },
             {
               "id": 129,
@@ -353,7 +365,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 64
             },
             {
               "id": 130,
@@ -378,7 +391,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 22
             },
             {
               "id": 131,
@@ -403,7 +417,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 51
             }
           ]
         },
@@ -435,7 +450,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 80
             },
             {
               "id": 133,
@@ -460,7 +476,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 38
             },
             {
               "id": 134,
@@ -485,7 +502,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 67
             },
             {
               "id": 135,
@@ -510,7 +528,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 25
             },
             {
               "id": 136,
@@ -535,7 +554,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 54
             },
             {
               "id": 137,
@@ -560,7 +580,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 83
             },
             {
               "id": 138,
@@ -585,7 +606,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 41
             },
             {
               "id": 139,
@@ -610,7 +632,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 70
             },
             {
               "id": 140,
@@ -635,7 +658,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 28
             }
           ]
         }
@@ -674,7 +698,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 57
             },
             {
               "id": 142,
@@ -699,7 +724,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 15
             },
             {
               "id": 143,
@@ -724,7 +750,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 44
             },
             {
               "id": 144,
@@ -749,7 +776,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 73
             },
             {
               "id": 145,
@@ -774,7 +802,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 31
             }
           ]
         },
@@ -806,7 +835,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 60
             },
             {
               "id": 147,
@@ -831,7 +861,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 18
             },
             {
               "id": 148,
@@ -856,7 +887,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 47
             },
             {
               "id": 149,
@@ -881,7 +913,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 76
             },
             {
               "id": 150,
@@ -906,7 +939,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 34
             },
             {
               "id": 151,
@@ -931,7 +965,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 63
             },
             {
               "id": 152,
@@ -956,7 +991,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 21
             },
             {
               "id": 153,
@@ -981,7 +1017,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 50
             },
             {
               "id": 154,
@@ -1006,7 +1043,8 @@
               "map": {
                 "x": null,
                 "y": null
-              }
+              },
+              "class_pct": 79
             }
           ]
         }

@@ -15,7 +15,13 @@ export function nodeLabel(lesson) {
   const head = lesson.kind === "paragraph" ? `§${lesson.number}` : `Урок ${lesson.number}`;
   const title = String(lesson.title ?? "").replace(/^§\s*\d+\.\s*/, "");
   const tail = lesson.state === "done" || lesson.state === "current" ? `, ${starsText(lesson.stars)}` : "";
-  return `${head}. ${title} — ${STATE_WORDS[lesson.state] ?? lesson.state}${tail}`;
+  const pct = lesson.classPct != null ? `, у класі ${lesson.classPct}% зі зіркою` : "";
+  return `${head}. ${title} — ${STATE_WORDS[lesson.state] ?? lesson.state}${tail}${pct}`;
+}
+
+/** «51%» — бейдж режиму вчителя (фаза 20, беклог FE-0645) під вузлом. */
+export function classPctLabel(pct) {
+  return `${Math.round(pct)}%`;
 }
 
 /** Куди веде гра уроку. */
@@ -168,6 +174,14 @@ export function renderNodes(layer, map, L, { onSelect } = {}) {
       stars.setAttribute("aria-hidden", "true");
       for (let k = 0; k < 3; k++) stars.append(starSvg(k < lesson.stars, "calc(14px * var(--s, 1))"));
       wrap.append(stars);
+    }
+
+    if (lesson.classPct != null) {   // режим вчителя (фаза 20, беклог FE-0645) — видимість: map.css
+      const pct = document.createElement("span");
+      pct.className = "node__pct";
+      pct.setAttribute("aria-hidden", "true");
+      pct.textContent = classPctLabel(lesson.classPct);
+      wrap.append(pct);
     }
     layer.append(wrap);
     buttons.set(i, btn);

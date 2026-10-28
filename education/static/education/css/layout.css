@@ -27,6 +27,8 @@
 .topbar__account { display: flex; align-items: center; gap: var(--sp-2); }
 .topbar__account .chip { color: var(--text-2); }
 .topbar__login { border-color: var(--line-strong); color: var(--text); }
+.topbar__teacher-toggle { gap: 6px; }
+.topbar__teacher-toggle[aria-pressed="true"] { background: var(--acc); color: var(--ink); border-color: var(--acc); }
 
 /* Вузький десктоп: прибираємо підписи чіпів, щоб не налазили на вкладки класів */
 @media (max-width: 1100px) {
@@ -40,7 +42,7 @@
 /* --- Телефон ------------------------------------------------------------------ */
 @media (max-width: 720px) {
   .topbar { height: var(--topbar-h-mobile); padding: 0 var(--sp-4); gap: var(--sp-2); }
-  .topbar__brand, .topbar__grades, .topbar__login, .topbar__account { display: none; }
+  .topbar__brand, .topbar__grades, .topbar__login, .topbar__account, .topbar__teacher-toggle { display: none; }
   .topbar__grade-pick { display: inline-flex; gap: 6px; min-height: 44px; padding: 7px 14px; font-size: var(--fs-14); }
   .topbar__stats { gap: var(--sp-2); }
   .topbar__chip { background: none; border: 0; padding: 4px; gap: 4px; }

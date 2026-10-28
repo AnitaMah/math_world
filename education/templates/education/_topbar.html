@@ -23,6 +23,8 @@
     <span class="chip topbar__chip" title="Серія днів">{% icon "flame" size=18 %}<span class="visually-hidden">Серія: </span><span data-me="streak">—</span><span class="topbar__long"> <span data-me="streak_word">днів</span></span></span>
   </div>
 
+  <button class="btn btn--sm btn--secondary topbar__teacher-toggle" type="button" id="teacherModeToggle" hidden aria-pressed="false">{% icon "chart" size=16 %}<span class="topbar__long"> Режим вчителя</span></button>
+
   {% if user.is_authenticated %}
   <div class="topbar__account">
     <span class="chip">{% icon "user" size=18 %}{{ user.get_username }}</span>

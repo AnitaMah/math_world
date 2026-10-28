@@ -5,8 +5,8 @@ import { readFileSync } from "node:fs";
 import { normalizeMap } from "../../../education/static/education/js/api.js";
 import { layoutGrade } from "../../../education/static/education/js/map-layout.js";
 import {
-  starsText, nodeLabel, playUrl, canPlay, lessonHash, findByHash, initialIndex, fogRegions,
-  newlyRevealed, loadSeenFog, saveSeenFog, markJustFinished, consumeJustFinished, walkSteps,
+  starsText, nodeLabel, classPctLabel, playUrl, canPlay, lessonHash, findByHash, initialIndex,
+  fogRegions, newlyRevealed, loadSeenFog, saveSeenFog, markJustFinished, consumeJustFinished, walkSteps,
 } from "../../../education/static/education/js/map-nodes.js";
 
 const load = (name) => normalizeMap(JSON.parse(readFileSync(
@@ -22,6 +22,19 @@ test("nodeLabel для скрінрідера", () => {
   assert.equal(nodeLabel({ kind: "item", number: 5, title: "Шкала", state: "locked", stars: 0 }), "Урок 5. Шкала — закрито");
   assert.equal(nodeLabel({ kind: "paragraph", number: 12, title: "§ 12. Відношення", state: "soon", stars: 0 }),
     "§12. Відношення — ще не імпортовано");
+});
+
+test("nodeLabel: з class_pct (режим вчителя, фаза 20, FE-0645) додає частку класу", () => {
+  assert.equal(
+    nodeLabel({ kind: "item", number: 4, title: "Площина. Пряма. Промінь", state: "current", stars: 1, classPct: 51 }),
+    "Урок 4. Площина. Пряма. Промінь — ти тут, 1 зірка з 3, у класі 51% зі зіркою");
+  assert.equal(nodeLabel({ kind: "item", number: 5, title: "Шкала", state: "locked", stars: 0, classPct: null }),
+    "Урок 5. Шкала — закрито");
+});
+
+test("classPctLabel — округлення", () => {
+  assert.equal(classPctLabel(51), "51%");
+  assert.equal(classPctLabel(50.6), "51%");
 });
 
 test("playUrl, canPlay, якорі", () => {

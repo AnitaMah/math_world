@@ -12,5 +12,6 @@
     { "date": "2026-10-25", "points": 0 },
     { "date": "2026-10-26", "points": 0 },
     { "date": "2026-10-27", "points": 0 }
-  ]
+  ],
+  "is_teacher": false
 }
