@@ -434,7 +434,14 @@ class ProfilePageTests(TestCase):
         for value in ("dark", "light", "system"):
             self.assertIn(f'data-theme-pick="{value}"', html)
         self.assertIn('id="themePicker"', html)
-        self.assertIn("education/js/profile-theme.js", html)
+        self.assertIn("education/js/profile-settings.js", html)
+
+    def test_sound_toggle(self):
+        """Беклог FE-0637: вимикач звуку правильної/неправильної відповіді."""
+        html = self.client.get("/profile/").content.decode()
+        self.assertIn('id="profileSoundToggle"', html)
+        self.assertIn("data-sound-label", html)
+        self.assertIn("education/js/profile-settings.js", html)
 
 
 class ThemeNoFlashScriptTests(TestCase):
@@ -569,6 +576,7 @@ class PlayPageTests(TestCase):
         self.assertIn('aria-label="Вийти з уроку"', html)
         self.assertIn("Урок 1 · Ряд натуральних чисел", html)
         self.assertIn(f'data-api="/api/play/items/{self.i1.id}/"', html)
+        self.assertIn('id="soundToggle"', html)                           # беклог FE-0637
         # наступний урок з завданнями — § 2 (пункт 2 без вправ пропускаємо)
         self.assertIn(f'data-next="/play/paragraph/{self.p2.id}/"', html)
 

@@ -3,6 +3,7 @@
 import { api } from "./api.js";
 import { errorFeedback, feedbackFor, finishModel, orderTasks, progressPct, taskView } from "./play-core.js";
 import { markJustFinished } from "./map-nodes.js";
+import { playFeedbackSound, mountSoundToggle } from "./sound.js";
 
 const root = document.getElementById("play");
 const $ = (id) => document.getElementById(id);
@@ -22,6 +23,11 @@ function maybeMarkFinished() {
   if (justEarnedStar && grade) markJustFinished(Number(grade), lessonHash);
 }
 $("closeBtn")?.addEventListener("click", maybeMarkFinished);
+
+// Вимикач звуку правильної/неправильної відповіді (фаза 20, беклог FE-0637) — у шапці гри,
+// де звук і грається.
+const soundToggle = $("soundToggle");
+if (soundToggle) mountSoundToggle(soundToggle);
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const icon = (name, size = 20, cls = "") =>
@@ -131,6 +137,7 @@ async function check() {
   updateMe(d);
   const f = feedbackFor(d);
   showFeedback(f);
+  playFeedbackSound(f.kind);
   if (d.correct) {
     t.solved = true;
     sessionPoints += d.points || 0;

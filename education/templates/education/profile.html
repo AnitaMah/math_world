@@ -41,7 +41,14 @@
     </div>
   </section>
 
+  <section class="card profile-sound stack stack--gap-3">
+    <h2 class="label-caps">Звук відповідей</h2>
+    <button class="btn btn--secondary btn--block" type="button" id="profileSoundToggle" aria-pressed="true">
+      {% icon "sound-on" size=18 %}<span data-sound-label>Увімкнено</span>
+    </button>
+  </section>
+
   <a class="btn btn--secondary btn--block" href="{% url 'home' %}">{% icon "map" size=18 %}На мапу</a>
 </div>
 {% endblock %}
-{% block scripts %}<script type="module" src="{% static 'education/js/profile-theme.js' %}"></script>{% endblock %}
+{% block scripts %}<script type="module" src="{% static 'education/js/profile-settings.js' %}"></script>{% endblock %}

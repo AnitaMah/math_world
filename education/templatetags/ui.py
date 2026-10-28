@@ -18,6 +18,7 @@ ICONS = frozenset({
     "lock", "map", "chart", "user", "check", "sparkle", "close",
     "chevron-down", "chevron-left", "chevron-right", "book",
     "chat", "pencil", "repeat", "owl", "scroll",
+    "sound-on", "sound-off",
 })
 
 
