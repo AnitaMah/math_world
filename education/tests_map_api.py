@@ -117,6 +117,35 @@ class GradeMapContractTests(MapFixture):
         return len(ctx)
 
 
+class GradeMapLangTests(MapFixture):
+    """FE-0642: заголовки на мапі мовою cookie `mw_lang`, запасний варіант uk де `*_de` порожнє."""
+
+    def test_default_is_ukrainian(self):
+        data = self.map()
+        self.assertEqual(data["sections"][0]["title"], self.par.section.name_uk)
+        self.assertEqual(data["sections"][0]["paragraphs"][0]["title"], self.par.name_uk)
+
+    def test_german_cookie_falls_back_when_translation_missing(self):
+        self.client.cookies["mw_lang"] = "de"
+        data = self.map()
+        self.assertEqual(data["sections"][0]["title"], self.par.section.name_uk)
+        self.assertEqual(data["sections"][0]["paragraphs"][0]["title"], self.par.name_uk)
+
+    def test_german_cookie_uses_translation_when_present(self):
+        self.par.section.name_de = "Abschnitt I"
+        self.par.section.save()
+        self.par.name_de = "Natürliche Zahlen"
+        self.par.save()
+        self.item2.content_de = "Ziffern"
+        self.item2.save()
+        self.client.cookies["mw_lang"] = "de"
+        data = self.map()
+        self.assertEqual(data["sections"][0]["title"], "Abschnitt I")
+        self.assertEqual(data["sections"][0]["paragraphs"][0]["title"], "Natürliche Zahlen")
+        _, l2, _ = self.lessons(data)
+        self.assertEqual(l2["title"], "Ziffern")
+
+
 class GradesListTests(MapFixture):
     def test_summary(self):
         data = self.client.get(reverse("api_grades")).json()

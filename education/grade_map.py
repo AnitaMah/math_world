@@ -104,8 +104,11 @@ class GradeMap:
         return [p for s in self.sections for p in s.paragraphs_ordered]
 
 
-def load_grade(grade: Grade, player: Player | None = None) -> GradeMap:
-    """Усі уроки класу зі станами. Запитів — кілька на клас (не на урок): ігрові завдання рахуємо лише там, де є вправи."""
+def load_grade(grade: Grade, player: Player | None = None, lang: str = "uk") -> GradeMap:
+    """Усі уроки класу зі станами. Запитів — кілька на клас (не на урок): ігрові завдання рахуємо лише там, де є вправи.
+
+    lang (фаза 20, беклог FE-0642) — мова назв уроків/параграфів; де `*_de` ще порожнє,
+    `_item_title`/`get_name` самі падають назад на українську."""
     sections = list(Section.objects.filter(grade=grade).order_by("number"))
     paragraphs = list(Paragraph.objects.filter(section__in=sections).order_by("section__number", "number")
                       .select_related("section")
@@ -116,6 +119,8 @@ def load_grade(grade: Grade, player: Player | None = None) -> GradeMap:
     for s in sections:
         s.paragraphs_ordered = by_section.get(s.pk, [])
 
+    from .views import _item_title
+
     lessons: list[Lesson] = []
     island: dict[int, int] = {}
     for idx, p in enumerate(paragraphs):
@@ -123,10 +128,9 @@ def load_grade(grade: Grade, player: Player | None = None) -> GradeMap:
         items = list(p.item_set.all())
         if items:
             for it in items:
-                title = (it.content or "").strip().splitlines()[0] if (it.content or "").strip() else ""
-                lessons.append(Lesson("item", it, p, p.section, title))
+                lessons.append(Lesson("item", it, p, p.section, _item_title(it, lang)))
         else:                                    # Тарасенкова: урок = параграф
-            lessons.append(Lesson("paragraph", p, p, p.section, p.name_uk))
+            lessons.append(Lesson("paragraph", p, p, p.section, p.get_name(lang)))
 
     # завдання лише для уроків, де є ігрові вправи
     for kind, model in (("item", Item), ("paragraph", Paragraph)):
@@ -157,8 +161,9 @@ def load_grade(grade: Grade, player: Player | None = None) -> GradeMap:
                     lessons[cur] if cur is not None else None, island, sum(l.stars for l in lessons))
 
 
-def map_payload(gm: GradeMap) -> dict:
-    """Тіло `GET /api/grades/<n>/map/`."""
+def map_payload(gm: GradeMap, lang: str = "uk") -> dict:
+    """Тіло `GET /api/grades/<n>/map/`. lang — фаза 20, беклог FE-0642 (назви розділів і §:
+    уроки-пункти вже отримали свою назву мовою lang у load_grade())."""
     by_par: dict[int, list[Lesson]] = {}
     for l in gm.lessons:
         by_par.setdefault(l.paragraph.pk, []).append(l)
@@ -167,14 +172,14 @@ def map_payload(gm: GradeMap) -> dict:
         paragraphs = []
         for p in s.paragraphs_ordered:
             own = by_par.get(p.pk, [])
-            entry = {"id": p.pk, "number": p.number, "title": p.name_uk}
+            entry = {"id": p.pk, "number": p.number, "title": p.get_name(lang)}
             if own and own[0].kind == "paragraph":
-                entry.update(own[0].as_dict() | {"id": p.pk, "number": p.number, "title": p.name_uk})
+                entry.update(own[0].as_dict() | {"id": p.pk, "number": p.number, "title": p.get_name(lang)})
                 entry["items"] = []
             else:
                 entry["items"] = [l.as_dict() for l in own]
             paragraphs.append(entry)
-        sections.append({"id": s.pk, "number": s.number, "title": s.name_uk, "paragraphs": paragraphs})
+        sections.append({"id": s.pk, "number": s.number, "title": s.get_name(lang), "paragraphs": paragraphs})
     tb = gm.textbook
     return {"grade": gm.grade.number, "subject": gm.grade.subject.code,
             "textbook": {"author": tb.author, "year": tb.year} if tb else None,

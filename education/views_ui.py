@@ -195,8 +195,9 @@ def _lesson_render(request, kind, lesson):
     from django.urls import reverse
     from .game import get_player
     from .services import playable_counts
-    from .views import _blocks_context, _item_title
+    from .views import _blocks_context, _item_title, get_lang
 
+    lang = get_lang(request)
     paragraph = lesson.paragraph if kind == "item" else lesson
     section = paragraph.section
     grade = section.grade
@@ -218,12 +219,12 @@ def _lesson_render(request, kind, lesson):
     _place_figures(blocks)
 
     if kind == "item":
-        title = _strip_title(_item_title(lesson, "uk"))
+        title = _strip_title(_item_title(lesson, lang))
         label = f"Урок {lesson.number}"
         play_url = reverse("play_item", args=[lesson.pk])
         anchor = f"lesson-{lesson.pk}"
     else:
-        title = _strip_title(paragraph.name_uk, paragraph=True)
+        title = _strip_title(paragraph.get_name(lang), paragraph=True)
         label = f"§{paragraph.number}"
         play_url = reverse("play_paragraph", args=[lesson.pk]) if is_lesson else ""
         anchor = f"lesson-p{lesson.pk}" if is_lesson else (f"lesson-{items[0].pk}" if items else "")
@@ -233,14 +234,14 @@ def _lesson_render(request, kind, lesson):
     return render(request, "education/lesson.html", {
         "kind": kind, "lesson": lesson, "is_lesson": is_lesson,
         "title": title, "label": label,
-        "paragraph": paragraph, "paragraph_title": _strip_title(paragraph.name_uk, paragraph=True),
+        "paragraph": paragraph, "paragraph_title": _strip_title(paragraph.get_name(lang), paragraph=True),
         "section": section, "grade": grade, "current_grade": grade.number,
         "isl": _island_of(paragraph),
         "stars": progress.get((kind, lesson.pk), 0),
         "playable": playable_counts([lesson]).get(lesson.pk, 0) if is_lesson else 0,
         "play_url": play_url, "map_url": map_url,
         "blocks": blocks, "staff": staff,
-        "items": [{"obj": i, "title": _strip_title(_item_title(i, "uk")), "url": reverse("item_detail", args=[i.pk]),
+        "items": [{"obj": i, "title": _strip_title(_item_title(i, lang)), "url": reverse("item_detail", args=[i.pk]),
                    "stars": progress.get(("item", i.pk), 0), "playable": item_counts.get(i.pk, 0)} for i in items],
     })
 
@@ -297,17 +298,18 @@ def play_page(request, kind, lesson):
     """
     import re
     from django.urls import reverse
-    from .views import _item_title
+    from .views import _item_title, get_lang
 
+    lang = get_lang(request)
     paragraph = lesson.paragraph if kind == "item" else lesson
     grade = paragraph.section.grade
     if kind == "item":
-        title = re.sub(r"^\s*\d+\.\s*", "", _item_title(lesson, "uk"))
+        title = re.sub(r"^\s*\d+\.\s*", "", _item_title(lesson, lang))
         label = f"Урок {lesson.number} · {title}"
         api_url = reverse("api_play_item", args=[lesson.pk])
         theory_url = reverse("item_detail", args=[lesson.pk])
     else:
-        title = re.sub(r"^§\s*\d+\.\s*", "", paragraph.name_uk)
+        title = re.sub(r"^§\s*\d+\.\s*", "", paragraph.get_name(lang))
         label = f"§{paragraph.number} · {title}"
         api_url = reverse("api_play_paragraph", args=[lesson.pk])
         theory_url = reverse("paragraph_page", args=[lesson.pk])

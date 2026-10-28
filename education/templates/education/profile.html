@@ -62,6 +62,15 @@
     </button>
   </section>
 
+  <section class="card profile-lang stack stack--gap-3" id="langPicker">
+    <h2 class="label-caps">Мова уроків</h2>
+    <div class="row row--gap-2" role="group" aria-label="Мова уроків">
+      <button class="btn btn--sm btn--secondary" type="button" data-lang-pick="uk">Українська</button>
+      <button class="btn btn--sm btn--secondary" type="button" data-lang-pick="de">Deutsch</button>
+    </div>
+    <p class="muted profile-lang__note">Переклад додається поступово — поки перекладеного немає, урок показує українську.</p>
+  </section>
+
   <a class="btn btn--secondary btn--block" href="{% url 'home' %}">{% icon "map" size=18 %}На мапу</a>
 </div>
 {% endblock %}

@@ -553,6 +553,25 @@ class LessonPageTests(TestCase):
         self.assertEqual(difficulty_name("olympiad"), "Олімпіадний")
         self.assertEqual(difficulty_name("unknown"), "")
 
+    def test_german_cookie_falls_back_to_ukrainian_when_translation_missing(self):
+        """FE-0642: *_de порожнє для цього уроку (0 з 75 параграфів перекладено) — запасний варіант uk."""
+        self.client.cookies["mw_lang"] = "de"
+        html = self.client.get(f"/items/{self.item.id}/").content.decode()
+        self.assertIn("Додавання натуральних чисел</h1>", html)
+
+    def test_german_cookie_uses_translation_when_present(self):
+        self.item.content_de = "7. Addition natürlicher Zahlen"
+        self.item.save()
+        self.client.cookies["mw_lang"] = "de"
+        html = self.client.get(f"/items/{self.item.id}/").content.decode()
+        self.assertIn("Addition natürlicher Zahlen</h1>", html)
+
+    def test_no_cookie_stays_ukrainian_even_with_translation_present(self):
+        self.item.content_de = "7. Addition natürlicher Zahlen"
+        self.item.save()
+        html = self.client.get(f"/items/{self.item.id}/").content.decode()
+        self.assertIn("Додавання натуральних чисел</h1>", html)
+
 
 class ReflowFilterTests(SimpleTestCase):
     def test_joins_broken_lines(self):

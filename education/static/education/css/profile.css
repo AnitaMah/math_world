@@ -38,3 +38,9 @@
 .profile-theme [data-theme-pick][aria-pressed="true"] {
   background: var(--isl-1-acc); color: var(--ink); border-color: transparent;
 }
+
+/* --- Мова уроків (фаза 20, FE-0642) ----------------------------------------------- */
+.profile-lang [data-lang-pick][aria-pressed="true"] {
+  background: var(--isl-1-acc); color: var(--ink); border-color: transparent;
+}
+.profile-lang__note { font-size: var(--fs-13); }

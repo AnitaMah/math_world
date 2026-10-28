@@ -146,9 +146,11 @@ def grade_map(request, number):
     """Мапа класу (контракт `docs/frontend`): розділи → § → уроки зі станом, зірками, завданнями, блоками."""
     from .game import get_player
     from .grade_map import load_grade, map_payload
+    from .views import get_lang
 
+    lang = get_lang(request)
     grade = get_object_or_404(Grade, number=number, subject__code=request.GET.get("subject", "math"))
-    return ok(map_payload(load_grade(grade, get_player(request, create=False))))
+    return ok(map_payload(load_grade(grade, get_player(request, create=False), lang), lang))
 
 
 def _lesson(kind: str, pk: int):
