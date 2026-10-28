@@ -24,4 +24,5 @@ urlpatterns = [
     path("schools/mine/", api_schools.my_schools, name="api_my_schools"),
     path("schools/<int:pk>/staff/", api_schools.staff, name="api_school_staff"),
     path("schools/<int:pk>/staff/<int:user_id>/", api_schools.staff_member, name="api_school_staff_member"),
+    path("classes/<int:pk>/grades/<int:number>/stars/", api_schools.class_stars, name="api_class_stars"),
 ]

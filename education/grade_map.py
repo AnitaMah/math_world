@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from django.db.models import Prefetch
+from django.db.models import Count, Prefetch
 
 from .game import lesson_tasks
-from .models import ContentBlock, Grade, Item, LessonProgress, Paragraph, Player, Section, Textbook
+from .models import ContentBlock, Grade, Item, LessonProgress, Paragraph, Player, SchoolClass, Section, Textbook
 from .services import playable_counts
 
 # Блоки, які знає контракт (теги в панелі уроку), у порядку показу
@@ -205,3 +205,27 @@ def find_lesson(kind: str, lesson: Item | Paragraph, player: Player | None) -> t
     gm = load_grade(paragraph.section.grade, player)
     found = next(l for l in gm.lessons if l.kind == kind and l.obj.pk == lesson.pk)
     return gm, found
+
+
+def class_star_payload(school_class: SchoolClass, grade: Grade, lang: str = "uk") -> dict:
+    """Тіло `GET /api/classes/<id>/grades/<n>/stars/` — контракт для FE-0645 (режим вчителя).
+
+    Для кожного уроку/вузла шкільного класу (групи учнів вчителя, не плутати зі «шкільним класом»
+    у значенні grade тут) — скільком учням зараховано зірку (``LessonProgress.stars > 0``) і яка
+    це частка від усіх учнів групи.
+    """
+    gm = load_grade(grade, lang=lang)
+    student_ids = list(school_class.students.values_list("user_id", flat=True))
+    total = len(student_ids)
+    rows = (LessonProgress.objects.filter(player__user_id__in=student_ids, stars__gt=0)
+            .values("item_id", "paragraph_id").annotate(n=Count("pk")))
+    with_star: dict[tuple[str, int], int] = {}
+    for r in rows:
+        key = ("item", r["item_id"]) if r["item_id"] else ("paragraph", r["paragraph_id"])
+        with_star[key] = r["n"]
+    lessons = []
+    for l in gm.lessons:
+        n = with_star.get((l.kind, l.obj.pk), 0)
+        lessons.append({"kind": l.kind, "id": l.obj.pk, "with_star": n,
+                        "percent": round(n * 100 / total) if total else 0})
+    return {"class_id": school_class.pk, "grade": grade.number, "total_students": total, "lessons": lessons}

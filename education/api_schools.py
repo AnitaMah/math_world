@@ -5,6 +5,7 @@
     GET    /api/schools/<id>/staff/                персонал школи (для членів школи і superuser)
     POST   /api/schools/<id>/staff/                {"username": "..."} — додати вчителя (лише верифікована школа)
     DELETE /api/schools/<id>/staff/<user_id>/      прибрати вчителя
+    GET    /api/classes/<id>/grades/<n>/stars/     % учнів класу із зіркою на кожному уроці/вузлі (FE-0645)
 """
 from __future__ import annotations
 
@@ -18,7 +19,7 @@ from django.views.decorators.http import require_http_methods
 
 from . import schools as svc
 from .api import api_error, api_view, ok
-from .models import SCHOOL_COUNTRY_CHOICES, School, SchoolMembership
+from .models import SCHOOL_COUNTRY_CHOICES, Grade, School, SchoolClass, SchoolMembership
 
 
 def login_required_json(view):
@@ -130,6 +131,21 @@ def staff_member(request, pk, user_id):
     except PermissionDenied as exc:
         return api_error(403, "forbidden", str(exc))
     return HttpResponse(status=204)
+
+
+@api_view
+@require_http_methods(["GET"])
+@login_required_json
+def class_stars(request, pk, number):
+    """% учнів класу із зіркою на кожному уроці/вузлі — контракт для FE-0645."""
+    from .grade_map import class_star_payload
+    from .views import get_lang
+
+    school_class = get_object_or_404(SchoolClass, pk=pk)
+    if not svc.can_manage_class(request.user, school_class):
+        return api_error(403, "forbidden", "Немає права переглядати статистику цього класу")
+    grade = get_object_or_404(Grade, number=number, subject__code=request.GET.get("subject", "math"))
+    return ok(class_star_payload(school_class, grade, get_lang(request)))
 
 
 def ok_status(status: int, data):
