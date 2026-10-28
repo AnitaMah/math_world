@@ -4,7 +4,9 @@
 - будь-який залогінений користувач може зареєструвати школу → статус «pending», він стає її адміністратором;
 - лише superuser (адміністратор платформи) верифікує або відхиляє школу;
 - адміністратор **верифікованої** школи сам додає й видаляє її вчителів;
-- поки школа не верифікована (або її відхилили), додавати персонал може лише superuser.
+- поки школа не верифікована (або її відхилили), додавати персонал може лише superuser;
+- вчитель верифікованої школи створює власні класи й сам керує їхнім складом учнів;
+  адміністратор школи й superuser також можуть керувати складом будь-якого класу школи.
 
 Права перевіряються щоразу «наживо»: якщо школу відкликали, її адміністратор одразу втрачає право.
 """
@@ -14,11 +16,15 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from .models import School, SchoolMembership
+from .models import School, SchoolClass, SchoolClassStudent, SchoolMembership
 
 
 class AlreadyMember(Exception):
     """Користувач уже належить до цієї школи."""
+
+
+class AlreadyInClass(Exception):
+    """Учень уже в цьому класі."""
 
 
 def is_school_admin(user, school: School) -> bool:
@@ -104,5 +110,53 @@ def remove_teacher(by, school: School, user) -> None:
     membership.delete()
 
 
-__all__ = ["AlreadyMember", "ValidationError", "add_teacher", "can_manage_staff", "can_view_staff",
-           "is_school_admin", "register_school", "reject_school", "remove_teacher", "verify_school"]
+def is_teacher(user, school: School) -> bool:
+    if not user.is_authenticated:
+        return False
+    return SchoolMembership.objects.filter(school=school, user=user, role=SchoolMembership.ROLE_TEACHER).exists()
+
+
+def can_manage_class(user, school_class: SchoolClass) -> bool:
+    """Чи може user керувати складом цього класу: сам вчитель класу, адмін школи або superuser."""
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser or school_class.teacher_id == user.pk:
+        return True
+    return is_school_admin(user, school_class.school)
+
+
+def create_class(by, school: School, name: str) -> SchoolClass:
+    """Вчитель створює свій клас. Потрібна верифікована школа й роль «вчитель» у ній."""
+    if not school.is_verified:
+        raise PermissionDenied("Школа ще не верифікована")
+    if not is_teacher(by, school):
+        raise PermissionDenied("Лише вчитель школи може створити клас")
+    school_class = SchoolClass(school=school, teacher=by, name=name.strip())
+    school_class.full_clean()
+    school_class.save()
+    return school_class
+
+
+def add_student(by, school_class: SchoolClass, user) -> SchoolClassStudent:
+    if not can_manage_class(by, school_class):
+        raise PermissionDenied("Немає права керувати складом цього класу")
+    try:
+        with transaction.atomic():
+            return SchoolClassStudent.objects.create(school_class=school_class, user=user, added_by=by)
+    except IntegrityError:
+        raise AlreadyInClass(f"{user} уже в класі {school_class.name}") from None
+
+
+def remove_student(by, school_class: SchoolClass, user) -> None:
+    if not can_manage_class(by, school_class):
+        raise PermissionDenied("Немає права керувати складом цього класу")
+    membership = SchoolClassStudent.objects.filter(school_class=school_class, user=user).first()
+    if membership is None:
+        raise SchoolClassStudent.DoesNotExist(f"{user} не в класі {school_class.name}")
+    membership.delete()
+
+
+__all__ = ["AlreadyInClass", "AlreadyMember", "ValidationError", "add_student", "add_teacher",
+           "can_manage_class", "can_manage_staff", "can_view_staff", "create_class", "is_school_admin",
+           "is_teacher", "register_school", "reject_school", "remove_student", "remove_teacher",
+           "verify_school"]

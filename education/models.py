@@ -589,3 +589,34 @@ class SchoolMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} — {self.get_role_display()} @ {self.school.name}"
+
+
+class SchoolClass(models.Model):
+    """Клас — група учнів школи, яку веде вчитель (режим вчителя, FE-0640/0645)."""
+
+    school = models.ForeignKey(School, on_delete=models.CASCADE, related_name="classes")
+    teacher = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="taught_classes")
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["school", "name"]
+
+    def __str__(self):
+        return f"{self.name} ({self.school.name})"
+
+
+class SchoolClassStudent(models.Model):
+    """Учень у класі. Один учень — один запис на клас (учень може бути в кількох класах)."""
+
+    school_class = models.ForeignKey(SchoolClass, on_delete=models.CASCADE, related_name="students")
+    user = models.ForeignKey("auth.User", on_delete=models.CASCADE, related_name="class_memberships")
+    added_by = models.ForeignKey("auth.User", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["school_class", "user__username"]
+        constraints = [models.UniqueConstraint(fields=["school_class", "user"], name="class_student_unique")]
+
+    def __str__(self):
+        return f"{self.user} — {self.school_class}"

@@ -6,7 +6,8 @@ from django.urls import path, reverse
 from django.utils.html import format_html
 
 from .models import (
-    Answer, ContentBlock, Exercise, Figure, Grade, ImportRun, Item, Paragraph, School, SchoolMembership,
+    Answer, ContentBlock, Exercise, Figure, Grade, ImportRun, Item, Paragraph, School, SchoolClass,
+    SchoolClassStudent, SchoolMembership,
     Section, Subject, SubExercise, Textbook, TheoryPractice,
 )
 
@@ -274,3 +275,29 @@ class SchoolAdmin(admin.ModelAdmin):
         for school in queryset:
             reject_school(request.user, school)
         self.message_user(request, f"Відхилено: {queryset.count()}", messages.WARNING)
+
+
+class SchoolClassStudentInline(admin.TabularInline):
+    model = SchoolClassStudent
+    fk_name = "school_class"
+    extra = 0
+    fields = ("user", "added_by", "created_at")
+    readonly_fields = ("added_by", "created_at")
+    autocomplete_fields = ("user",)
+
+
+@admin.register(SchoolClass)
+class SchoolClassAdmin(admin.ModelAdmin):
+    list_display = ("name", "school", "teacher", "created_at")
+    list_filter = ("school",)
+    search_fields = ("name", "teacher__username")
+    autocomplete_fields = ("school", "teacher")
+    inlines = [SchoolClassStudentInline]
+
+    def save_formset(self, request, form, formset, change):
+        for student in formset.save(commit=False):
+            if student.pk is None:
+                student.added_by = request.user
+            student.save()
+        for obj in formset.deleted_objects:
+            obj.delete()

@@ -73,6 +73,53 @@ class SchoolRulesTests(TestCase):
             School.objects.filter(pk=self.school.pk).update(status=School.STATUS_VERIFIED)
 
 
+class SchoolClassRulesTests(TestCase):
+    """Клас (група учнів), яку веде вчитель — FE-0640."""
+
+    def setUp(self):
+        self.root = User.objects.create_superuser("root", password="pw-12345678")
+        self.director = User.objects.create_user("director", password="pw-12345678")
+        self.teacher = User.objects.create_user("teacher", password="pw-12345678")
+        self.other_teacher = User.objects.create_user("other_teacher", password="pw-12345678")
+        self.student = User.objects.create_user("student", password="pw-12345678")
+        self.school = svc.register_school(self.director, name="Ліцей №1", country="UA",
+                                          official_number="137456", city="Київ")
+        svc.verify_school(self.root, self.school)
+        svc.add_teacher(self.director, self.school, self.teacher)
+        svc.add_teacher(self.director, self.school, self.other_teacher)
+
+    def test_unverified_school_cannot_have_classes(self):
+        school = svc.register_school(self.director, name="Новий ліцей", country="UA", official_number="999")
+        with self.assertRaises(PermissionDenied):
+            svc.create_class(self.teacher, school, "5-А")
+
+    def test_only_teacher_creates_class(self):
+        with self.assertRaises(PermissionDenied):
+            svc.create_class(self.director, self.school, "5-А")  # школа-адмін, не вчитель
+        school_class = svc.create_class(self.teacher, self.school, "5-А")
+        self.assertEqual((school_class.teacher, school_class.school), (self.teacher, self.school))
+
+    def test_teacher_manages_own_class_roster(self):
+        school_class = svc.create_class(self.teacher, self.school, "5-А")
+        m = svc.add_student(self.teacher, school_class, self.student)
+        self.assertEqual((m.school_class, m.user, m.added_by), (school_class, self.student, self.teacher))
+        with self.assertRaises(svc.AlreadyInClass):
+            svc.add_student(self.teacher, school_class, self.student)
+        svc.remove_student(self.teacher, school_class, self.student)
+        self.assertFalse(school_class.students.filter(user=self.student).exists())
+
+    def test_other_teacher_cannot_manage_foreign_class(self):
+        school_class = svc.create_class(self.teacher, self.school, "5-А")
+        with self.assertRaises(PermissionDenied):
+            svc.add_student(self.other_teacher, school_class, self.student)
+
+    def test_school_admin_and_superuser_manage_any_class(self):
+        school_class = svc.create_class(self.teacher, self.school, "5-А")
+        svc.add_student(self.director, school_class, self.student)
+        svc.remove_student(self.root, school_class, self.student)
+        self.assertFalse(school_class.students.exists())
+
+
 class SchoolApiTests(TestCase):
     def setUp(self):
         self.root = User.objects.create_superuser("root", password="pw-12345678")
