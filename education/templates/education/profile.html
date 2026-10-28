@@ -32,6 +32,16 @@
     {% endif %}
   </section>
 
+  <section class="card profile-theme stack stack--gap-3" id="themePicker">
+    <h2 class="label-caps">Тема</h2>
+    <div class="row row--gap-2" role="group" aria-label="Тема оформлення">
+      <button class="btn btn--sm btn--secondary" type="button" data-theme-pick="dark">Темна</button>
+      <button class="btn btn--sm btn--secondary" type="button" data-theme-pick="light">Світла</button>
+      <button class="btn btn--sm btn--secondary" type="button" data-theme-pick="system">Системна</button>
+    </div>
+  </section>
+
   <a class="btn btn--secondary btn--block" href="{% url 'home' %}">{% icon "map" size=18 %}На мапу</a>
 </div>
 {% endblock %}
+{% block scripts %}<script type="module" src="{% static 'education/js/profile-theme.js' %}"></script>{% endblock %}

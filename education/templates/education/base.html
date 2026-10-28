@@ -2,8 +2,18 @@
 <html lang="uk"{% if UI_DEBUG %} data-debug="1"{% endif %}>
 <head>
   <meta charset="utf-8">
+  <script>
+    /* Тема без блимання (фаза 20, FE-0636): виставити data-theme ДО першого малювання, поки
+       CSS ще не застосувався. Повна логіка вибору — js/theme.js (лише на /profile/); тут —
+       мінімальна копія того самого читання localStorage, бо модуль не встигає завантажитись. */
+    try {
+      var t = localStorage.getItem("mw_theme");
+      if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b1220">
+  <meta name="theme-color" content="#eef3f9" media="(prefers-color-scheme: light)">
   <title>{% block title %}Мапа{% endblock %} · Математичний світ</title>
   <link rel="icon" href="{% static 'education/img/favicon.svg' %}" type="image/svg+xml">
   {% block meta %}{% endblock %}

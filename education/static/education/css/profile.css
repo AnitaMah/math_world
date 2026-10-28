@@ -10,3 +10,8 @@
   display: flex; align-items: center; gap: 6px;
   color: var(--muted-2); font-size: var(--fs-14); font-weight: var(--fw-bold);
 }
+
+/* --- Тема (фаза 20, FE-0636) ----------------------------------------------------- */
+.profile-theme [data-theme-pick][aria-pressed="true"] {
+  background: var(--isl-1-acc); color: var(--ink); border-color: transparent;
+}

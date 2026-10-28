@@ -84,8 +84,9 @@
   --node-size: 46px;
   --node-size-current: 60px;
   --node-ring: 84px;
-  --ring: #ffffff;                /* біле кільце поточного й вибраного вузла */
-  --node-selected: 0 0 0 4px var(--bg), 0 0 0 7px var(--ring);
+  --ring: #ffffff;                /* біле — фон картки рисунка, бейдж «Ти тут», поточний вузол;
+                                      навмисно однакове в обох темах (як --ink — завжди темний) */
+  --node-selected: 0 0 0 4px var(--bg), 0 0 0 7px var(--focus);
 
   /* --- Шрифти --------------------------------------------------------------- */
   --font-display: 'Unbounded', system-ui, sans-serif;
@@ -145,3 +146,115 @@
 .isl-3 { --acc: var(--isl-3-acc); --land: var(--isl-3-land); }
 .isl-4 { --acc: var(--isl-4-acc); --land: var(--isl-4-land); }
 .isl-5 { --acc: var(--isl-5-acc); --land: var(--isl-5-land); }
+
+/* ======================================================================================
+   Світла тема (фаза 20, беклог FE-0636; за запитом вчителів). Лише кольори — розміри,
+   шрифти, відступи й радіуси спільні з темною. Той самий архіпелаг, тепер удень: світле
+   небо/море замість нічного океану, острови-акценти ближчі до денного освітлення.
+   Контраст кожної пари (ті самі пари, що й /ui/tokens/ для темної теми) перевірено окремо
+   (докладніше — DECISIONS.md): текст/фон ≥ 4.5:1, графіка (замок, зірка тощо) ≥ 3:1.
+   Застосовується, коли `<html data-theme="light">` (явний вибір) або коли вибору нема
+   і системна тема світла (`prefers-color-scheme`) — js/theme.js. ====================== */
+:root[data-theme="light"] {
+  --bg: #eef3f9;
+  --bg-sea-1: #cfe7f7;
+  --bg-sea-2: #eef3f9;
+  --surface: #ffffff;
+  --surface-2: #f4f8fb;
+  --card: #ffffff;
+  --card-2: #eef2f7;
+  --card-3: #e8eef5;
+
+  --line: #e1e7ef;
+  --line-2: #d7e0ea;
+  --line-3: #cdd9e6;
+  --line-strong: #aebccd;
+  --line-card: #e3e9f0;
+  --line-tag: #dde4ec;
+  --line-btn: #d2dce6;
+  --tabs-bg: #eef2f7;
+  --tabs-border: #dbe3ec;
+
+  --text: #15202b;          /* 14.8:1 на --bg */
+  --text-2: #3c4b5e;
+  --muted: #5c6b7e;
+  --muted-2: #5f6d80;       /* 4.9:1 на --surface-2 */
+  --ink: #0d1220;
+  --link: #0e7490;
+  --link-hover: #0b4f61;
+  --focus: #1d4ed8;
+
+  --star: #bf8606;
+  --star-off: #d8dee6;
+  --points: #7c5fe0;
+  --streak: #e2722a;
+  --ok: #127a43;
+  --ok-bg: #e3f6ea;
+  --bad: #c22f2f;
+  --bad-bg: #fbe7e7;
+  --info: #176fb5;
+  --info-bg: #e2f0fc;
+  --neutral-bg: #e9edf3;
+  --muted-bg: #e7ecf2;
+  --auto-bg: #e2eef8;
+  --ai-bg: #ece7fb;
+
+  /* Акценти темніше, ніж уночі (--ink зверху й --node-open-bg знизу тягнуть у різні боки —
+     кожен підібрано так, щоб пройти обидві пари, див. скрипт перевірки в DECISIONS.md). */
+  --isl-1-acc: #1d9baf;  --isl-1-land: #c8ecf3;
+  --isl-2-acc: #927ae6;  --isl-2-land: #e2dbfa;
+  --isl-3-acc: #b96e12;  --isl-3-land: #f8e3c4;
+  --isl-4-acc: #e06485;  --isl-4-land: #fbdde6;
+  --isl-5-acc: #2f9e5c;  --isl-5-land: #d4f0dd;
+
+  --rim: #ffffff;
+  --rim-stroke: #c3d2e2;
+  --shallow: rgba(29, 155, 175, .12);
+  --wave: #c7dced;
+  --speck: #aec4da;
+  --fog: rgba(90, 110, 140, .14);
+  --fog-stroke: rgba(90, 110, 140, .3);
+  --route: rgba(21, 32, 43, .32);
+  --boat-route: rgba(29, 155, 175, .5);
+  --boat: #a9763f;
+
+  --node-open-bg: #ffffff;
+  --node-locked-bg: #eef2f7;
+  --node-locked-fg: #75839a;    /* 3.4:1 — лише іконка замка, ≥ 3:1 */
+  --node-locked-border: #d7e0ea;
+  --node-soon-bg: #f2f5f9;
+  --node-soon-fg: #5c6b80;      /* 5.0:1 */
+  --node-soon-border: #c5d1e0;
+
+  --shadow-sheet: 0 -10px 30px rgba(21, 32, 43, .15);
+}
+
+/* Системна тема, поки гравець не обрав явно (js/theme.js не виставив data-theme). */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --bg: #eef3f9; --bg-sea-1: #cfe7f7; --bg-sea-2: #eef3f9;
+    --surface: #ffffff; --surface-2: #f4f8fb; --card: #ffffff; --card-2: #eef2f7; --card-3: #e8eef5;
+    --line: #e1e7ef; --line-2: #d7e0ea; --line-3: #cdd9e6; --line-strong: #aebccd;
+    --line-card: #e3e9f0; --line-tag: #dde4ec; --line-btn: #d2dce6;
+    --tabs-bg: #eef2f7; --tabs-border: #dbe3ec;
+    --text: #15202b; --text-2: #3c4b5e; --muted: #5c6b7e; --muted-2: #5f6d80;
+    --ink: #0d1220; --link: #0e7490; --link-hover: #0b4f61; --focus: #1d4ed8;
+    --star: #bf8606; --star-off: #d8dee6; --points: #7c5fe0; --streak: #e2722a;
+    --ok: #127a43; --ok-bg: #e3f6ea; --bad: #c22f2f; --bad-bg: #fbe7e7;
+    --info: #176fb5; --info-bg: #e2f0fc; --neutral-bg: #e9edf3; --muted-bg: #e7ecf2;
+    --auto-bg: #e2eef8; --ai-bg: #ece7fb;
+    --isl-1-acc: #1d9baf; --isl-1-land: #c8ecf3;
+    --isl-2-acc: #927ae6; --isl-2-land: #e2dbfa;
+    --isl-3-acc: #b96e12; --isl-3-land: #f8e3c4;
+    --isl-4-acc: #e06485; --isl-4-land: #fbdde6;
+    --isl-5-acc: #2f9e5c; --isl-5-land: #d4f0dd;
+    --rim: #ffffff; --rim-stroke: #c3d2e2; --shallow: rgba(29, 155, 175, .12);
+    --wave: #c7dced; --speck: #aec4da;
+    --fog: rgba(90, 110, 140, .14); --fog-stroke: rgba(90, 110, 140, .3);
+    --route: rgba(21, 32, 43, .32); --boat-route: rgba(29, 155, 175, .5); --boat: #a9763f;
+    --node-open-bg: #ffffff; --node-locked-bg: #eef2f7; --node-locked-fg: #75839a;
+    --node-locked-border: #d7e0ea; --node-soon-bg: #f2f5f9; --node-soon-fg: #5c6b80;
+    --node-soon-border: #c5d1e0;
+    --shadow-sheet: 0 -10px 30px rgba(21, 32, 43, .15);
+  }
+}

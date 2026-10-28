@@ -428,6 +428,25 @@ class ProfilePageTests(TestCase):
         self.assertNotIn("Увійти", html)
         self.assertNotIn("Зареєструватися", html)
 
+    def test_theme_picker(self):
+        """Беклог FE-0636: перемикач теми — ті самі три варіанти, що знає js/theme.js."""
+        html = self.client.get("/profile/").content.decode()
+        for value in ("dark", "light", "system"):
+            self.assertIn(f'data-theme-pick="{value}"', html)
+        self.assertIn('id="themePicker"', html)
+        self.assertIn("education/js/profile-theme.js", html)
+
+
+class ThemeNoFlashScriptTests(TestCase):
+    """Інлайн-скрипт у <head> (фаза 20, FE-0636): виставляє data-theme до першого малювання."""
+
+    def test_every_page_has_the_inline_init(self):
+        html = self.client.get("/").content.decode()
+        self.assertIn("localStorage.getItem(\"mw_theme\")", html)
+        self.assertIn('document.documentElement.dataset.theme = t', html)
+        # до будь-якого <link rel="stylesheet">, щоб застосувалось раніше CSS
+        self.assertLess(html.index("mw_theme"), html.index('rel="stylesheet"'))
+
 
 class LessonPageTests(TestCase):
     """`/items/<id>/` у новому UI — теорія й вправи уроку (фаза 13)."""
