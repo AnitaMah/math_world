@@ -29,6 +29,16 @@ $("closeBtn")?.addEventListener("click", maybeMarkFinished);
 const soundToggle = $("soundToggle");
 if (soundToggle) mountSoundToggle(soundToggle);
 
+// Офлайн-режим (фаза 20, беклог FE-0638): service worker кешує сторінку й завдання уроку
+// (sw.js), тож їх видно без мережі; сама перевірка відповіді все одно потребує з'єднання.
+const offlineBanner = $("offlineBanner");
+function syncOnlineState() {
+  if (offlineBanner) offlineBanner.hidden = navigator.onLine;
+}
+globalThis.addEventListener("online", syncOnlineState);
+globalThis.addEventListener("offline", syncOnlineState);
+syncOnlineState();
+
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const icon = (name, size = 20, cls = "") =>
   `<svg class="icon icon--${name} ${cls}" width="${size}" height="${size}" aria-hidden="true" focusable="false"><use href="#i-${name}"/></svg>`;

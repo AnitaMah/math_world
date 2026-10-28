@@ -455,6 +455,24 @@ class ThemeNoFlashScriptTests(TestCase):
         self.assertLess(html.index("mw_theme"), html.index('rel="stylesheet"'))
 
 
+class ServiceWorkerTests(TestCase):
+    """`/sw.js` (фаза 20, беклог FE-0638): офлайн-кеш каркасу й завдань уроку."""
+
+    def test_served_at_root_for_full_scope(self):
+        """Поза /static/ — інакше область дії service worker обмежилась би самим /static/."""
+        resp = self.client.get("/sw.js")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp["Content-Type"], "application/javascript")
+
+    def test_never_caches_answer_checks(self):
+        body = self.client.get("/sw.js").content.decode()
+        self.assertIn('request.method !== "GET"', body)   # POST (перевірка відповіді) не чіпаємо
+
+    def test_registration_script_on_every_page(self):
+        html = self.client.get("/").content.decode()
+        self.assertIn("education/js/sw-register.js", html)
+
+
 class LessonPageTests(TestCase):
     """`/items/<id>/` у новому UI — теорія й вправи уроку (фаза 13)."""
 
@@ -577,6 +595,7 @@ class PlayPageTests(TestCase):
         self.assertIn("Урок 1 · Ряд натуральних чисел", html)
         self.assertIn(f'data-api="/api/play/items/{self.i1.id}/"', html)
         self.assertIn('id="soundToggle"', html)                           # беклог FE-0637
+        self.assertIn('id="offlineBanner"', html)                         # беклог FE-0638
         # наступний урок з завданнями — § 2 (пункт 2 без вправ пропускаємо)
         self.assertIn(f'data-next="/play/paragraph/{self.p2.id}/"', html)
 

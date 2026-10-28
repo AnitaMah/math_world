@@ -19,6 +19,13 @@
 .game__label { margin: 0; font-family: var(--font-body); font-size: var(--fs-13); font-weight: var(--fw-bold); color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .game__chips { display: flex; gap: var(--sp-2); }
 
+/* Офлайн-режим (фаза 20, FE-0638): уже завантажені завдання лишаються доступні без мережі. */
+.game__offline {
+  margin: 0; padding: var(--sp-2) var(--gutter);
+  background: var(--info-bg); color: var(--info);
+  font-size: var(--fs-13); font-weight: var(--fw-bold); text-align: center;
+}
+
 /* --- Завдання ---------------------------------------------------------------------- */
 .game__stage { padding: var(--sp-4) var(--gutter) var(--sp-8); }
 .game__loading { color: var(--muted); }

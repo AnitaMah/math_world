@@ -8,6 +8,7 @@ from education import views_review, views_ui
 
 
 urlpatterns = [
+    path("sw.js", views_ui.service_worker, name="service_worker"),   # поза /static/ заради scope=/
     path("", views_ui.world_page, name="home"),   # «Світ» — вибір класу
     path("grades/<int:number>/", views_ui.grade_map_page, name="grade_map_page"),
     path("paragraphs/<int:paragraph_id>/", views_ui.paragraph_page, name="paragraph_page"),

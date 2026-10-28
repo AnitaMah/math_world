@@ -3,7 +3,8 @@
 Службові сторінки `/ui/…` доступні тільки при DEBUG — це «вітрина» для розробки.
 """
 from django.conf import settings
-from django.http import Http404
+from django.contrib.staticfiles.finders import find as find_static
+from django.http import Http404, HttpResponse
 from django.shortcuts import render
 
 TOKEN_GROUPS = [
@@ -97,6 +98,16 @@ def ui_api(request):
     """`/ui/api/` — відповіді API-клієнта й normalizeMap() (реальний бекенд або ?mock=1)."""
     _debug_only()
     return render(request, "education/ui_api.html")
+
+
+def service_worker(request):
+    """`/sw.js` — поза `/static/`, щоб область дії (scope) покривала весь сайт: мапу, урок, гру
+    (фаза 20, беклог FE-0638). Віддає файл з education/static/education/js/sw.js як є."""
+    path = find_static("education/js/sw.js")
+    if not path:
+        raise Http404
+    with open(path, encoding="utf-8") as f:
+        return HttpResponse(f.read(), content_type="application/javascript")
 
 
 def grade_map_page(request, number):
