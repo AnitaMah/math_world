@@ -3,7 +3,8 @@
 //   document.dispatchEvent(new CustomEvent("me:updated", { detail: { points: 60, streak: 5 } }))
 import { plural } from "./ui.js";
 import { api } from "./api.js";
-import { mountTeacherModeToggle } from "./teacher-mode.js";
+import { isTeacherModeOn, mountTeacherModeToggle, setTeacherModeOn } from "./teacher-mode.js";
+import { mountClassPicker } from "./teacher-classes.js";
 
 const DAYS = ["день", "дні", "днів"];
 const WEEKDAY_LETTERS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
@@ -48,6 +49,15 @@ export function fill(me) {
   if ("is_teacher" in me) {
     const toggle = document.getElementById("teacherModeToggle");
     if (toggle) toggle.hidden = !me.is_teacher;
+    if (me.is_teacher) {
+      const picker = document.getElementById("teacherClassPicker");
+      if (picker) mountClassPicker(picker, { onChange: () => document.dispatchEvent(new CustomEvent("teacher-mode:change")) });
+    } else if (isTeacherModeOn()) {
+      // не вчитель, а режим вчителя увімкнено в localStorage — спільний браузер зі старою сесією
+      // вчителя (`mw_teacher_mode` не прив'язаний до акаунта); самолікування, інакше ?class_id=
+      // на реальному бекенді впаде в 403 і зламає мапу цьому користувачу
+      setTeacherModeOn(false);
+    }
   }
   if ("history" in me) {
     const chart = document.querySelector('[data-me="history"]');

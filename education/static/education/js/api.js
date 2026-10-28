@@ -76,11 +76,21 @@ export const api = {
   grades() {
     return mockMode() ? mockFile("grades.json") : getJSON("/api/grades/");
   },
-  gradeMap(n) {
+  /** classId — режим вчителя (FE-0640/0645): додає `class_pct` на кожен урок; на моках ігнорується
+      (мок уже має `class_pct` незалежно від класу — див. mock/README.md). */
+  gradeMap(n, classId) {
     const mode = mockMode();
-    if (!mode) return getJSON(`/api/grades/${n}/map/`);
+    if (!mode) return getJSON(`/api/grades/${n}/map/${classId ? `?class_id=${classId}` : ""}`);
     const variant = n === 5 && (mode === "demo" || mode === "states") ? `.${mode}` : "";
     return mockFile(`grade-${n}${variant}.json`);
+  },
+  /** Класи, якими керує вчитель (режим вчителя, FE-0640/0645). `?mock_classes=0/1` — порожньо/один. */
+  classes() {
+    if (mockMode()) {
+      const n = new URLSearchParams(globalThis.location?.search ?? "").get("mock_classes");
+      return mockFile(n === "0" ? "classes.empty.json" : n === "1" ? "classes.one.json" : "classes.json");
+    }
+    return getJSON("/api/classes/mine/");
   },
   play(kind, id) {
     if (mockMode()) return mockFile(new URLSearchParams(globalThis.location?.search ?? "").get("mock_play") === "empty" ? "play.empty.json" : "play.json");
@@ -176,7 +186,7 @@ export function normalizeMap(raw) {
           id: it.id, kind: it.kind, number: it.number, title: it.title, sectionIdx, paraIdx,
           stars: it.stars ?? 0, solved: it.solved ?? 0, total: it.total ?? 0, tasks, blocks: it.blocks ?? [],
           map: it.map ?? { x: null, y: null }, state: it.state ?? "soon",
-          classPct: it.class_pct ?? null,   // режим вчителя (фаза 20, беклог FE-0645) — лише на моках поки що
+          classPct: it.class_pct ?? null,   // режим вчителя (фаза 20, беклог FE-0645): лише при ?class_id=
         };
         paragraph.lessonIdx.push(lessons.length);
         lessons.push(lesson);

@@ -8,6 +8,7 @@ import {
 } from "./map-nodes.js";
 import { lessonListModel } from "./lesson-panel.js";
 import { mountPanZoom } from "./map-pan.js";
+import { currentClassId } from "./teacher-classes.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const stage = document.getElementById("mapStage");
@@ -158,7 +159,7 @@ async function load() {
   show("mapLoading");
   panZoom.reset();
   const grade = Number(stage.dataset.grade);
-  const res = await api.gradeMap(grade);
+  const res = await api.gradeMap(grade, currentClassId());
   if (!res.ok) {
     document.getElementById("mapErrorText").textContent = res.data?.detail || "Перевір з’єднання і спробуй ще раз.";
     return show("mapError");
@@ -240,4 +241,7 @@ function renderLessonList(map) {
 }
 
 document.getElementById("mapRetry").addEventListener("click", load);
+// перемикач «режим вчителя» або зміна класу (teacher-mode.js/teacher-classes.js) — перезавантажити
+// з/без `class_id`, щоб мапа отримала чи прибрала `class_pct` на вузлах
+document.addEventListener("teacher-mode:change", load);
 load();

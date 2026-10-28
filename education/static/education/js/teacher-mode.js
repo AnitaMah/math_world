@@ -1,7 +1,9 @@
 // Режим вчителя (фаза 20, беклог FE-0645): перемикач у топбарі (видно лише вчителю —
 // me.js виставляє `is_teacher`) показує/ховає `.node__pct` — % учнів класу зі зіркою на
-// кожному вузлі мапи (map-nodes.js, map.css). Дані — мок (`class_pct` у grade-5.json);
-// контракт з бекендом (FE-0640) ще не зафіксовано (docs/frontend/DECISIONS.md, 2026-10-28).
+// кожному вузлі мапи (map-nodes.js, map.css). Дані — `class_pct` на `GET /api/grades/<n>/map/
+// ?class_id=<id>` (контракт зафіксований FE-0640, docs/frontend/DECISIONS.md, 2026-10-28);
+// клас обирає teacher-classes.js. Подія `teacher-mode:change` — map.js перезавантажує мапу
+// (з/без `class_id`, залежно від нового стану).
 const KEY = "mw_teacher_mode";
 
 /** Вимкнено за замовчуванням, поки вчитель не увімкнув явно. */
@@ -28,6 +30,7 @@ export function setTeacherModeOn(on) {
   } catch {
     /* приватне вікно — перемикач діє лише в цій вкладці */
   }
+  globalThis.document?.dispatchEvent(new CustomEvent("teacher-mode:change"));
 }
 
 /** Підключає кнопку-перемикач у топбарі; саму кнопку показує/ховає me.js (`is_teacher`). */

@@ -11,7 +11,7 @@ function withFakeDom(fn) {
     removeItem: (k) => store.delete(k),
   };
   const dataset = {};
-  globalThis.document = { documentElement: { dataset } };
+  globalThis.document = { documentElement: { dataset }, dispatchEvent: () => {} };
   try {
     fn({ store, dataset });
   } finally {
@@ -36,5 +36,14 @@ test("isTeacherModeOn/setTeacherModeOn: увімкнення і вимкненн
     assert.equal(store.has("mw_teacher_mode"), false);
     assert.equal(isTeacherModeOn(), false);
     assert.equal("teacherMode" in dataset, false);
+  });
+});
+
+test("setTeacherModeOn: надсилає teacher-mode:change — map.js перезавантажує мапу", () => {
+  withFakeDom(() => {
+    const seen = [];
+    globalThis.document.dispatchEvent = (e) => seen.push(e.type);
+    setTeacherModeOn(true);
+    assert.deepEqual(seen, ["teacher-mode:change"]);
   });
 });

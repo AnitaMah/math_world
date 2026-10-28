@@ -1,0 +1,5 @@
+{
+  "classes": [
+    { "id": 1, "name": "5-А", "school_id": 1, "school_name": "Ліцей №1", "teacher_id": 2, "teacher_username": "вчитель_hanna", "student_count": 24 }
+  ]
+}

@@ -35,7 +35,7 @@ def _lesson(lesson, where, errors):
         errors.append(f"{where}: невідомі blocks {set(lesson['blocks']) - BLOCKS}")
     if set(lesson.get("map") or {}) != {"x", "y"}:
         errors.append(f"{where}: map має бути {{x, y}}")
-    if "class_pct" in lesson:  # режим вчителя (FE-0645), контракт з бекендом (FE-0640) ще не зафіксовано
+    if "class_pct" in lesson:  # режим вчителя (FE-0645), контракт з FE-0640 зафіксовано 2026-10-28
         pct = lesson["class_pct"]
         if pct is not None and (not isinstance(pct, int) or isinstance(pct, bool) or not 0 <= pct <= 100):
             errors.append(f"{where}: class_pct має бути 0–100 або null")
@@ -91,6 +91,19 @@ def check_all():
     teacher = json.loads((MOCK / "me.teacher.json").read_text(encoding="utf-8"))
     if teacher.get("is_teacher") is not True:
         errors.append("me.teacher.json: is_teacher має бути true")
+    for name in ("classes.json", "classes.one.json", "classes.empty.json"):
+        payload = json.loads((MOCK / name).read_text(encoding="utf-8"))
+        if "classes" not in payload or not isinstance(payload["classes"], list):
+            errors.append(f"{name}: немає списку `classes`")
+            continue
+        for c in payload["classes"]:
+            for key in ("id", "name", "school_id", "school_name", "teacher_id", "teacher_username", "student_count"):
+                if key not in c:
+                    errors.append(f"{name} клас {c.get('name')}: немає `{key}`")
+    if len(json.loads((MOCK / "classes.one.json").read_text(encoding="utf-8"))["classes"]) != 1:
+        errors.append("classes.one.json: має бути рівно 1 клас")
+    if json.loads((MOCK / "classes.empty.json").read_text(encoding="utf-8"))["classes"]:
+        errors.append("classes.empty.json: classes має бути порожнім")
     return errors
 
 
