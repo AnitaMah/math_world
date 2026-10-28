@@ -4,7 +4,7 @@ import { api, normalizeMap } from "./api.js";
 import { layoutGrade } from "./map-layout.js";
 import {
   renderNodes, fogRegions, initialIndex, newlyRevealed, loadSeenFog, saveSeenFog,
-  consumeJustFinished, walkSteps, findByHash,
+  consumeJustFinished, walkSteps, findByHash, findParaByHash,
 } from "./map-nodes.js";
 import { lessonListModel } from "./lesson-panel.js";
 import { mountPanZoom } from "./map-pan.js";
@@ -192,7 +192,8 @@ async function load() {
   show(null);
   await document.fonts.ready;
   fitChips();
-  nodes.select(initialIndex(map.lessons, location.hash), { push: false });
+  const fromPara = findParaByHash(map, location.hash);
+  nodes.select(fromPara >= 0 ? fromPara : initialIndex(map.lessons, location.hash), { push: false });
   // вибір на телефоні → тихо синхронізувати десктопні вузли (без повторної події)
   stage.addEventListener("lesson:select", (e) => {
     if (e.detail.source === "mobile") nodes.select(e.detail.index, { silent: true, push: true });

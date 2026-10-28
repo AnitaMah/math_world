@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { normalizeMap } from "../../../education/static/education/js/api.js";
 import { layoutLessons } from "../../../education/static/education/js/map-layout.js";
-import { groupsOf, groupOfLesson, groupMeta, swipeDirection } from "../../../education/static/education/js/map-mobile.js";
+import { groupsOf, groupOfLesson, groupMeta, swipeDirection, swipeDown } from "../../../education/static/education/js/map-mobile.js";
 
 const load = (name) => normalizeMap(JSON.parse(readFileSync(
   new URL(`../../../education/static/education/mock/${name}`, import.meta.url), "utf8")));
@@ -31,6 +31,13 @@ test("свайп: лише впевнений горизонтальний ру�
   assert.equal(swipeDirection(90, -20), -1);
   assert.equal(swipeDirection(40, 0), 0);      // закоротко
   assert.equal(swipeDirection(-80, 70), 0);    // це прокрутка, а не свайп
+});
+
+test("swipeDown: згортання нижнього листа (фаза 11, беклог FE-0455)", () => {
+  assert.equal(swipeDown(10, 80), true);
+  assert.equal(swipeDown(0, -80), false);      // вгору — не згортання
+  assert.equal(swipeDown(10, 40), false);      // закоротко
+  assert.equal(swipeDown(70, 80), false);      // це горизонтальний свайп, не вертикальний
 });
 
 test("layoutLessons: 9 уроків розділу III 6 класу — вертикально, крок 76", () => {

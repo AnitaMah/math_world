@@ -261,6 +261,12 @@
   touch-action: pan-y;
 }
 .mm-canvas { position: relative; width: 100%; aspect-ratio: var(--ar, .5); }
+/* Перехід між параграфами (фаза 11, беклог FE-0447): 250 мс зсув острова; `prefers-reduced-motion`
+   (base.css) скорочує тривалість до миті глобальним правилом. */
+.mm-canvas.is-sliding-next { animation: mm-slide-next .25s ease-out; }
+.mm-canvas.is-sliding-prev { animation: mm-slide-prev .25s ease-out; }
+@keyframes mm-slide-next { from { transform: translateX(28px); opacity: .3; } to { transform: translateX(0); opacity: 1; } }
+@keyframes mm-slide-prev { from { transform: translateX(-28px); opacity: .3; } to { transform: translateX(0); opacity: 1; } }
 .mm-nav {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   margin: var(--sp-2) auto; padding: 8px 14px; min-height: 44px;
@@ -272,10 +278,16 @@
 .lesson-sheet {
   position: absolute; left: 12px; right: 12px; bottom: 8px; z-index: 4;
   display: flex; flex-direction: column; gap: 10px;
-  max-height: 60%; overflow-y: auto;
+  max-height: 60%; overflow-y: auto;   /* згорнутий — короткий вміст, 60% і так ніколи не досягається */
   padding: 14px 16px 16px;
   background: var(--card-2); border: 1px solid var(--line-3); border-radius: var(--r-2xl);
   box-shadow: var(--shadow-sheet);
+}
+/* Розгорнутий лист (фаза 11, FE-0454/0460): до 80% висоти екрана, в ландшафті — не більше 60%,
+   щоб не перекривати майже весь екран (клавіатурна й скрінрідер-навігація мапою лишаються ззовні). */
+.lesson-sheet.is-open { max-height: 80%; }
+@media (orientation: landscape) {
+  .lesson-sheet.is-open { max-height: 60%; }
 }
 .lesson-sheet__head {
   display: flex; align-items: flex-start; gap: 10px; width: 100%; min-height: 44px;

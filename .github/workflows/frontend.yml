@@ -1,0 +1,77 @@
+name: frontend
+
+# Один прогін усього фронтенду (фаза 19, FE-0619..0620): юніт-тести JS, Django-тести UI,
+# контракт моків, візуальні знімки Playwright — усе через tools/frontend/run_tests.py.
+# Еталони для знімків — docs/frontend/baseline/*-linux.png (докладніше — DECISIONS.md).
+
+on:
+  push:
+    branches: [main]
+    paths: &paths
+      - "education/**"
+      - "math_world/**"
+      - "tools/frontend/**"
+      - "docs/frontend/baseline/**"
+  pull_request:
+    paths: *paths
+  workflow_dispatch:
+    inputs:
+      update_baselines:
+        description: "Перегенерувати Linux-еталони Playwright і завантажити як артефакт (замість падіння на розбіжностях)"
+        type: boolean
+        default: false
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - run: pip install -r requirements.txt
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: tools/frontend/package-lock.json
+
+      - run: npm ci
+        working-directory: tools/frontend
+
+      # Кеш браузерів Playwright за версією @playwright/test (package-lock.json) — фаза 19, 0620.
+      - uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('tools/frontend/package-lock.json') }}
+
+      - name: Install Playwright browser binaries (якщо не в кеші)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
+        working-directory: tools/frontend
+
+      - name: Install Playwright OS-залежності
+        run: npx playwright install-deps chromium
+        working-directory: tools/frontend
+
+      - name: Усі тести фронтенду
+        run: python tools/frontend/run_tests.py${{ inputs.update_baselines && ' --baseline' || '' }}
+
+      - name: Playwright-звіт (при падінні)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tools/frontend/playwright-report/
+          retention-days: 14
+
+      - name: Оновлені еталони (update_baselines)
+        if: ${{ inputs.update_baselines }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: updated-baselines
+          path: docs/frontend/baseline/

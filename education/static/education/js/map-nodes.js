@@ -43,6 +43,21 @@ export function findByHash(lessons, hash) {
   return lessons.findIndex((l) => l.kind === kind && l.id === id);
 }
 
+/**
+ * `#para-54` — обраний параграф без конкретного уроку (телефон, фаза 11, FE-0448): урок, який
+ * представляє параграф — current/open, інакше перший не «у хмарах», інакше перший. `-1`, якщо
+ * хеш не такий або параграфа з таким id нема.
+ */
+export function findParaByHash(map, hash) {
+  const m = /^#para-(\d+)$/.exec(hash ?? "");
+  if (!m) return -1;
+  const para = map.paragraphs.find((p) => p.id === Number(m[1]));
+  if (!para) return -1;
+  return para.lessonIdx.find((i) => ["current", "open"].includes(map.lessons[i].state))
+    ?? para.lessonIdx.find((i) => map.lessons[i].state !== "soon")
+    ?? para.lessonIdx[0] ?? -1;
+}
+
 /** Який урок вибрати при відкритті: з URL → поточний → перший відкритий → перший. */
 export function initialIndex(lessons, hash) {
   const fromHash = findByHash(lessons, hash);

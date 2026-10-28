@@ -5,8 +5,9 @@ import { readFileSync } from "node:fs";
 import { normalizeMap } from "../../../education/static/education/js/api.js";
 import { layoutGrade } from "../../../education/static/education/js/map-layout.js";
 import {
-  starsText, nodeLabel, classPctLabel, playUrl, canPlay, lessonHash, findByHash, initialIndex,
-  fogRegions, newlyRevealed, loadSeenFog, saveSeenFog, markJustFinished, consumeJustFinished, walkSteps,
+  starsText, nodeLabel, classPctLabel, playUrl, canPlay, lessonHash, findByHash, findParaByHash,
+  initialIndex, fogRegions, newlyRevealed, loadSeenFog, saveSeenFog, markJustFinished,
+  consumeJustFinished, walkSteps,
 } from "../../../education/static/education/js/map-nodes.js";
 
 const load = (name) => normalizeMap(JSON.parse(readFileSync(
@@ -54,6 +55,14 @@ test("findByHash / initialIndex", () => {
   assert.equal(initialIndex(m.lessons, "#lesson-117"), 0);
   const g6 = load("grade-6.json");
   assert.equal(initialIndex(g6.lessons, ""), 0);           // усе «у хмарах» — перший
+});
+
+test("findParaByHash: параграф без конкретного уроку (телефон, фаза 11, FE-0448)", () => {
+  const m = load("grade-5.json");
+  assert.equal(findParaByHash(m, "#para-49"), 3);    // §1 — current, урок 4
+  assert.equal(findParaByHash(m, "#para-50"), 6);    // §2 — усе «у хмарах», перший урок параграфа
+  assert.equal(findParaByHash(m, "#para-999"), -1);  // немає такого параграфа
+  assert.equal(findParaByHash(m, "#lesson-117"), -1); // інший формат хеша
 });
 
 test("fogRegions: у реальному стані хмари над §2–§5, найбільша — §5 або §3", () => {

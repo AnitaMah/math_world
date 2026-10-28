@@ -29,6 +29,11 @@ export function swipeDirection(dx, dy) {
   return dx < 0 ? 1 : -1;   // вліво → наступний, вправо → попередній
 }
 
+/** Свайп вниз (а не вбік і не дотик) — згортає розгорнутий нижній лист уроку (фаза 11, FE-0455). */
+export function swipeDown(dx, dy) {
+  return dy > 60 && Math.abs(dy) > Math.abs(dx) * 1.5;
+}
+
 const $ = (root, sel) => root.querySelector(sel);
 const SVG_NS = "http://www.w3.org/2000/svg";
 
@@ -82,13 +87,29 @@ export function mountMobile(root, stage) {
     });
   }
 
+  /** `#para-<id>` замість `#lesson-<id>` (фаза 11, FE-0448): це перехід між параграфами, а не
+      вибір конкретного уроку — emit() вище вже поставив `#lesson-…`, тут навмисно перебиваємо. */
+  function setParaHash(g) {
+    if (g.kind === "paragraph" && g.paraIdx != null) history.replaceState(null, "", `#para-${map.paragraphs[g.paraIdx].id}`);
+  }
+
+  /** 250 мс зсув острова при переході між параграфами (фаза 11, FE-0447); `prefers-reduced-motion`
+      скорочує тривалість до миті глобальним правилом у base.css. */
+  function slideCanvas(direction) {
+    canvas.classList.remove("is-sliding-next", "is-sliding-prev");
+    void canvas.offsetWidth;   // форсувати reflow — інакше повторний свайп у той самий бік не перезапустить анімацію
+    canvas.classList.add(direction > 0 ? "is-sliding-next" : "is-sliding-prev");
+  }
+
   function go(delta) {
     const gi = groupIdx + delta;
     if (gi < 0 || gi >= groups.length) return;
     const g = groups[gi];
     renderGroup(gi, { scrollTo: false });
     scroll.scrollTop = 0;
+    slideCanvas(delta);
     emit(g.target);
+    setParaHash(g);
   }
 
   // --- нижній лист уроку ---------------------------------------------------------------
@@ -126,10 +147,20 @@ export function mountMobile(root, stage) {
     $(sheet, "[data-f=theory]").href = m.theoryHref;
   }
 
-  $(sheet, "[data-f=toggle]").addEventListener("click", (e) => {
-    const open = !sheet.classList.contains("is-open");
+  function setSheetOpen(open) {
     sheet.classList.toggle("is-open", open);
-    e.currentTarget.setAttribute("aria-expanded", String(open));
+    $(sheet, "[data-f=toggle]").setAttribute("aria-expanded", String(open));
+  }
+  $(sheet, "[data-f=toggle]").addEventListener("click", () => setSheetOpen(!sheet.classList.contains("is-open")));
+
+  // свайп вниз по розгорнутому листу — згортає (фаза 11, FE-0455)
+  let sheetStart = null;
+  sheet.addEventListener("pointerdown", (e) => { sheetStart = { x: e.clientX, y: e.clientY }; });
+  sheet.addEventListener("pointerup", (e) => {
+    if (!sheetStart) return;
+    const down = swipeDown(e.clientX - sheetStart.x, e.clientY - sheetStart.y);
+    sheetStart = null;
+    if (down && sheet.classList.contains("is-open")) setSheetOpen(false);
   });
 
   // --- список островів ---------------------------------------------------------------------
