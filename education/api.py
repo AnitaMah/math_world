@@ -143,14 +143,29 @@ def grades(request):
 @api_view
 @require_GET
 def grade_map(request, number):
-    """Мапа класу (контракт `docs/frontend`): розділи → § → уроки зі станом, зірками, завданнями, блоками."""
+    """Мапа класу (контракт `docs/frontend`): розділи → § → уроки зі станом, зірками, завданнями, блоками.
+
+    `?class_id=` (режим вчителя, FE-0640/0645) — додає поле `class_pct` на кожен урок/вузол: %
+    учнів цього шкільного класу із зіркою (`None`, якщо без завдань). Доступно лише тому, хто може
+    керувати класом (його вчитель, адмін школи, superuser) — інакше 403.
+    """
     from .game import get_player
-    from .grade_map import load_grade, map_payload
+    from .grade_map import class_percent_map, load_grade, map_payload
+    from .models import SchoolClass
+    from .schools import can_manage_class
     from .views import get_lang
 
     lang = get_lang(request)
     grade = get_object_or_404(Grade, number=number, subject__code=request.GET.get("subject", "math"))
-    return ok(map_payload(load_grade(grade, get_player(request, create=False), lang), lang))
+    gm = load_grade(grade, get_player(request, create=False), lang)
+    class_pct = None
+    class_id = request.GET.get("class_id")
+    if class_id:
+        school_class = get_object_or_404(SchoolClass, pk=class_id)
+        if not can_manage_class(request.user, school_class):
+            return api_error(403, "forbidden", "Немає права переглядати статистику цього класу")
+        class_pct = class_percent_map(school_class, gm)
+    return ok(map_payload(gm, lang, class_pct))
 
 
 def _lesson(kind: str, pk: int):
@@ -339,9 +354,14 @@ def _points_history(player) -> list[dict]:
 @require_GET
 def me(request):
     from .game import get_player
+    from .models import SchoolMembership
+
     player = get_player(request, create=False)
+    is_teacher = (request.user.is_authenticated
+                  and SchoolMembership.objects.filter(user=request.user,
+                                                      role=SchoolMembership.ROLE_TEACHER).exists())
     return ok({"authenticated": request.user.is_authenticated,
                "name": request.user.username if request.user.is_authenticated else "Гість",
                "points": player.points if player else 0, "streak": player.streak if player else 0,
                "stars": player.progress.aggregate(n=Sum("stars"))["n"] or 0 if player else 0,
-               "history": _points_history(player)})
+               "history": _points_history(player), "is_teacher": is_teacher})

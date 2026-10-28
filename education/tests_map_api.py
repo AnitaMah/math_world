@@ -3,9 +3,10 @@ from django.contrib.auth.models import User
 from django.test import SimpleTestCase
 from django.urls import reverse
 
+from education import schools as svc
 from education.game import record_answer
 from education.grade_map import assign_states, load_grade
-from education.models import Answer, ContentBlock, Exercise, Item, SubExercise
+from education.models import Answer, ContentBlock, Exercise, Item, Player, SubExercise
 from education.tests_game import GameFixture
 from tools.frontend.check_mocks import STATES, check_grade_map
 
@@ -195,3 +196,66 @@ class PlayLockTests(MapFixture):
     def test_lock_does_not_leak_into_other_apis(self):
         # перевірка відповіді й теорія не блокуються: лише старт гри
         self.assertEqual(self.client.get(reverse("api_item", args=[self.item2.pk])).status_code, 200)
+
+
+class TeacherModeApiTests(MapFixture):
+    """FE-0640/0645: `is_teacher` на `/api/me/` і `class_pct` на мапі через `?class_id=`."""
+
+    def setUp(self):
+        super().setUp()
+        self.root = User.objects.create_superuser("root", password="pw-12345678")
+        self.director = User.objects.create_user("director", password="pw-12345678")
+        self.teacher = User.objects.create_user("teacher", password="pw-12345678")
+        self.alice = User.objects.create_user("alice", password="pw-12345678")
+        self.bob = User.objects.create_user("bob", password="pw-12345678")
+        self.school = svc.register_school(self.director, name="Ліцей №1", country="UA", official_number="137456")
+        svc.verify_school(self.root, self.school)
+        svc.add_teacher(self.director, self.school, self.teacher)
+        self.school_class = svc.create_class(self.teacher, self.school, "5-А")
+        svc.add_student(self.teacher, self.school_class, self.alice)
+        svc.add_student(self.teacher, self.school_class, self.bob)
+        self.alice_player = Player.objects.create(user=self.alice)
+        self.bob_player = Player.objects.create(user=self.bob)
+
+    def map_with_class(self, class_id=None):
+        return self.client.get(reverse("api_grade_map", args=[5]),
+                               {"class_id": class_id or self.school_class.pk}).json()
+
+    def test_is_teacher_on_me(self):
+        self.assertFalse(self.client.get(reverse("api_me")).json()["is_teacher"])
+        self.client.force_login(self.teacher)
+        self.assertTrue(self.client.get(reverse("api_me")).json()["is_teacher"])
+        self.client.force_login(self.director)       # школа-адмін, не вчитель
+        self.assertFalse(self.client.get(reverse("api_me")).json()["is_teacher"])
+
+    def test_class_id_requires_permission(self):
+        url, params = reverse("api_grade_map", args=[5]), {"class_id": self.school_class.pk}
+        self.assertEqual(self.client.get(url, params).status_code, 403)       # гість
+        self.client.force_login(self.alice)                                   # учень класу, не керує ним
+        self.assertEqual(self.client.get(url, params).status_code, 403)
+
+    def test_without_class_id_no_class_pct_field(self):
+        self.assertNotIn("class_pct", self.lessons()[0])
+
+    def test_class_pct_matches_stars_and_passes_contract(self):
+        record_answer(self.alice_player, self.s21, "1396")     # 1 з 3 завдань уроку self.item → 1 зірка
+        self.client.force_login(self.teacher)
+        data = self.map_with_class()
+        self.assertEqual(check_grade_map(data, "api_teacher"), [])
+        l1, l2, l3 = self.lessons(data)
+        self.assertEqual(l1["class_pct"], 50)      # 1 з 2 учнів класу має зірку на цьому уроці
+        self.assertEqual(l2["class_pct"], 0)       # є завдання, але жодної зірки
+        self.assertIsNone(l3["class_pct"])         # без завдань («у хмарах»)
+
+    def test_empty_class_is_all_none_not_error(self):
+        empty_class = svc.create_class(self.teacher, self.school, "5-Б")
+        self.client.force_login(self.teacher)
+        data = self.map_with_class(empty_class.pk)
+        self.assertEqual(check_grade_map(data, "api_teacher_empty"), [])
+        self.assertTrue(all(l["class_pct"] is None for l in self.lessons(data)))
+
+    def test_school_admin_and_superuser_can_view(self):
+        url, params = reverse("api_grade_map", args=[5]), {"class_id": self.school_class.pk}
+        for user in (self.director, self.root):
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(url, params).status_code, 200)

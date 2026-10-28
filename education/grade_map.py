@@ -161,12 +161,26 @@ def load_grade(grade: Grade, player: Player | None = None, lang: str = "uk") -> 
                     lessons[cur] if cur is not None else None, island, sum(l.stars for l in lessons))
 
 
-def map_payload(gm: GradeMap, lang: str = "uk") -> dict:
+def map_payload(gm: GradeMap, lang: str = "uk",
+                class_pct: dict[tuple[str, int], int | None] | None = None) -> dict:
     """Тіло `GET /api/grades/<n>/map/`. lang — фаза 20, беклог FE-0642 (назви розділів і §:
-    уроки-пункти вже отримали свою назву мовою lang у load_grade())."""
+    уроки-пункти вже отримали свою назву мовою lang у load_grade()).
+
+    class_pct (FE-0640/0645, режим вчителя) — необов'язкове поле `class_pct` на кожному уроці/
+    вузлі, якщо передано (запит з `?class_id=`): ``{(kind, id): percent | None}`` з
+    `class_percent_map()`. Без нього поле в полі зовсім не з'являється — контракт для звичайного
+    гравця не змінюється.
+    """
     by_par: dict[int, list[Lesson]] = {}
     for l in gm.lessons:
         by_par.setdefault(l.paragraph.pk, []).append(l)
+
+    def lesson_dict(l: Lesson) -> dict:
+        d = l.as_dict()
+        if class_pct is not None:
+            d["class_pct"] = class_pct.get((l.kind, l.obj.pk))
+        return d
+
     sections = []
     for s in gm.sections:
         paragraphs = []
@@ -174,10 +188,10 @@ def map_payload(gm: GradeMap, lang: str = "uk") -> dict:
             own = by_par.get(p.pk, [])
             entry = {"id": p.pk, "number": p.number, "title": p.get_name(lang)}
             if own and own[0].kind == "paragraph":
-                entry.update(own[0].as_dict() | {"id": p.pk, "number": p.number, "title": p.get_name(lang)})
+                entry.update(lesson_dict(own[0]) | {"id": p.pk, "number": p.number, "title": p.get_name(lang)})
                 entry["items"] = []
             else:
-                entry["items"] = [l.as_dict() for l in own]
+                entry["items"] = [lesson_dict(l) for l in own]
             paragraphs.append(entry)
         sections.append({"id": s.pk, "number": s.number, "title": s.get_name(lang), "paragraphs": paragraphs})
     tb = gm.textbook
@@ -207,14 +221,12 @@ def find_lesson(kind: str, lesson: Item | Paragraph, player: Player | None) -> t
     return gm, found
 
 
-def class_star_payload(school_class: SchoolClass, grade: Grade, lang: str = "uk") -> dict:
-    """Тіло `GET /api/classes/<id>/grades/<n>/stars/` — контракт для FE-0645 (режим вчителя).
-
-    Для кожного уроку/вузла шкільного класу (групи учнів вчителя, не плутати зі «шкільним класом»
-    у значенні grade тут) — скільком учням зараховано зірку (``LessonProgress.stars > 0``) і яка
-    це частка від усіх учнів групи.
+def class_percent_map(school_class: SchoolClass, gm: GradeMap) -> dict[tuple[str, int], int | None]:
+    """``{(kind, id): percent}`` — % учнів шкільного класу (групи учнів вчителя, не плутати зі
+    «шкільним класом» у значенні grade тут), яким зараховано зірку (``LessonProgress.stars > 0``)
+    на цьому уроці/вузлі. `None`, якщо немає завдань (урок ще «в хмарах») або в класі нема учнів —
+    контракт `map_payload(..., class_pct=...)` для FE-0645.
     """
-    gm = load_grade(grade, lang=lang)
     student_ids = list(school_class.students.values_list("user_id", flat=True))
     total = len(student_ids)
     rows = (LessonProgress.objects.filter(player__user_id__in=student_ids, stars__gt=0)
@@ -223,9 +235,8 @@ def class_star_payload(school_class: SchoolClass, grade: Grade, lang: str = "uk"
     for r in rows:
         key = ("item", r["item_id"]) if r["item_id"] else ("paragraph", r["paragraph_id"])
         with_star[key] = r["n"]
-    lessons = []
+    result: dict[tuple[str, int], int | None] = {}
     for l in gm.lessons:
-        n = with_star.get((l.kind, l.obj.pk), 0)
-        lessons.append({"kind": l.kind, "id": l.obj.pk, "with_star": n,
-                        "percent": round(n * 100 / total) if total else 0})
-    return {"class_id": school_class.pk, "grade": grade.number, "total_students": total, "lessons": lessons}
+        key = (l.kind, l.obj.pk)
+        result[key] = round(with_star.get(key, 0) * 100 / total) if total and l.total else None
+    return result

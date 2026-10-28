@@ -28,5 +28,4 @@ urlpatterns = [
     path("classes/mine/", api_schools.my_classes, name="api_my_classes"),
     path("classes/<int:pk>/students/", api_schools.class_students, name="api_class_students"),
     path("classes/<int:pk>/students/<int:user_id>/", api_schools.class_student, name="api_class_student"),
-    path("classes/<int:pk>/grades/<int:number>/stars/", api_schools.class_stars, name="api_class_stars"),
 ]
