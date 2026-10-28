@@ -158,3 +158,61 @@ class SchoolApiTests(TestCase):
         school = svc.register_school(self.director, name="Ліцей", country="UA", official_number="5555")
         self.client.force_login(self.teacher)
         self.assertEqual(self.client.get(f"/api/schools/{school.pk}/staff/").status_code, 403)
+
+
+class SchoolClassApiTests(TestCase):
+    """CRUD-ендпоінти класу (групи учнів вчителя) і його складу — FE-0640."""
+
+    def setUp(self):
+        self.root = User.objects.create_superuser("root", password="pw-12345678")
+        self.director = User.objects.create_user("director", password="pw-12345678")
+        self.teacher = User.objects.create_user("teacher", password="pw-12345678")
+        self.student = User.objects.create_user("student", password="pw-12345678")
+        self.school = svc.register_school(self.director, name="Ліцей №1", country="UA", official_number="137456")
+        svc.verify_school(self.root, self.school)
+        svc.add_teacher(self.director, self.school, self.teacher)
+
+    def post(self, url, data):
+        return self.client.post(url, json.dumps(data), content_type="application/json")
+
+    def test_full_flow(self):
+        self.assertEqual(self.client.get("/api/classes/mine/").status_code, 401)
+
+        self.client.force_login(self.director)
+        r = self.post("/api/classes/", {"school_id": self.school.pk, "name": "5-А"})
+        self.assertEqual((r.status_code, r.json()["error"]), (403, "forbidden"))   # адмін, не вчитель
+
+        self.client.force_login(self.teacher)
+        r = self.post("/api/classes/", {"school_id": self.school.pk, "name": "5-А"})
+        self.assertEqual(r.status_code, 201)
+        class_id = r.json()["id"]
+        self.assertEqual((r.json()["school_id"], r.json()["teacher_username"], r.json()["student_count"]),
+                         (self.school.pk, "teacher", 0))
+
+        mine = self.client.get("/api/classes/mine/").json()["classes"]
+        self.assertEqual([c["id"] for c in mine], [class_id])
+
+        r = self.post(f"/api/classes/{class_id}/students/", {"username": "student"})
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(self.post(f"/api/classes/{class_id}/students/", {"username": "student"}).status_code, 409)
+        self.assertEqual(self.post(f"/api/classes/{class_id}/students/", {"username": "nobody"}).status_code, 404)
+
+        students = self.client.get(f"/api/classes/{class_id}/students/").json()["students"]
+        self.assertEqual([s["username"] for s in students], ["student"])
+
+        r = self.client.delete(f"/api/classes/{class_id}/students/{self.student.pk}/")
+        self.assertEqual(r.status_code, 204)
+        self.assertEqual(self.client.get(f"/api/classes/{class_id}/students/").json()["students"], [])
+
+    def test_school_admin_sees_class_in_mine_but_not_as_teacher(self):
+        school_class = svc.create_class(self.teacher, self.school, "5-А")
+        self.client.force_login(self.director)
+        mine = self.client.get("/api/classes/mine/").json()["classes"]
+        self.assertEqual([c["id"] for c in mine], [school_class.pk])
+
+    def test_outsider_has_no_classes_and_cannot_see_roster(self):
+        school_class = svc.create_class(self.teacher, self.school, "5-А")
+        stranger = User.objects.create_user("stranger", password="pw-12345678")
+        self.client.force_login(stranger)
+        self.assertEqual(self.client.get("/api/classes/mine/").json()["classes"], [])
+        self.assertEqual(self.client.get(f"/api/classes/{school_class.pk}/students/").status_code, 403)
