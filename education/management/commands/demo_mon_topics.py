@@ -4,7 +4,7 @@ from django.db import transaction
 from education.models import Answer, ContentBlock, Exercise, Paragraph, SubExercise, Textbook
 
 # Оригінальний демо-контент (без підручника) для 2 реальних тем програми МОН --
-# показує теорію + вправи з автоперевіркою поверх import_mon_grade5.
+# показує теорію + вправи з автоперевіркою поверх import_mon_curriculum --grade 5.
 TOPICS = [
     {
         "section": 1, "paragraph": 3,   # Додавання натуральних чисел. Властивості додавання
@@ -28,14 +28,14 @@ TOPICS = [
 
 
 class Command(BaseCommand):
-    help = "Додає оригінальну теорію та вправи з автоперевіркою до 2 тем програми МОН (import_mon_grade5)."
+    help = "Додає оригінальну теорію та вправи з автоперевіркою до 2 тем програми МОН (import_mon_curriculum --grade 5)."
 
     @transaction.atomic
     def handle(self, *args, **options):
         try:
             textbook = Textbook.objects.get(profile_code="mon_grade5")
         except Textbook.DoesNotExist:
-            raise CommandError("Спочатку виконай: python manage.py import_mon_grade5")
+            raise CommandError("Спочатку виконай: python manage.py import_mon_curriculum --grade 5")
 
         for topic in TOPICS:
             paragraph = Paragraph.objects.get(

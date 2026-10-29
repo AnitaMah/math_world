@@ -20,7 +20,7 @@ ROMAN = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V"}
 
 
 class Command(BaseCommand):
-    help = "Додає оригінальну теорію та вправи з автоперевіркою для розділу програми МОН (import_mon_grade5/6)."
+    help = "Додає оригінальну теорію та вправи з автоперевіркою для розділу програми МОН (import_mon_curriculum)."
 
     def add_arguments(self, parser):
         parser.add_argument("--grade", type=int, required=True, choices=sorted(CONTENT),
