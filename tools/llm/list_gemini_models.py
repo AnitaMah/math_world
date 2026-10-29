@@ -5,7 +5,7 @@ GEMINI_MODEL). Run this once to pick a real model name instead of
 guessing from docs/blogs that may be ahead of or behind what's live.
 
 Usage:
-    python scripts/list_gemini_models.py
+    python tools/llm/list_gemini_models.py
 """
 import os
 

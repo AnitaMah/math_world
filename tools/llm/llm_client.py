@@ -9,7 +9,7 @@ DEFAULT_MAX_TOKENS = 600
 
 # LLM_BACKEND=lmstudio (default, requires LM Studio running locally on
 # LM_STUDIO_URL) or LLM_BACKEND=gemini (cloud, free tier -- see
-# scripts/gemini_client.py, Step 27 of the refactor plan). Every existing
+# tools/llm/gemini_client.py, Step 27 of the refactor plan). Every existing
 # caller of send_llm_prompt() keeps working unchanged either way.
 LLM_BACKEND = os.environ.get("LLM_BACKEND", "lmstudio")
 
@@ -19,7 +19,7 @@ def send_llm_prompt(prompt: str, image_path: str = None, model: str = DEFAULT_MO
     """
     Надсилає prompt до LLM. Бекенд обирається змінною середовища
     LLM_BACKEND: "lmstudio" (за замовчуванням, локальна LM Studio) або
-    "gemini" (хмарний, безкоштовний рівень -- scripts/gemini_client.py).
+    "gemini" (хмарний, безкоштовний рівень -- tools/llm/gemini_client.py).
 
     :param prompt: Текстовий запит
     :param image_path: (необов’язково) шлях до зображення, якщо потрібен multimodal input
@@ -78,7 +78,7 @@ def send_llm_prompt(prompt: str, image_path: str = None, model: str = DEFAULT_MO
 def _send_gemini_prompt(prompt: str, image_path: str = None) -> str:
     """
     Gemini-бекенд для send_llm_prompt(). Використовує кешуючий клієнт із
-    scripts/gemini_client.py (Step 27), тому повторний виклик з тим самим
+    tools/llm/gemini_client.py (Step 27), тому повторний виклик з тим самим
     prompt/зображенням не витрачає денну квоту повторно.
     """
     try:

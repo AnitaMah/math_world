@@ -13,7 +13,7 @@ Why this exists instead of calling google-genai directly everywhere:
 This module deliberately does NOT hardcode a model name at import time --
 Google's free-tier model lineup and quotas have moved more than once in
 2026 (2.0 -> 2.5 -> 3.x Flash), and third-party docs/blogs can lag or lead
-what's actually live on a given key. Run `scripts/list_gemini_models.py`
+what's actually live on a given key. Run `tools/llm/list_gemini_models.py`
 to see the real, current model names your key can call before picking
 one via GEMINI_MODEL (env var) or the `model` argument; check
 https://aistudio.google.com/rate-limit for whichever currently has the
@@ -28,7 +28,7 @@ Setup:
                                             # is more reliable here than any doc/blog guess.
 
 Quick test:
-    python scripts/gemini_client.py "Say hello in Ukrainian in five words."
+    python tools/llm/gemini_client.py "Say hello in Ukrainian in five words."
 """
 from __future__ import annotations
 
@@ -43,7 +43,7 @@ try:
     from dotenv import load_dotenv  # type: ignore
 
     # Loads .env from the current working directory (project root, when
-    # run via `python manage.py shell` or `python scripts/...`) into
+    # run via `python manage.py shell` or `python tools/llm/...`) into
     # os.environ, if it isn't loaded there already. Safe to call more than
     # once; does nothing if python-dotenv isn't installed yet, since
     # GEMINI_API_KEY can still be set as a real environment variable.
@@ -199,7 +199,7 @@ class GeminiClient:
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python scripts/gemini_client.py \"<prompt text>\"", file=sys.stderr)
+        print("Usage: python tools/llm/gemini_client.py \"<prompt text>\"", file=sys.stderr)
         sys.exit(1)
     prompt = sys.argv[1]
     client = GeminiClient()
