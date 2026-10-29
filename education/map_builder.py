@@ -24,17 +24,29 @@ def build_map_data(lang="uk", focus_type=None, focus_id=None):
             "name": getattr(grade, f"name_{lang}", grade.name_uk),
             "level": 0,
             "color": "#29b6f6",
-            "url": reverse('section_list', args=[grade.id]) + f"?lang={lang}",
+            # сторінка мапи класу (фаза 18); раніше тут був reverse('section_list', ...),
+            # яке лише 301-редіректило на той самий grade_map_page без анкора.
+            "url": reverse('grade_map_page', args=[grade.number]) + f"?lang={lang}",
         })
 
         for section in grade.section_set.all().order_by("number"):
             section_id = f"s{section.id}"
+            first_paragraph = section.paragraph_set.all().order_by("number").first()
+            first_item = first_paragraph.item_set.order_by("number").first() if first_paragraph else None
+            if first_item:
+                anchor = f"#lesson-{first_item.pk}"
+            elif first_paragraph:
+                anchor = f"#lesson-p{first_paragraph.pk}"
+            else:
+                anchor = ""
             nodes.append({
                 "id": section_id,
                 "name": getattr(section, f"name_{lang}", section.name_uk),
                 "level": 1,
                 "color": "#66bb6a",
-                "url": reverse('paragraph_list', args=[section.id]) + f"?lang={lang}",
+                # мапа класу, проскрольована до першого уроку розділу; раніше —
+                # reverse('paragraph_list', ...), яке 301-редіректило сюди ж.
+                "url": reverse('grade_map_page', args=[grade.number]) + anchor + f"?lang={lang}",
             })
             links.append({"from": grade_id, "to": section_id})
 
@@ -45,7 +57,9 @@ def build_map_data(lang="uk", focus_type=None, focus_id=None):
                     "name": getattr(paragraph, f"name_{lang}", paragraph.name_uk),
                     "level": 2,
                     "color": "#ffa726",
-                    "url": reverse('item_list', args=[paragraph.id]) + f"?lang={lang}",
+                    # сторінка § (фаза 18); раніше — reverse('item_list', ...), яке
+                    # 301-редіректило на ту саму paragraph_page.
+                    "url": reverse('paragraph_page', args=[paragraph.id]) + f"?lang={lang}",
                 })
                 links.append({"from": section_id, "to": paragraph_id})
 
