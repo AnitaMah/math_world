@@ -129,3 +129,30 @@ Django не вимагає, щоб модель жила в тому засто�
   разом з інструментом, який вона перевіряла.
 - **`TheoryPractice` і `generate_item_content`** НЕ видалені — власник ще
   використовує команду вручну.
+
+## 2026-10-29 — підсумок: карта застосунків (сесії 1–16 завершені)
+
+Кінцевий стан `INSTALLED_APPS`: `education` (ядро), `schools`, `game`.
+
+| Застосунок | Моделі | Відповідає за | Залежить від |
+| --- | --- | --- | --- |
+| `education` | `Subject, Grade, Textbook, Section, Paragraph, Item, ContentBlock, Exercise, SubExercise, Answer, Figure, ImportRun, TheoryPractice, ManualEdit` | каталог, PDF-імпорт, ручна перевірка, catalog API | нічого з новоствореного |
+| `schools` | `School, SchoolMembership, SchoolClass, SchoolClassStudent` | школи/класи/вчителі, API шкіл | лише `auth.User` |
+| `game` | `Player, Attempt, LessonProgress` | бали/зірки/серія, гра API | `education` (`Item/Paragraph/Exercise/SubExercise`), однобічно |
+
+Жодна таблиця не перейменована і не пересоздана (окрім `education_lesson`,
+яка видалена фізично — 0 рядків). Усі переноси моделей — `SeparateDatabaseAndState`,
+перевірені `makemigrations --check` після кожного.
+
+**Мертвий код, видалений за час рефакторингу:** модель `Lesson`, `legacy.py` +
+`migrate_legacy_data`. **Лишений навмисно:** `TheoryPractice` + `generate_item_content`
+(власник ще користується), старі 301-редіректні маршрути (`grade_list` тощо — справжні
+тести перевіряють зворотну сумісність старих посилань).
+
+**У беклозі (не зроблено, і це нормально):** серіалізатори через DRF (сесія 18),
+`pdf_pipeline` як окремий пакет (сесія 19), перейменування `education` → `catalog`
+(сесія 20) — усі три свідомо відкладені: ціна вища за користь на зараз.
+
+**Базова лінія тестів за весь рефакторинг:** 691 → 683 (−8, видалення
+`LegacyBlocksTests` разом з інструментом, який вона перевіряла) → 683 стабільно
+до кінця. Жодної регресії, жодної зміни зовнішнього API-контракту.

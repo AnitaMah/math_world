@@ -49,7 +49,8 @@ status = verified  ──►  school admin adds / removes its teachers on its ow
       admin revokes verification  ──►  rights are lost immediately (checked live)
 ```
 
-Data model (`education/models.py`):
+Data model (`schools/models.py` – its own Django app, since schools/classes have no foreign key
+into the curriculum catalog at all):
 
 - `School` – name, country (`UA` / `DE`), official number (unique per country), status
   (`pending` / `verified` / `rejected`), who verified it and when.
@@ -57,7 +58,7 @@ Data model (`education/models.py`):
 - `SchoolMembership` – user ↔ school with role `school_admin` or `teacher`, who added them;
   unique per (school, user).
 
-Business rules live in one place, `education/schools.py`, and are used by both the admin and the API:
+Business rules live in one place, `schools/services.py`, and are used by both the admin and the API:
 
 | Action | Who |
 |---|---|
@@ -95,7 +96,7 @@ and install Tesseract with the Ukrainian language pack.
 ## Tests
 
 ```bash
-python manage.py test education          # backend + pipeline
+python manage.py test                          # backend + pipeline + schools + game
 cd tools/frontend && npm install && npm test   # JavaScript unit tests
 ```
 
@@ -103,15 +104,20 @@ Tests that need a real textbook PDF or Tesseract are skipped automatically when 
 
 ## Project structure
 
+Three Django apps, split by domain (`docs/backend/DECISIONS.md` has the full reasoning):
+
 ```
-education/
-  models.py          data model (curriculum, textbooks, exercises, game, schools)
-  schools.py         school & staff rules
-  api.py, api_schools.py, api_urls.py   JSON API
-  game.py, services.py                  points, stars, answer checking
+education/          curriculum catalog + PDF import + review (the "core" app)
+  models.py          curriculum data model (textbooks, sections, exercises, content blocks)
+  api.py, serializers.py, api_urls.py   catalog JSON API
+  services.py, review.py, views_review.py   answer checking, manual review workflow
   pdf_pipeline/      PDF → JSON pipeline (OCR, layout, structure, vision, validation)
   importers/         JSON → database import
   management/commands/   import, export, backup/restore, review tools
+schools/             schools, roles, classes (no FK into the catalog at all)
+  models.py, services.py, api.py, urls.py, admin.py
+game/                player progress, points, stars, streaks (depends on the catalog, one-way)
+  models.py, services.py, api.py, urls.py, serializers.py
 docs/                design decisions, plans and pipeline documentation
 tools/frontend/      JS unit tests and Playwright visual tests
 ```

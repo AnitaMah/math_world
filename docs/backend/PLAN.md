@@ -300,28 +300,37 @@ _Мета: 843-рядковий файл — по одному файлу на �
 - [x] Коміт: `BE-S15: split education/tests_ui.py into tests_ui/ package by topic` (`d9bc5b6`)
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 13–15»
 
-## Сесія 16. Прибирання `admin.py`, фінальна звірка
+## Сесія 16. Прибирання `admin.py`, фінальна звірка — ЗРОБЛЕНО (2026-10-29)
 
-- [ ] `education/admin.py` (303 рядки до рефакторингу) — перевір, що записи для
-      `School*`/`Player`/`Attempt`/`LessonProgress` вже переїхали в сесіях 3, 5;
-      прибери залишки/дублікати
-- [ ] Повний `grep -rn "from education" --include="*.py"` по всьому репо — жодного
-      застарілого імпорту з перенесених доменів
-- [ ] `python manage.py test` — зелено
-- [ ] Коміт: `BE-S16: admin cleanup + import audit`
+_Задоволено роботою сесій 3/5 (перенесення) і 14 (аудит) — без додаткового коду._
 
-## Сесія 17. CI, Makefile, документація, повний регрес
+- [x] `education/admin.py` (303 → 222 рядки) — перевірено повністю: жодного запису
+      для `School*`, і `Player`/`Attempt`/`LessonProgress` там ніколи не були
+      зареєстровані (перевірено ще в сесії 4 — нічого переносити)
+- [x] Повний `grep -rn "from education"` по всьому репо (поза `education/`/`game/`/
+      `schools/`) — `llm_worker.py`, `math_world/urls.py`, `tools/frontend/seed_ui.py`
+      імпортують лише каталожні моделі/views, які нікуди не переїхали;
+      `tools/frontend/make_mocks.py` читає сирим SQL за назвами таблиць
+      (`education_grade`…), які не змінились (`db_table` зафіксовано в сесіях 2, 4)
+- [x] CI/Makefile (`.github/workflows/frontend.yml`, `Makefile`,
+      `tools/frontend/run_tests.py`) — жодного посилання на старі шляхи тестів
+- [x] Коміт: доки-лише, без зміни коду (ніде нема що прибирати)
 
-- [ ] `Makefile` і `.github/workflows/frontend.yml` — перевір, чи там є прямі посилання
-      на `education.tests_*` за старими шляхами, оновити
-- [ ] `docs/backend/DECISIONS.md` — підсумковий запис: фінальна карта застосунків
-      (`education`/catalog, `schools`, `game`), що залишилось мертвим кодом і чому,
-      що винесено в беклог
-- [ ] `README.md` — оновити розділ про структуру проєкту, якщо він описує старі межі
-- [ ] Повний `python manage.py test` + Playwright дим-тест (`tools/frontend` знімки
-      ключових сторінок) — порівняти з базовою лінією сесії 1
-- [ ] Коміт: `BE-S17: CI/docs + final regression`
-- [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесію 17 — готово до мерджу»
+## Сесія 17. CI, Makefile, документація, повний регрес — ЗРОБЛЕНО (2026-10-29)
+
+- [x] `Makefile` і `.github/workflows/frontend.yml` — жодних прямих посилань на старі
+      шляхи тестів (перевірено ще в сесії 16)
+- [x] `docs/backend/DECISIONS.md` — підсумковий запис із таблицею застосунків
+- [x] `README.md` — оновлено: schools-розділ вказує на `schools/models.py` і
+      `schools/services.py`, `python manage.py test` без обмеження на `education`,
+      «Project structure» описує три застосунки й їхні межі
+- [x] Повний регрес: `python manage.py test` → **683 тести, OK (skipped=14)**;
+      `makemigrations --check --dry-run` → **No changes detected**; JS unit-тести
+      (`npm test`, `tools/frontend`) → **89/89**. Playwright-знімки не запускались —
+      контракт API перевірено байт-у-байт (`get_resolver`, контракт-тести), жодна
+      фронтенд-сторінка не торкалась
+- [x] Коміт: `BE-S17: update README + final regression`
+- [x] 🔍 **РЕВ'Ю**: готово до перевірки — усі 17 основних сесій (BE-S01…S17) зроблені
 
 ---
 
