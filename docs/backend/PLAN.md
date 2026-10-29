@@ -80,19 +80,17 @@ _Мета: `School`, `SchoolMembership`, `SchoolClass`, `SchoolClassStudent` п�
 Сесії 2 і 3 виконані разом однією сесією (неможливо лишити код у робочому стані між
 ними — моделі й код, що на них посилається, мусять переїхати одночасно).
 
-- [ ] `python manage.py startapp schools`, додай у `INSTALLED_APPS`
-- [ ] Перенеси 4 класи моделей з `education/models.py` у `schools/models.py` (той самий
-      код, лише імпорт `auth.User` як рядок лишається)
-- [ ] У `schools/models.py` зафіксуй `Meta.db_table = "education_school"` (і так для
-      кожної з 4 моделей) — таблиці не перейменовуються, лише застосунок у стані міграцій
-- [ ] Міграція: у `education` — `migrations.DeleteModel` обгорнутий у
-      `SeparateDatabaseAndState(database_operations=[], state_operations=[DeleteModel(...)])`;
-      у `schools` — дзеркально `CreateModel` тим самим способом. Жодного `database_operations`
-      з реальним DDL — таблиці фізично не чіпаються
-- [ ] `python manage.py makemigrations --check` — підтверди, що Django не хоче додаткових
-      міграцій (стан і факт збігаються)
-- [ ] `python manage.py test` — зелено, без жодної зміни в поведінці
-- [ ] Коміт: `BE-S02: schools models (state-only move)`
+- [x] `python manage.py startapp schools`, додано в `INSTALLED_APPS`
+- [x] Перенесено 4 класи моделей з `education/models.py` у `schools/models.py`
+- [x] У `schools/models.py` зафіксовано `Meta.db_table = "education_school"` (і так для
+      кожної з 4 моделей)
+- [x] Міграція: `education/migrations/0022_move_schools_to_schools_app.py`
+      (`SeparateDatabaseAndState`, `DeleteModel` зі стану) + `schools/migrations/0001_initial.py`
+      (дзеркальний `CreateModel`) — жодного `database_operations` з реальним DDL
+- [x] `python manage.py makemigrations --check` — стан і факт збігаються
+- [x] `python manage.py test` — зелено
+- [x] Коміт: об'єднано з сесією 3 в `BE-S02..S03` (`0b54407`), бо код неможливо лишити
+      в робочому стані між переносом моделей і переносом коду, що на них посилається
 
 ## Сесія 3. Застосунок `schools` — код і тести — ЗРОБЛЕНО (2026-10-29, `0b54407`)
 
@@ -135,8 +133,8 @@ _Мета: `School`, `SchoolMembership`, `SchoolClass`, `SchoolClassStudent` п�
       `education/api.py` (6 місць), `education/grade_map.py`, `education/views_ui.py`,
       `education/tests_map_api.py`, `education/tests_queries.py`,
       `education/tests_ui/test_auth_pages.py`
-- [ ] `python manage.py test` — у процесі, коміт після підтвердження
-- [ ] Коміт: `BE-S04..S05: extract game app (models + code + tests)`
+- [x] `python manage.py test` — 691/691, OK (skipped=14)
+- [x] Коміт: `BE-S04..S05: extract game app (models + code + tests)` (`18de228`)
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 4–5»
 
 ## Сесія 6. Розбиття `api.py` за доменами — ЗРОБЛЕНО (2026-10-29)
@@ -190,30 +188,34 @@ _Мета: замінити ручні `*_dict` функції на один exp
 - [x] Коміт: `BE-S07+S08+S14: serializer layers + test-layout audit`
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 6–8»
 
-## Сесія 9. Видалення мертвого коду
+## Сесія 9. Видалення мертвого коду — ЗРОБЛЕНО (2026-10-29, `eacb721`)
 
 _Мета: прибрати знайдене в сесії 1 — тільки після підтвердження, що нічого не зламається._
 
-- [ ] Видалити модель `Lesson` (`models.py`) + міграція `RemoveModel` (справжня, з DDL —
-      це не used-таблиця, тож тут вже звичайна, не state-only, міграція)
-- [ ] `TheoryPractice`: якщо `generate_item_content` не запускається в робочому процесі —
-      задокументувати як deprecated замість видалення (дані вже в БД, видаляти ризиковано
-      без окремого рішення власника) — запиши вирок у DECISIONS.md
-- [ ] `legacy.py` / `migrate_legacy_data`: видалити лише якщо підтверджено, що міграція
-      вже застосована в усіх середовищах, які є (запитай власника перед видаленням)
-- [ ] Коміт: `BE-S09: remove dead Lesson model` (+ окремий коміт для legacy.py, якщо видаляли)
+- [x] Видалено модель `Lesson` (`models.py`) + міграція `0024_delete_lesson.py` (справжня,
+      з DDL — таблиця мала 0 рядків, не state-only)
+- [x] `TheoryPractice`: власник підтвердив, що `generate_item_content` ще використовується
+      вручну — НЕ видалено, лишено як є (рішення в DECISIONS.md)
+- [x] `legacy.py` / `migrate_legacy_data`: власник підтвердив, що міграція вже застосована
+      всюди — видалено. Знайдено й виправлено пастку: міграція `0019` імпортувала функцію
+      з `legacy.py` на момент застосування — логіку вбудовано прямо в міграцію (деталі в
+      DECISIONS.md)
+- [x] Коміт: `BE-S09+S13: remove dead code, decide review stays in education` (`eacb721`,
+      об'єднано з сесією 13 — обидві готувались паралельно)
 
-## Сесія 10. `map_builder.py` і залишки старого UI в `urls.py`
+## Сесія 10. `map_builder.py` і залишки старого UI в `urls.py` — ЗРОБЛЕНО (2026-10-29, `848164c`)
 
-- [ ] Прочитай, які саме `reverse()`-виклики в `map_builder.py` тримають живими
-      `grade_list`/`section_list`/`paragraph_list`/`item_list` в `urls.py`
-- [ ] Заміни ці виклики на прямі URL-шаблони або на нові імена маршрутів мапи
-      (`grade_map_page` тощо), щоб прибрати залежність від старих імен
-- [ ] Видали старі `path(...)` з `urls.py`, якщо нічого більше на них не посилається
-      (`grep -rn "grade_list\|section_list\|paragraph_list\|item_list" --include="*.py" --include="*.html"`)
-- [ ] `python manage.py test` — зелено, 301-редіректи старих адрес (якщо потрібні для
-      зовнішніх посилань) лишити окремим простим маршрутом без старих view-функцій
-- [ ] Коміт: `BE-S10: decouple map_builder from old UI route names`
+- [x] `build_map_data()` у `map_builder.py` виявився мертвим кодом (ніхто не викликає) —
+      виправлення було про коректність/розв'язку залежності, а не про збереження поведінки
+      для живого викликача
+- [x] Замінено три `reverse()`-виклики на прямі посилання на `grade_map_page`/`paragraph_page`
+      (деталі заміни кожного — у коміті)
+- [x] Старі `path(...)` в `urls.py` **лишено**: `tests_api.py`/`tests_ui.py` справді
+      перевіряють зворотну сумісність старих адрес (301-редіректи) — це не випадкова
+      залежність, а навмисна поведінка з власними тестами
+- [x] `python manage.py test` — 691/691, без змін до базової лінії
+- [x] Коміт: `BE-S10: decouple map_builder from old UI route names` (`848164c`, змерджено
+      як `232cdc7`) — виконано паралельним агентом в ізольованому worktree
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 9–10»
 
 ## Сесія 11. `pdf_pipeline/structure.py` — розбиття — ЗРОБЛЕНО (2026-10-29, `87ddf69`)
