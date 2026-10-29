@@ -30,12 +30,12 @@ python tools/frontend/run_tests.py --no-visual # швидко, без брауз
 
 | Де | Що |
 |---|---|
-| `education/views_ui.py` | тонкі view нового UI: «Світ», мапа, урок, сторінка §, гра, «Прогрес», «Профіль», службові `/ui/…` |
-| `education/views.py` | точки входу за старими іменами URL, 301-редиректи зі старих адрес, реєстрація, `_blocks_context` |
+| `education/views/ui.py` | тонкі view нового UI: «Світ», мапа, урок, сторінка §, гра, «Прогрес», «Профіль», службові `/ui/…` |
+| `education/views/__init__.py` | точки входу за старими іменами URL, 301-редиректи зі старих адрес, реєстрація, `_blocks_context` |
 | `education/templatetags/ui.py` | `{% icon %}`, `{% topbar %}`, `{% auth_field %}`, фільтри `uk_plural`, `block_name`, `block_icon`, `difficulty_name`, `reflow` |
-| `education/context.py` | `UI_DEBUG` → `<html data-debug="1">` (моки лише в DEBUG) |
+| `education/views/context.py` | `UI_DEBUG` → `<html data-debug="1">` (моки лише в DEBUG) |
 | `templates/education/base.html` | каркас: шрифти, токени, спрайт іконок, верхня панель, нижня навігація |
-| `templates/education/` | `world`, `map`, `lesson`, `progress`, `profile` (+ `_lesson_blocks`), `play`, `ui_*`; фрагменти `_topbar`, `_bottom_nav`, `_icons`, `_stars`, `_progress` |
+| `templates/education/` | `world`, `map`, `lesson`, `progress`, `profile`, `play`; `ui/` (`api`, `kit`, `tokens`); `partials/` (`topbar`, `bottom_nav`, `icons`, `stars`, `progress`, `lesson_blocks`) |
 | `templates/registration/` | вхід і реєстрація (`_auth_base`, `_field`) |
 | `templates/404.html`, `500.html` | сторінки помилок (500 — статичний HTML без тегів) |
 
@@ -72,11 +72,11 @@ python tools/frontend/run_tests.py --no-visual # швидко, без брауз
 
 ## Як додати новий екран
 
-1. View у `views_ui.py` (тонкий: дані → `render`), URL у `math_world/urls.py`.
+1. View у `views/ui.py` (тонкий: дані → `render`), URL у `math_world/urls.py`.
 2. Шаблон `{% extends "education/base.html" %}`; блоки `title`, `body_class`, `styles`, `content`, `scripts`.
    Повноекранний екран — порожні `{% block topbar %}{% endblock %}` і `{% block bottom_nav %}{% endblock %}`.
 3. Стилі — новий файл у `css/`, **лише `var(--…)`** з `tokens.css`. Потрібен новий колір — спершу токен.
-4. Іконки — `{% icon "назва" size=20 %}`; нова — `<symbol id="i-назва">` у `_icons.html` + ім’я в `ICONS`.
+4. Іконки — `{% icon "назва" size=20 %}`; нова — `<symbol id="i-назва">` у `partials/icons.html` + ім’я в `ICONS`.
 5. Логіку JS — у чисту функцію з тестом у `tools/frontend/tests/`.
 6. Знімок — додай екран у `tools/frontend/visual.spec.js` і `python tools/frontend/run_tests.py --baseline`.
 7. Перевір клавіатуру й axe (див. DECISIONS, фаза 16), запиши рішення в `DECISIONS.md`.
@@ -90,8 +90,8 @@ python tools/frontend/run_tests.py --no-visual # швидко, без брауз
 | Кнопки | `.btn` + `--primary`, `--secondary`, `--ok`, `--bad`, `--info`, `--muted`, `--sm`, `--block`; `.btn-icon` 44×44 | «Кнопки» |
 | Чіпи, теги, статуси | `.chip`, `.tag`, `.status--done/current/open/locked`, `.sec-chip` | «Чіпи, теги, статуси» |
 | Картки | `.card`, `--dashed`, `--float`; `.empty-note` | «Картки, прогрес, зірки» |
-| Прогрес | `{% include "education/_progress.html" with value= max= label= size= %}` | там само |
-| Зірки | `{% include "education/_stars.html" with count= size= outline= %}` | там само |
+| Прогрес | `{% include "education/partials/progress.html" with value= max= label= size= %}` | там само |
+| Зірки | `{% include "education/partials/stars.html" with count= size= outline= %}` | там само |
 | Рядки панелі | `.feature-row`, `.score-row` | «Рядки панелі уроку» |
 | Бейдж складності | `.diff .diff--preparatory…olympiad` | (теорія, гра) |
 | Поле форми | `{% auth_field field %}` → `.field` | (вхід) |
