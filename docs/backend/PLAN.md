@@ -139,22 +139,34 @@ _Мета: `School`, `SchoolMembership`, `SchoolClass`, `SchoolClassStudent` п�
 - [ ] Коміт: `BE-S04..S05: extract game app (models + code + tests)`
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 4–5»
 
-## Сесія 6. Розбиття `api.py` за доменами
+## Сесія 6. Розбиття `api.py` за доменами — ЗРОБЛЕНО (2026-10-29)
 
 _Мета: 367-рядковий `api.py` — по одному файлу на домен, а не всі ендпоінти підряд._
 
-- [ ] `education/api.py` лишає лише catalog-ендпоінти: `textbooks`, `textbook_tree`,
+- [x] `education/api.py` лишає лише catalog-ендпоінти: `textbooks`, `textbook_tree`,
       `grades`, `grade_map`, `lesson_detail`, `lesson_exercise_list`, `exercise_detail`,
-      `figure_image`
-- [ ] Нове `game/api.py`: `check`, `solution`, `play`, `me`, `_rate_limited`,
-      `_payload_text`, `_points_history` (усе, що працює з `Player`/`Attempt`)
-- [ ] `schools/api.py` вже існує з сесії 3
-- [ ] `education/api_urls.py` стає тонким include: `path("", include("education.api.urls"))`
-      + `include("game.urls")` + `include("schools.urls")` (кожен застосунок — свій
-      `urls.py` з префіксами, зовнішні шляхи API не змінюються)
-- [ ] Контракт-тести (`tools/frontend/check_mocks.py`, `tests_map_api.py`) лишаються
-      зеленими без змін у самих тестах — доказ, що контракт не зламано
-- [ ] Коміт: `BE-S06: split api.py by domain`
+      `figure_image` (+ спільні хелпери `api_error`/`ok`/`api_view`/серіалізатори/`_lesson` —
+      і `game/api.py`, і `schools/api.py` імпортують їх звідси, той самий підхід, що вже
+      був у `schools/api.py` з сесії 3)
+- [x] Нове `game/api.py`: `check`, `solution`, `play`, `me`, `_rate_limited`,
+      `_payload_text`, `_points_history`, `progress_dict`
+- [x] `schools/api.py` вже існував з сесії 3
+- [x] `education/api_urls.py` — тонкий include: catalog-шляхи лишились прямо тут +
+      `path("", include("game.urls"))` + `path("", include("schools.urls"))` (нові
+      `game/urls.py`, `schools/urls.py` з точно тими самими шляхами й іменами маршрутів —
+      зовнішній контракт не змінився, перевірено `get_resolver().url_patterns`)
+- [x] Контракт-тести (`tools/frontend/check_mocks.py`, `tests_map_api.py`) лишились
+      зеленими без змін у самих тестах
+- [x] **Знахідка:** перший прогін тестів зловив `test_solution_endpoint` —
+      `solution()` у оригіналі робив `from .ai_check import get_ai_checker` **усередині
+      функції** (лінивий імпорт), а я спочатку підняв його на рівень модуля в
+      `game/api.py`. `mock.patch("education.ai_check.get_ai_checker", ...)` у тестах
+      патчить атрибут модуля `education.ai_check`, а не прив'язане на рівні модуля ім'я
+      в `game.api` — тож патч мовчки не діяв. Повернув лінивий імпорт усередину
+      `solution()` — той самий прийом, що інший агент застосував до
+      `MAX_CONSECUTIVE_ERRORS` у фазі 12 (зберегти спосіб імпорту, а не ідеальну
+      структуру нагорі файлу)
+- [x] Коміт: `BE-S06: split api.py by domain`
 
 ## Сесія 7. Шар серіалізаторів — catalog
 

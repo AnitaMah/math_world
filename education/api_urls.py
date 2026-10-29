@@ -1,6 +1,4 @@
-from django.urls import path
-
-from schools import api as api_schools
+from django.urls import include, path
 
 from . import api
 
@@ -17,17 +15,6 @@ urlpatterns = [
          name="api_paragraph_exercises"),
     path("exercises/<int:pk>/", api.exercise_detail, name="api_exercise"),
     path("figures/<int:pk>/image", api.figure_image, name="api_figure_image"),
-    path("subexercises/<int:pk>/check/", api.check, name="api_check"),
-    path("exercises/<int:pk>/solution/", api.solution, name="api_solution"),
-    path("play/items/<int:pk>/", api.play, {"kind": "item"}, name="api_play_item"),
-    path("play/paragraphs/<int:pk>/", api.play, {"kind": "paragraph"}, name="api_play_paragraph"),
-    path("me/", api.me, name="api_me"),
-    path("schools/", api_schools.register, name="api_school_register"),
-    path("schools/mine/", api_schools.my_schools, name="api_my_schools"),
-    path("schools/<int:pk>/staff/", api_schools.staff, name="api_school_staff"),
-    path("schools/<int:pk>/staff/<int:user_id>/", api_schools.staff_member, name="api_school_staff_member"),
-    path("classes/", api_schools.create_class, name="api_class_create"),
-    path("classes/mine/", api_schools.my_classes, name="api_my_classes"),
-    path("classes/<int:pk>/students/", api_schools.class_students, name="api_class_students"),
-    path("classes/<int:pk>/students/<int:user_id>/", api_schools.class_student, name="api_class_student"),
+    path("", include("game.urls")),
+    path("", include("schools.urls")),
 ]
