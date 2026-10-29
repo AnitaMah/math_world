@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.db import IntegrityError, transaction
 from django.test import TestCase, override_settings
 
-from .models import (
+from ..models import (
     DIFFICULTY_CHOICES, TEXT_SOURCE_CHOICES, Answer, ContentBlock, Exercise, Figure, Grade, ImportRun, Item,
     Paragraph, Section, SubExercise, Subject, Textbook, parse_answer_number,
 )

@@ -11,7 +11,7 @@ from django.utils import timezone
 
 from education.ai_check import AiVerdict, FakeAiChecker, build_prompt, parse_verdict
 from education.models import Answer, ContentBlock, Exercise, SubExercise
-from education.tests_api import LessonFixture
+from education.tests.test_api import LessonFixture
 
 from .models import Attempt, LessonProgress, Player
 from .services import lesson_tasks, merge_players, record_answer, record_solution, stars_for

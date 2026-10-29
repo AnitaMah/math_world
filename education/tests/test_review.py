@@ -15,7 +15,7 @@ from django.urls import reverse
 from education import review
 from education.importers.textbook_json import TextbookImporter
 from education.models import Exercise, ManualEdit, SubExercise, Textbook
-from education.tests_importer import MEDIA, PNG, blocks_of, fixture_json
+from education.tests.test_importer import MEDIA, PNG, blocks_of, fixture_json
 
 
 @override_settings(MEDIA_ROOT=MEDIA)

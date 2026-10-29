@@ -27,10 +27,10 @@ urlpatterns = [
     path("progress/", views_ui.progress_page, name="progress"),
     path("profile/", views_ui.profile_page, name="profile"),
     # Старий UI видалено (фаза 18): старі адреси — 301 на нову мапу для зовнішніх
-    # посилань і закладок (BE-S10: map_builder.py більше не тримає ці імена живими —
-    # він тепер reverse'ить напряму на grade_map_page/paragraph_page; маршрути й
-    # імена лишені окремо, бо на них є власні тести: tests_ui.test_old_urls_redirect_permanently,
-    # tests_ui.test_old_sections_url_still_works, tests_api reverse("item_list", ...)).
+    # посилань і закладок. Маршрути й імена лишені окремо, бо на них є власні тести:
+    # tests_ui.test_old_urls_redirect_permanently, tests_ui.test_old_sections_url_still_works,
+    # tests_api reverse("item_list", ...). (education/map_builder.py, яке колись тримало ці
+    # імена живими, саме було мертвим кодом — видалено разом з generate_map_json.)
     path("grades/", education_views.old_grade_list, name="grade_list"),
     path("grades/<int:grade_id>/sections/", education_views.old_section_list, name="section_list"),
     path("sections/<int:section_id>/paragraphs/", education_views.old_paragraph_list, name="paragraph_list"),
