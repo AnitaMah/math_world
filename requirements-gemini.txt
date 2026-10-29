@@ -1,5 +1,5 @@
 # Step 27: dependencies for the Gemini-backed OCR/theory/map pipeline.
 # Kept separate from any existing requirements file so it doesn't get
-# mixed up with the local LM Studio / SDXL stack in utils/.
+# mixed up with the local LM Studio / SDXL stack in tools/llm/.
 google-genai
 python-dotenv
