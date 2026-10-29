@@ -1,8 +1,8 @@
 from django.core.management.base import BaseCommand
 from education.models import Item, TheoryPractice
-from utils.llm_client import send_llm_prompt
-from utils.geometry import is_geometry_topic, build_geometry_prompt, save_image_diagram
-from utils.image_generator import generate_image_from_prompt
+from tools.llm.llm_client import send_llm_prompt
+from tools.llm.geometry import is_geometry_topic, build_geometry_prompt, save_image_diagram
+from tools.llm.image_generator import generate_image_from_prompt
 
 
 def generate_theory_and_practice(item: Item) -> tuple[str, str]:

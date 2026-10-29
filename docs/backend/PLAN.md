@@ -308,7 +308,7 @@ _Задоволено роботою сесій 3/5 (перенесення) і 
       для `School*`, і `Player`/`Attempt`/`LessonProgress` там ніколи не були
       зареєстровані (перевірено ще в сесії 4 — нічого переносити)
 - [x] Повний `grep -rn "from education"` по всьому репо (поза `education/`/`game/`/
-      `schools/`) — `llm_worker.py`, `math_world/urls.py`, `tools/frontend/seed_ui.py`
+      `schools/`) — `tools/llm/worker.py`, `math_world/urls.py`, `tools/frontend/seed_ui.py`
       імпортують лише каталожні моделі/views, які нікуди не переїхали;
       `tools/frontend/make_mocks.py` читає сирим SQL за назвами таблиць
       (`education_grade`…), які не змінились (`db_table` зафіксовано в сесіях 2, 4)
