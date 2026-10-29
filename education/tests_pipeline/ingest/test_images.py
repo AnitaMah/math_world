@@ -12,7 +12,7 @@ from education.pdf_pipeline.ingest.images import (
 )
 from education.pdf_pipeline.ingest.pdf_inspect import pdf_sha256
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 MERZLYAK_PDF = ROOT / "5-klas-matematika-merzljak-2018-1-46.pdf"
 
 

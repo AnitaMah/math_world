@@ -7,7 +7,7 @@ from pathlib import Path
 
 from education.pdf_pipeline.config import PipelineConfig
 from education.pdf_pipeline.run import run_pipeline
-from education.tests_pipeline.test_run import PagedFakeOcr, make_pdf
+from education.tests_pipeline.run.test_run import PagedFakeOcr, make_pdf
 
 PAGES = [3, 5, 6]            # 3 — порожня, 5 і 6 — зі змістом (див. PAGES у test_run)
 

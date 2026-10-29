@@ -10,7 +10,7 @@ from education.pdf_pipeline.ingest import preprocess as pp
 from education.pdf_pipeline.config import PipelineConfig
 from education.pdf_pipeline.datatypes import BBox, PageImage
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 MERZLYAK_PDF = ROOT / "5-klas-matematika-merzljak-2018-1-46.pdf"
 
 

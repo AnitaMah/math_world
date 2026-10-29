@@ -14,7 +14,7 @@ from education.pdf_pipeline.ocr import FakeOcrEngine, OcrParams, ocr_cache_path,
 from education.pdf_pipeline.ocr.tesseract import TesseractEngine, TesseractNotAvailable, parse_tesseract_data
 from education.pdf_pipeline.ingest.preprocess import PreparedPage, Transform, _scale_matrix
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[3]
 MERZLYAK_PDF = ROOT / "5-klas-matematika-merzljak-2018-1-46.pdf"
 
 

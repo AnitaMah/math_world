@@ -13,7 +13,7 @@ from education.models import (
     Answer, ContentBlock, Exercise, Figure, Grade, ImportRun, Item, Paragraph, Section, Subject, SubExercise,
     Textbook,
 )
-from education.tests_pipeline.test_export import export, merzlyak_tree
+from education.tests_pipeline.output.test_export import export, merzlyak_tree
 
 PNG = (b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4"
        b"\x89\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00\x00IEND\xaeB`\x82")

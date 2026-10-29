@@ -55,7 +55,7 @@ def make_pdf(path: Path, pages: int = 7) -> None:
     doc.save(path)
 
 
-_TOC_PATH = Path(__file__).resolve().parents[2] / "data" / "5_class_ukr.txt"
+_TOC_PATH = Path(__file__).resolve().parents[3] / "data" / "5_class_ukr.txt"
 
 
 @unittest.skipUnless(_TOC_PATH.exists(), "немає змісту (авторське право — лише локально)")

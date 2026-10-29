@@ -13,7 +13,7 @@ from education.importers.textbook_json import TextbookImporter
 from education.models import Answer, ContentBlock, Exercise, Figure, Item, Paragraph, SubExercise, Textbook
 from education.services import answers_equal, check_answer, normalize_answer
 from education.tests_importer import PNG
-from education.tests_pipeline.test_export import export, merzlyak_tree
+from education.tests_pipeline.output.test_export import export, merzlyak_tree
 
 MEDIA = tempfile.mkdtemp(prefix="math_world_api_media_")
 

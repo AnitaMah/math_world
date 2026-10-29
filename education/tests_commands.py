@@ -14,8 +14,8 @@ from django.test import TestCase, override_settings
 
 from education.management.commands.parse_textbook import Command as ParseCommand
 from education.models import Answer, Exercise, ImportRun, SubExercise, Textbook
-from education.tests_pipeline.test_export import export, merzlyak_tree
-from education.tests_pipeline.test_run import PagedFakeOcr, make_pdf
+from education.tests_pipeline.output.test_export import export, merzlyak_tree
+from education.tests_pipeline.run.test_run import PagedFakeOcr, make_pdf
 
 MEDIA = tempfile.mkdtemp(prefix="math_world_cmd_media_")
 
