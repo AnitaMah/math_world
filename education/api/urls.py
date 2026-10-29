@@ -1,6 +1,6 @@
 from django.urls import include, path
 
-from . import api
+from .. import api
 
 urlpatterns = [
     path("csrf/", api.csrf, name="api_csrf"),

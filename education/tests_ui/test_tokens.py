@@ -30,7 +30,7 @@ class TokensCssTests(SimpleTestCase):
         cls.tokens = (static / "tokens.css").read_text(encoding="utf-8")
 
     def test_every_token_shown_on_page_is_defined(self):
-        from education.views_ui import CONTRAST_PAIRS, TOKEN_GROUPS
+        from education.views.ui import CONTRAST_PAIRS, TOKEN_GROUPS
         names = {n for _, group in TOKEN_GROUPS for n, _ in group}
         names |= {n for fg, bg, _ in CONTRAST_PAIRS for n in (fg, bg)}
         missing = sorted(n for n in names if f"{n}:" not in self.tokens)

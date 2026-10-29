@@ -19,9 +19,9 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
-from .models import Exercise, Figure, Grade, Item, Paragraph, Section, SubExercise, Textbook
+from ..models import Exercise, Figure, Grade, Item, Paragraph, Section, SubExercise, Textbook
+from ..services import THEORY_BLOCK_TYPES, lesson_exercises, playable_counts
 from .serializers import block_dict, exercise_dict, figure_dict, subexercise_dict
-from .services import THEORY_BLOCK_TYPES, lesson_exercises, playable_counts
 
 MAX_PAGE_SIZE = 50
 
@@ -104,7 +104,7 @@ def grades(request):
     """Класи для екрана «Світ»: підручник, к-сть розділів/уроків, зірки гравця, поточний урок."""
     from game.services import get_player
 
-    from .grade_map import grade_summary, load_grade
+    from ..grade_map import grade_summary, load_grade
 
     player = get_player(request, create=False)
     qs = Grade.objects.filter(subject__code=request.GET.get("subject", "math")).order_by("number")
@@ -124,8 +124,8 @@ def grade_map(request, number):
     from schools.models import SchoolClass
     from schools.services import can_manage_class
 
-    from .grade_map import class_percent_map, load_grade, map_payload
-    from .views import get_lang
+    from ..grade_map import class_percent_map, load_grade, map_payload
+    from ..views import get_lang
 
     lang = get_lang(request)
     grade = get_object_or_404(Grade, number=number, subject__code=request.GET.get("subject", "math"))

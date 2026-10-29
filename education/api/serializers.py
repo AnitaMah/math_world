@@ -4,7 +4,7 @@
 """
 from __future__ import annotations
 
-from .models import ContentBlock, Exercise, Figure, SubExercise
+from ..models import ContentBlock, Exercise, Figure, SubExercise
 
 
 def figure_dict(fig: Figure) -> dict:

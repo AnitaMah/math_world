@@ -71,7 +71,7 @@ def ui_tokens(request):
 def ui_kit(request):
     """`/ui/kit/` — вітрина базових стилів і компонентів нового UI (росте з кожною фазою)."""
     _debug_only()
-    from .templatetags.ui import ICONS
+    from ..templatetags.ui import ICONS
     sec_chips = [(1, "I", "Натуральні числа"), (2, "I", "Додавання і віднімання"), (3, "I", "Множення і ділення"),
                  (4, "II", "Звичайні дроби"), (5, "II", "Десяткові дроби")]
     return render(request, "education/ui_kit.html", {"icons": sorted(ICONS), "sec_chips": sec_chips})
@@ -113,15 +113,15 @@ def service_worker(request):
 def grade_map_page(request, number):
     """`/grades/<n>/` — мапа-архіпелаг класу (фаза 8). Дані малює js/map.js з /api/grades/<n>/map/."""
     from django.shortcuts import get_object_or_404
-    from .models import Grade
+    from ..models import Grade
     grade = get_object_or_404(Grade, number=number, subject__code="math")
     return render(request, "education/map.html", {"grade": grade, "current_grade": grade.number})
 
 
 def _grade_cards():
     """Картки класів для екрана «Світ»: дані з БД (кількість островів і уроків, автор)."""
-    from .models import Grade, Item, Paragraph
-    from .templatetags.ui import _short_author
+    from ..models import Grade, Item, Paragraph
+    from ..templatetags.ui import _short_author
     cards = []
     for g in Grade.objects.filter(subject__code="math").order_by("number").prefetch_related("textbooks"):
         tb = next((t for t in g.textbooks.all()), None)
@@ -152,7 +152,7 @@ def _place_figures(blocks):
     Пул рисунків спільний на урок: рисунок із блоку «Теорія» може бути згаданий у «Коли зроблено
     уроки». Незгадані рисунки не показуються. Результат — b["html"] для кожного блоку.
     """
-    from .templatetags.ui import text_with_figures
+    from ..templatetags.ui import text_with_figures
     figmap = {}
     for b in blocks:
         for f in b["figures"]:
@@ -176,7 +176,7 @@ def paragraph_page(request, paragraph_id):
     блоки рівня § («Головне в параграфі», «Перевірте себе») і список його уроків.
     """
     from django.shortcuts import get_object_or_404
-    from .models import Paragraph
+    from ..models import Paragraph
     paragraph = get_object_or_404(Paragraph.objects.select_related("section__grade"), pk=paragraph_id)
     return _lesson_render(request, "paragraph", paragraph)
 
@@ -196,8 +196,8 @@ def _lesson_render(request, kind, lesson):
 
     from game.services import get_player
 
-    from .services import playable_counts
-    from .views import _blocks_context, _item_title, get_lang
+    from ..services import playable_counts
+    from . import _blocks_context, _item_title, get_lang
 
     lang = get_lang(request)
     paragraph = lesson.paragraph if kind == "item" else lesson
@@ -252,7 +252,7 @@ def _lesson_render(request, kind, lesson):
 
 def _island_of(paragraph):
     """Колір острова параграфа: isl-1..5 за його порядком у класі (як на мапі)."""
-    from .models import Paragraph
+    from ..models import Paragraph
     order = list(Paragraph.objects.filter(section__grade=paragraph.section.grade)
                  .order_by("section__number", "number").values_list("id", flat=True))
     return (order.index(paragraph.id) % 5) + 1 if paragraph.id in order else 1
@@ -261,7 +261,7 @@ def _island_of(paragraph):
 def _grade_lessons(grade):
     """Уроки класу в порядку мапи: пункти параграфа, або сам § (kind="paragraph"), якщо пунктів немає."""
     from django.db.models import Prefetch
-    from .models import Item, Paragraph
+    from ..models import Item, Paragraph
     pars = (Paragraph.objects.filter(section__grade=grade).order_by("section__number", "number")
             .prefetch_related(Prefetch("item_set", queryset=Item.objects.order_by("number"))))
     lessons = []
@@ -278,7 +278,7 @@ def _lesson_ref(kind, obj):
 def _next_lesson_url(grade, kind, lesson):
     """Наступний урок класу, у якому є ігрові завдання (кнопка «Наступний урок» на фіналі)."""
     from django.urls import reverse
-    from .services import playable_counts
+    from ..services import playable_counts
     lessons = _grade_lessons(grade)
     keys = [(k, o.pk) for k, o in lessons]
     if (kind, lesson.pk) not in keys:
@@ -300,7 +300,7 @@ def play_page(request, kind, lesson):
     """
     import re
     from django.urls import reverse
-    from .views import _item_title, get_lang
+    from . import _item_title, get_lang
 
     lang = get_lang(request)
     paragraph = lesson.paragraph if kind == "item" else lesson

@@ -4,8 +4,8 @@ from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
-from . import review
-from .models import ManualEdit, Textbook
+from .. import review
+from ..models import ManualEdit, Textbook
 
 
 def _filters(request):
@@ -81,7 +81,7 @@ def review_detail(request, kind, pk):
 
 @staff_member_required
 def review_crop(request, kind, pk):
-    from .services import page_crop_png
+    from ..services import page_crop_png
     ex = review.exercise_of(_get(kind, pk))
     if not ex.source_page:
         raise Http404("У вправи немає сторінки")

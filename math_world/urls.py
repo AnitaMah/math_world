@@ -4,7 +4,8 @@ from django.contrib import admin
 from django.urls import include, path
 
 from education import views as education_views
-from education import views_review, views_ui
+from education.views import review as views_review
+from education.views import ui as views_ui
 
 
 urlpatterns = [
@@ -17,7 +18,7 @@ urlpatterns = [
     path("play/paragraph/<int:pk>/", education_views.play_lesson, {"kind": "paragraph"}, name="play_paragraph"),
     path("accounts/signup/", education_views.signup, name="signup"),
     path("accounts/", include("django.contrib.auth.urls")),
-    path("api/", include("education.api_urls")),
+    path("api/", include("education.api.urls")),
     path("review/", views_review.review_index, name="review_index"),
     path("review/<str:kind>/<int:pk>/", views_review.review_detail, name="review_detail"),
     path("review/<str:kind>/<int:pk>/crop.png", views_review.review_crop, name="review_crop"),

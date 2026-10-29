@@ -4,8 +4,8 @@ from django.http import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
-from .models import Grade, Item, Paragraph, Section
-from .services import answers_by_target, lesson_blocks
+from ..models import Grade, Item, Paragraph, Section
+from ..services import answers_by_target, lesson_blocks
 
 
 # --------------------------------------------------------------------------- уроки
@@ -13,13 +13,13 @@ from .services import answers_by_target, lesson_blocks
 
 def item_detail(request, item_id):
     """`/items/<id>/` — теорія уроку (views_ui.lesson_page)."""
-    from .views_ui import lesson_page
+    from .ui import lesson_page
     return lesson_page(request, get_object_or_404(Item.objects.select_related("paragraph__section__grade"), pk=item_id))
 
 
 def play_lesson(request, kind, pk):
     """`/play/item|paragraph/<id>/` — екран гри (views_ui.play_page)."""
-    from .views_ui import play_page
+    from .ui import play_page
     return play_page(request, kind, get_object_or_404(Item if kind == "item" else Paragraph, pk=pk))
 
 

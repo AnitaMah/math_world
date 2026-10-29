@@ -1,7 +1,7 @@
 from django.template import engines
 from django.test import RequestFactory, SimpleTestCase
 
-from education.context import ui_debug
+from education.views.context import ui_debug
 
 
 class UiDebugContextProcessorTests(SimpleTestCase):
