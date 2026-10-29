@@ -1,6 +1,8 @@
 from django.urls import path
 
-from . import api, api_schools
+from schools import api as api_schools
+
+from . import api
 
 urlpatterns = [
     path("csrf/", api.csrf, name="api_csrf"),

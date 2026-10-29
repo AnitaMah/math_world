@@ -6,7 +6,7 @@ from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import IntegrityError, transaction
 from django.test import TestCase
 
-from . import schools as svc
+from . import services as svc
 from .models import School, SchoolMembership
 
 

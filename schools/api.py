@@ -14,6 +14,10 @@
 % учнів класу зі зіркою на уроці/вузлі — не окремий ендпоінт, а `class_pct` на
 `GET /api/grades/<n>/map/?class_id=<id>` (education/api.py, education/grade_map.py);
 `GET /api/me/` віддає `is_teacher` — контракт для FE-0645 (`docs/frontend/DECISIONS.md`).
+
+api_error/api_view/ok лишаються спільними HTTP-хелперами в education.api (BE-S03:
+генерична обгортка відповіді, не каталожна логіка — крос-застосунковий імпорт тут
+нормальний, на відміну від моделей).
 """
 from __future__ import annotations
 
@@ -26,8 +30,9 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.views.decorators.http import require_http_methods
 
-from . import schools as svc
-from .api import api_error, api_view, ok
+from education.api import api_error, api_view, ok
+
+from . import services as svc
 from .models import SCHOOL_COUNTRY_CHOICES, School, SchoolClass, SchoolClassStudent, SchoolMembership
 
 

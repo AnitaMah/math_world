@@ -11,7 +11,9 @@ from dataclasses import dataclass, field
 from django.db.models import Count, Prefetch
 
 from .game import lesson_tasks
-from .models import ContentBlock, Grade, Item, LessonProgress, Paragraph, Player, SchoolClass, Section, Textbook
+from schools.models import SchoolClass
+
+from .models import ContentBlock, Grade, Item, LessonProgress, Paragraph, Player, Section, Textbook
 from .services import playable_counts
 
 # Блоки, які знає контракт (теги в панелі уроку), у порядку показу

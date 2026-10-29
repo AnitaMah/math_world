@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.test import SimpleTestCase
 from django.urls import reverse
 
-from education import schools as svc
+from schools import services as svc
 from education.game import record_answer
 from education.grade_map import assign_states, load_grade
 from education.models import Answer, ContentBlock, Exercise, Item, Player, SubExercise

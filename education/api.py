@@ -149,10 +149,11 @@ def grade_map(request, number):
     учнів цього шкільного класу із зіркою (`None`, якщо без завдань). Доступно лише тому, хто може
     керувати класом (його вчитель, адмін школи, superuser) — інакше 403.
     """
+    from schools.models import SchoolClass
+    from schools.services import can_manage_class
+
     from .game import get_player
     from .grade_map import class_percent_map, load_grade, map_payload
-    from .models import SchoolClass
-    from .schools import can_manage_class
     from .views import get_lang
 
     lang = get_lang(request)
@@ -353,8 +354,9 @@ def _points_history(player) -> list[dict]:
 @api_view
 @require_GET
 def me(request):
+    from schools.models import SchoolMembership
+
     from .game import get_player
-    from .models import SchoolMembership
 
     player = get_player(request, create=False)
     is_teacher = (request.user.is_authenticated
