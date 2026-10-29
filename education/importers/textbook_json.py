@@ -108,7 +108,7 @@ class TextbookImporter:
     # ------------------------------------------------------------------ запуск
 
     def validate(self) -> None:
-        from education.pdf_pipeline.schema import SCHEMA_VERSION, SchemaError, validate_textbook
+        from education.pdf_pipeline.output.schema import SCHEMA_VERSION, SchemaError, validate_textbook
         version = self.data.get("schema_version") if isinstance(self.data, dict) else None
         if version != SCHEMA_VERSION:
             raise ValidationError(f"schema_version={version!r}, імпортер розуміє {SCHEMA_VERSION}")

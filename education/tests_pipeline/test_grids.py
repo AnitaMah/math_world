@@ -2,7 +2,7 @@
 import unittest
 
 from education.pdf_pipeline.datatypes import BBox, Line, Word
-from education.pdf_pipeline.grids import find_grids, read_grid, split_cells
+from education.pdf_pipeline.layout.grids import find_grids, read_grid, split_cells
 
 
 def line(*cells, y=0):

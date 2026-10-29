@@ -1,4 +1,4 @@
-"""Тести для education.pdf_pipeline.images."""
+"""Тести для education.pdf_pipeline.ingest.images."""
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,10 +7,10 @@ import pymupdf
 from PIL import Image
 
 from education.pdf_pipeline.config import PipelineConfig
-from education.pdf_pipeline.images import (
+from education.pdf_pipeline.ingest.images import (
     DEFAULT_RENDER_DPI, get_page_image, get_page_images, page_image_path, parse_page_range,
 )
-from education.pdf_pipeline.pdf_inspect import pdf_sha256
+from education.pdf_pipeline.ingest.pdf_inspect import pdf_sha256
 
 ROOT = Path(__file__).resolve().parents[2]
 MERZLYAK_PDF = ROOT / "5-klas-matematika-merzljak-2018-1-46.pdf"

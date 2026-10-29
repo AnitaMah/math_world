@@ -8,9 +8,9 @@ import numpy as np
 
 from education.pdf_pipeline.datatypes import BBox, Line, Node, SourceRef, Word
 from education.pdf_pipeline.layout import PageLayout
-from education.pdf_pipeline.report import crop_png_b64, render_report, write_report
+from education.pdf_pipeline.output.report import crop_png_b64, render_report, write_report
 from education.pdf_pipeline.structure import ParseIssue
-from education.pdf_pipeline.validate import (
+from education.pdf_pipeline.output.validate import (
     Problem, check_answer_mismatch, check_block_length, check_empty_nodes, check_exercise_numbers,
     check_expressions, check_figures, check_item_titles, check_lookalikes, check_low_conf_lines,
     check_orphan_answers, check_pages_without_body, from_parse_issues, tree_stats, validate,

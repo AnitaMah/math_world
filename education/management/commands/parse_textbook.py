@@ -33,8 +33,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **opts):
         from education.pdf_pipeline.config import PipelineConfig
-        from education.pdf_pipeline.images import parse_page_range
-        from education.pdf_pipeline.pdf_inspect import open_pdf
+        from education.pdf_pipeline.ingest.images import parse_page_range
+        from education.pdf_pipeline.ingest.pdf_inspect import open_pdf
         from education.pdf_pipeline.profiles import get_profile
 
         try:

@@ -1,4 +1,4 @@
-"""Тести для education.pdf_pipeline.figures — на згенерованих сторінках з «рисунками»."""
+"""Тести для education.pdf_pipeline.content.figures — на згенерованих сторінках з «рисунками»."""
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 
 from education.pdf_pipeline.datatypes import BBox, Line, Node, SourceRef, Word
-from education.pdf_pipeline.figures import (
+from education.pdf_pipeline.content.figures import (
     Figure, attach_figures, extract_page_figures, find_captions, group_by_captions, is_caption_line,
 )
 from education.pdf_pipeline.layout import PageLayout
@@ -175,7 +175,7 @@ class StrictFiguresTests(unittest.TestCase):
         self.assertTrue(figs[0].bbox.y0 >= 450 and figs[0].bbox.y1 <= 750)
 
     def test_text_cover(self):
-        from education.pdf_pipeline.figures import text_cover
+        from education.pdf_pipeline.content.figures import text_cover
         ln = text_line("aa bb", 10, 10, h=20)
         self.assertGreater(text_cover(BBox(0, 0, 150, 40), [ln]), 0.2)
         self.assertEqual(text_cover(BBox(500, 500, 600, 600), [ln]), 0.0)

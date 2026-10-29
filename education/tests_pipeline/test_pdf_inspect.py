@@ -1,4 +1,4 @@
-"""Тести для education.pdf_pipeline.pdf_inspect."""
+"""Тести для education.pdf_pipeline.ingest.pdf_inspect."""
 import hashlib
 import json
 import tempfile
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pymupdf
 
-from education.pdf_pipeline.pdf_inspect import (
+from education.pdf_pipeline.ingest.pdf_inspect import (
     PageInspection, PdfKind, classify_pdf, cyrillic_ratio, inspect_pdf,
     mixed_script_words, pdf_sha256, save_inspection, text_layer_quality,
 )

@@ -23,9 +23,9 @@ from rapidfuzz.distance import Levenshtein
 from .cache import load_json
 from .config import PipelineConfig
 from .datatypes import PageOcr
-from .images import get_page_image
+from .ingest.images import get_page_image
 from .ocr import OcrEngine, OcrParams, ocr_page, words_to_lines
-from .preprocess import PRESETS, PreprocessSpec, preprocess_page
+from .ingest.preprocess import PRESETS, PreprocessSpec, preprocess_page
 
 DEFAULT_MANIFEST = Path("education/tests_pipeline/fixtures/golden/golden.json")
 
@@ -72,7 +72,7 @@ def page_text(result: PageOcr, body_only: bool = True, normalize: bool = False) 
     else:
         lines = words_to_lines(result.words, result.page.pdf_page)
     if normalize:
-        from .normalize import normalize_lines
+        from .content.normalize import normalize_lines
         lines, _ = normalize_lines(lines)
     return "\n".join(line.text for line in lines)
 

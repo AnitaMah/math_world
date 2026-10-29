@@ -1,4 +1,4 @@
-"""Тести для education.pdf_pipeline.preprocess."""
+"""Тести для education.pdf_pipeline.ingest.preprocess."""
 import tempfile
 import unittest
 from pathlib import Path
@@ -6,7 +6,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-from education.pdf_pipeline import preprocess as pp
+from education.pdf_pipeline.ingest import preprocess as pp
 from education.pdf_pipeline.config import PipelineConfig
 from education.pdf_pipeline.datatypes import BBox, PageImage
 
@@ -182,7 +182,7 @@ class PreprocessPageTests(unittest.TestCase):
 @unittest.skipUnless(MERZLYAK_PDF.exists(), "немає PDF Мерзляка")
 class RealPageTests(unittest.TestCase):
     def test_page_7_default_preset(self):
-        from education.pdf_pipeline.images import get_page_image
+        from education.pdf_pipeline.ingest.images import get_page_image
         with tempfile.TemporaryDirectory() as tmp:
             page = get_page_image(MERZLYAK_PDF, 7, PipelineConfig(None, None, Path(tmp)))
             prepared = pp.preprocess_page(page)

@@ -1,11 +1,11 @@
-"""Тести для education.pdf_pipeline.exercises."""
+"""Тести для education.pdf_pipeline.content.exercises."""
 import unittest
 
 import cv2
 import numpy as np
 
 from education.pdf_pipeline.datatypes import BBox, Line, Node, Word
-from education.pdf_pipeline.exercises import (
+from education.pdf_pipeline.content.exercises import (
     classify_task, detect_difficulty_mark, enrich_exercises, figure_refs, flag_difficulty_order,
     has_margin_icon, is_colored, is_figure_label_line, split_exercise,
 )

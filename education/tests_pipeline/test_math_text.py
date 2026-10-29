@@ -1,4 +1,4 @@
-"""Тести для education.pdf_pipeline.math_text — на реальних підпунктах з OCR Мерзляка."""
+"""Тести для education.pdf_pipeline.content.math_text — на реальних підпунктах з OCR Мерзляка."""
 import unittest
 from fractions import Fraction
 
@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 
 from education.pdf_pipeline.datatypes import BBox, Node, SourceRef
-from education.pdf_pipeline.math_text import (
+from education.pdf_pipeline.content.math_text import (
     analyze_expression, check_tokens, detect_fraction_bars, enrich_math, format_answer, safe_eval, tokenize_expr,
 )
 

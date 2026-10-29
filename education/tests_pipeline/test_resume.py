@@ -128,7 +128,7 @@ class PageImageCacheTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_keeps_at_most_size_pages_and_reuses_recent(self):
-        from education.pdf_pipeline.preprocess import PageImageCache
+        from education.pdf_pipeline.ingest.preprocess import PageImageCache
         cache = PageImageCache(self.paths, size=3)
         for n in range(1, 8):
             self.assertEqual(int(cache.get(n)[0, 0, 0]), n)
@@ -140,7 +140,7 @@ class PageImageCacheTests(unittest.TestCase):
         self.assertEqual(cache.loads, 8)
 
     def test_unknown_page_is_none(self):
-        from education.pdf_pipeline.preprocess import PageImageCache
+        from education.pdf_pipeline.ingest.preprocess import PageImageCache
         cache = PageImageCache(self.paths)
         self.assertIsNone(cache.get(99))
         self.assertIsNone(cache.get(None))

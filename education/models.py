@@ -125,7 +125,7 @@ class Item(models.Model):
         return f"Завдання {self.number} ({self.paragraph})"
 
 
-# Спільні для пайплайна і БД переліки. Мають збігатися з education/pdf_pipeline/schema.py
+# Спільні для пайплайна і БД переліки. Мають збігатися з education/pdf_pipeline/output/schema.py
 # (тест education.tests.ChoicesMatchPipelineTests це перевіряє).
 DIFFICULTY_CHOICES = [
     ("preparatory", "Підготовчий (′)"),

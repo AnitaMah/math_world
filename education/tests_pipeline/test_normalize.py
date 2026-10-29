@@ -1,8 +1,8 @@
-"""Тести для education.pdf_pipeline.normalize."""
+"""Тести для education.pdf_pipeline.content.normalize."""
 import unittest
 
 from education.pdf_pipeline.datatypes import BBox, Line, Word
-from education.pdf_pipeline.normalize import (
+from education.pdf_pipeline.content.normalize import (
     LATIN_TO_CYR, Context, Normalizer, join_hyphenation, normalize_lines, rule_latin_lookalike_word,
     rule_mixed_script, word_script,
 )

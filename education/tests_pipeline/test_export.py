@@ -6,9 +6,9 @@ import unittest
 from pathlib import Path
 
 from education.pdf_pipeline.datatypes import BBox, Node, SourceRef
-from education.pdf_pipeline.export import dumps, export_textbook, file_sha256, load_textbook, write_textbook
-from education.pdf_pipeline.schema import SCHEMA_VERSION, SchemaError, validate_textbook
-from education.pdf_pipeline.validate import Problem
+from education.pdf_pipeline.output.export import dumps, export_textbook, file_sha256, load_textbook, write_textbook
+from education.pdf_pipeline.output.schema import SCHEMA_VERSION, SchemaError, validate_textbook
+from education.pdf_pipeline.output.validate import Problem
 
 SHA = "a" * 64
 STAMP = "2026-10-07T12:00:00+00:00"

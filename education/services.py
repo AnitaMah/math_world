@@ -140,15 +140,15 @@ def page_crop_png(textbook, page: int, bbox: list[int] | None, pad: int = 12) ->
     import cv2
 
     from .pdf_pipeline.config import PipelineConfig
-    from .pdf_pipeline.images import page_image_path
-    from .pdf_pipeline.preprocess import load_image
+    from .pdf_pipeline.ingest.images import page_image_path
+    from .pdf_pipeline.ingest.preprocess import load_image
 
     cfg = PipelineConfig.from_env_file()
     path = page_image_path(cfg.cache_dir, textbook.pdf_sha256, page)
     if not path.exists():
         from pathlib import Path
 
-        from .pdf_pipeline.images import get_page_image
+        from .pdf_pipeline.ingest.images import get_page_image
         pdf = Path(textbook.pdf_name)
         if not pdf.is_file():
             return None

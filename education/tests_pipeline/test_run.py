@@ -10,7 +10,7 @@ import pymupdf
 
 from education.pdf_pipeline.config import PipelineConfig
 from education.pdf_pipeline.datatypes import BBox, Word
-from education.pdf_pipeline.export import load_textbook
+from education.pdf_pipeline.output.export import load_textbook
 from education.pdf_pipeline.run import STAGES, PipelineError, _compact_pages, _stage_range, run_pipeline
 
 # Рядки сторінок (текст, висота шрифту в пікселях оригіналу) — як у тестах структури.

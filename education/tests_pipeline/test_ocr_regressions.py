@@ -9,18 +9,18 @@ import unittest
 import cv2
 import numpy as np
 
-from education.pdf_pipeline.answers import parse_answer_lines, split_parts
+from education.pdf_pipeline.content.answers import parse_answer_lines, split_parts
 from education.pdf_pipeline.datatypes import BBox, Line, Node, PageImage, Word
-from education.pdf_pipeline.exercises import figure_refs, split_exercise
-from education.pdf_pipeline.grids import read_grid
+from education.pdf_pipeline.content.exercises import figure_refs, split_exercise
+from education.pdf_pipeline.layout.grids import read_grid
 from education.pdf_pipeline.layout import PageLayout, infer_book_pages, split_running_header
-from education.pdf_pipeline.math_text import analyze_expression, detect_fraction_bars, enrich_math
-from education.pdf_pipeline.normalize import join_hyphenation, normalize_lines
-from education.pdf_pipeline.preprocess import PRESET_LOWRES, choose_preset
+from education.pdf_pipeline.content.math_text import analyze_expression, detect_fraction_bars, enrich_math
+from education.pdf_pipeline.content.normalize import join_hyphenation, normalize_lines
+from education.pdf_pipeline.ingest.preprocess import PRESET_LOWRES, choose_preset
 from education.pdf_pipeline.profiles import get_profile
 from education.pdf_pipeline.profiles.base import TocEntry
 from education.pdf_pipeline.structure import parse_structure
-from education.pdf_pipeline.validate import check_pages_without_body, check_exercise_numbers
+from education.pdf_pipeline.output.validate import check_pages_without_body, check_exercise_numbers
 
 M5 = get_profile("math_merzlyak_5")
 M5_TOC = [

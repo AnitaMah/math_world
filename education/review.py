@@ -44,7 +44,7 @@ def apply_text(obj, new_text: str) -> None:
     exercise = obj.exercise
     if exercise.task_verb != "compute":
         return
-    from education.pdf_pipeline.math_text import analyze_expression
+    from education.pdf_pipeline.content.math_text import analyze_expression
     result = analyze_expression(new_text, natural_numbers=exercise.textbook.grade.number <= 5)
     obj.expr, obj.expr_status, obj.expr_issues = result.expression, result.status, result.issues
     Answer.objects.filter(exercise=exercise, subexercise=obj, kind="computed").delete()

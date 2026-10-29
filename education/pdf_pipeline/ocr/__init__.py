@@ -12,7 +12,7 @@ from pathlib import Path
 
 from ..cache import load_json_or_none, save_json, short_hash
 from ..datatypes import PageOcr
-from ..preprocess import PreparedPage
+from ..ingest.preprocess import PreparedPage
 from .base import FakeOcrEngine, OcrEngine, OcrParams, words_to_lines
 
 __all__ = ["FakeOcrEngine", "OcrEngine", "OcrParams", "ocr_cache_path", "ocr_page", "words_to_lines"]

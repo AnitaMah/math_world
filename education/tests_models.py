@@ -152,7 +152,7 @@ class ChoicesMatchPipelineTests(TestCase):
         self.assertEqual({c for c, _ in DIFFICULTY_CHOICES}, {*DIFFICULTY_LEVELS, "unknown"})
 
     def test_text_source_and_expr_status(self):
-        from education.pdf_pipeline.schema import DEFINITIONS
+        from education.pdf_pipeline.output.schema import DEFINITIONS
         self.assertEqual({c for c, _ in TEXT_SOURCE_CHOICES}, set(DEFINITIONS["text_source"]["enum"]))
         statuses = {s for s in DEFINITIONS["subexercise"]["properties"]["expr_status"]["enum"] if s}
         self.assertEqual({c for c, _ in SubExercise.EXPR_STATUS_CHOICES}, statuses)

@@ -158,7 +158,7 @@ class NoiseAndRegionTests(unittest.TestCase):
     def test_detect_frames_on_synthetic_image(self):
         import numpy as np
         import cv2
-        from education.pdf_pipeline.regions import detect_frames
+        from education.pdf_pipeline.layout.regions import detect_frames
         img = np.full((1000, 800), 255, np.uint8)
         cv2.rectangle(img, (100, 200), (500, 400), 0, 2)          # рамка
         cv2.putText(img, "text", (120, 300), cv2.FONT_HERSHEY_SIMPLEX, 1, 0, 2)

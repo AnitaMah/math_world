@@ -2,7 +2,7 @@
 import unittest
 from fractions import Fraction
 
-from education.pdf_pipeline.answers import (
+from education.pdf_pipeline.content.answers import (
     AnswerEntry, AnswerKey, attach_answers, clean_value, paragraph_marker,
     parse_answer_lines, split_parts, to_number,
 )

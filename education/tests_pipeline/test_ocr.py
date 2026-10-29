@@ -12,7 +12,7 @@ from education.pdf_pipeline.config import PipelineConfig
 from education.pdf_pipeline.datatypes import BBox, PageImage, Word
 from education.pdf_pipeline.ocr import FakeOcrEngine, OcrParams, ocr_cache_path, ocr_page, words_to_lines
 from education.pdf_pipeline.ocr.tesseract import TesseractEngine, TesseractNotAvailable, parse_tesseract_data
-from education.pdf_pipeline.preprocess import PreparedPage, Transform, _scale_matrix
+from education.pdf_pipeline.ingest.preprocess import PreparedPage, Transform, _scale_matrix
 
 ROOT = Path(__file__).resolve().parents[2]
 MERZLYAK_PDF = ROOT / "5-klas-matematika-merzljak-2018-1-46.pdf"
@@ -161,8 +161,8 @@ class RealTesseractTests(unittest.TestCase):
     """Повільний тест (~10–60 с перший раз, далі з кешу)."""
 
     def test_page_7(self):
-        from education.pdf_pipeline.images import get_page_image
-        from education.pdf_pipeline.preprocess import preprocess_page
+        from education.pdf_pipeline.ingest.images import get_page_image
+        from education.pdf_pipeline.ingest.preprocess import preprocess_page
         cfg = PipelineConfig.from_env()
         engine = TesseractEngine(cfg)
         result = ocr_page(preprocess_page(get_page_image(MERZLYAK_PDF, 7, cfg)), engine)
