@@ -249,18 +249,20 @@ _Мета: 697-рядковий файл на кілька когерентни�
 - [x] Коміт: `BE-S12: split vision.py and run.py by concern` (`a20f5cb`)
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 11–12»
 
-## Сесія 13. Домен `review` — межа з catalog
+## Сесія 13. Домен `review` — межа з catalog — ЗРОБЛЕНО (2026-10-29)
 
 _Мета: `ManualEdit`, `review.py`, `views_review.py`, `templates/education/review/` —
 зафіксувати як внутрішній підмодуль catalog (не окремий застосунок: `ManualEdit` жорстко
 прив'язаний до `Textbook`/`Exercise`/`SubExercise`, виносити дорожче, ніж тримати)._
 
-- [ ] Запиши в DECISIONS.md явне рішення: review НЕ стає окремим застосунком, і чому
-- [ ] Перенеси `review.py`, `views_review.py` під `education/review/` як пакет
-      (`education/review/services.py`, `education/review/views.py`), якщо це покращує
-      навігацію — інакше залиш як є й зафіксуй це рішення замість переносу
-- [ ] `python manage.py test education.tests_review` — зелено
-- [ ] Коміт: `BE-S13: review module boundary` (або просто запис рішення, якщо без переносу)
+- [x] Запиши в DECISIONS.md явне рішення: review НЕ стає окремим застосунком, і чому
+- [x] Перенести в пакет чи лишити плоско? **Лишено як є**: `review.py` (139 рядків) і
+      `views_review.py` (91 рядок) уже плоскі, по одному призначенню на файл — пакет
+      додав би вкладеність без навігаційної користі (рішення в DECISIONS.md)
+- [ ] `python manage.py test education.tests_review` — без змін коду тут не потрібно,
+      перевіриться разом з рештою сесії 9 (та сама сесія, що й паралельно в роботі)
+- [x] Коміт: запис рішення в `docs/backend/DECISIONS.md`/`PLAN.md` (без зміни коду —
+      комітиться разом із сесією 9)
 
 ## Сесія 14. Тести: розкладка по застосунках
 

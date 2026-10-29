@@ -399,15 +399,6 @@ class TheoryPractice(models.Model):
         return f"ТП для завдання {self.item.id}"
 
 
-class Lesson(models.Model):
-    title = models.CharField(max_length=255)
-    content = models.TextField()
-    image = models.ImageField(upload_to='lessons/', null=True, blank=True)
-
-    def __str__(self):
-        return self.title
-
-
 # Гра (Player, Attempt, LessonProgress, DIFFICULTY_POINTS) живе у застосунку `game`
 # (BE-S04, docs/backend/PLAN.md) — залежить від каталогу (Item/Paragraph/Exercise/
 # SubExercise), але каталог нічого не знає про гру; винесено без зміни таблиць.
