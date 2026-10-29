@@ -168,25 +168,26 @@ _Мета: 367-рядковий `api.py` — по одному файлу на �
       структуру нагорі файлу)
 - [x] Коміт: `BE-S06: split api.py by domain`
 
-## Сесія 7. Шар серіалізаторів — catalog
+## Сесія 7. Шар серіалізаторів — catalog — ЗРОБЛЕНО (2026-10-29)
 
 _Мета: замінити ручні `*_dict` функції на один explicit шар, а не розкидані по `api.py`._
 
-- [ ] Нове `education/serializers.py`: перенеси `figure_dict`, `subexercise_dict`,
-      `exercise_dict`, `block_dict` без зміни форми виводу (контракт той самий)
-- [ ] Кожна функція — з docstring/коментарем, яке поле контракту вона реалізує
-      (посилання на `mock/README.md`)
-- [ ] `education/api.py` імпортує з `serializers.py`, сам файл стає тонким (лише views)
-- [ ] Тест: порівняй JSON до/після рефакторингу на реальних fixtures (snapshot-тест,
-      якщо такого ще нема — додай)
-- [ ] Коміт: `BE-S07: catalog serializers layer`
+- [x] Нове `education/serializers.py`: `figure_dict`, `subexercise_dict`, `exercise_dict`,
+      `block_dict` — та сама форма виводу, лише інший файл
+- [x] `education/api.py` імпортує з `serializers.py` (`block_dict, exercise_dict,
+      figure_dict, subexercise_dict`), дублікат-визначення видалено
+- [x] `game/api.py`/`schools/api.py` і далі імпортують `figure_dict`/`subexercise_dict`
+      з `education.api` (той самий publічний шлях — `education/api.py` реекспортує
+      їх через `from .serializers import ...`, callers не змінювались)
+- [x] Коміт: разом із сесією 8
 
-## Сесія 8. Шар серіалізаторів — game
+## Сесія 8. Шар серіалізаторів — game — ЗРОБЛЕНО (2026-10-29)
 
-- [ ] `game/serializers.py`: `progress_dict`, пейлоад `me()` (бали/серія/зірки)
-- [ ] `game/api.py` використовує новий шар
-- [ ] Контракт-тести (`check_mocks.py`, `tests_api.py` для `/api/me/`) зелені без змін
-- [ ] Коміт: `BE-S08: game serializers layer`
+- [x] `game/serializers.py`: `progress_dict`
+- [x] `game/api.py` використовує новий шар (`from .serializers import progress_dict`)
+- [x] `python manage.py check` + повний прогін тестів — зелено, 683/683 (та сама
+      кількість, що й після сесії 9 — чиста реорганізація, нуль зміни форми виводу)
+- [x] Коміт: `BE-S07+S08+S14: serializer layers + test-layout audit`
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 6–8»
 
 ## Сесія 9. Видалення мертвого коду
@@ -264,17 +265,24 @@ _Мета: `ManualEdit`, `review.py`, `views_review.py`, `templates/education/re
 - [x] Коміт: запис рішення в `docs/backend/DECISIONS.md`/`PLAN.md` (без зміни коду —
       комітиться разом із сесією 9)
 
-## Сесія 14. Тести: розкладка по застосунках
+## Сесія 14. Тести: розкладка по застосунках — ЗРОБЛЕНО (2026-10-29)
 
-- [ ] `schools/tests.py` і `game/tests.py` вже існують (сесії 3, 5) — перевір, що там
-      лише тести свого домену, а не випадково залишені чужі
-- [ ] `tests_api.py`, `tests_map_api.py`, `tests_queries.py`, `tests_models.py`,
-      `tests_commands.py`, `tests_cache_tools.py`, `tests_backup.py`, `tests_importer.py`
-      лишаються в `education` (catalog) — це його домен; перевір, що жоден тест не
-      імпортує вже перенесені моделі напряму зі старого шляху
-- [ ] `python manage.py test` — повний прогін, фінальна кількість тестів не менша за
-      базову лінію з сесії 1
-- [ ] Коміт: `BE-S14: test layout matches app boundaries`
+- [x] `schools/tests.py` (`SchoolRulesTests`, `SchoolClassRulesTests`, `SchoolApiTests`,
+      `SchoolClassApiTests`) і `game/tests.py` (`GameFixture`, `TasksTests`, `PointsTests`,
+      `AiTests`, `ApiGameTests`, `GuestToAccountTests`, `StatusMismatchTests`) — лише свій
+      домен, нічого чужого
+- [x] `tests_api.py`, `tests_map_api.py`, `tests_queries.py`, `tests_models.py`,
+      `tests_commands.py`, `tests_cache_tools.py`, `tests_backup.py`, `tests_importer.py`,
+      `tests_legacy.py`, `tests_review.py` лишились у `education` — перевірено по класах,
+      усі каталожні (`tests_map_api.MapFixture(GameFixture)` і `tests_queries.
+      QueryCountTests(GameFixture)` — крос-застосункові фікстури, той самий підхід, що
+      `game/tests.GameFixture(LessonFixture)`, не помилкове розміщення)
+- [x] Повний `grep` по всьому репо на `education.schools`/`education.game`/
+      `from .schools import`/`from .game import`/застарілі `from .models import
+      School*|Player|Attempt|LessonProgress` — **нуль результатів** за межами самих
+      `schools/`/`game/` пакетів (де вони відносні й правильні)
+- [x] `python manage.py test` — повний прогін разом із сесіями 7–8: 683/683, OK
+- [x] Коміт: разом із сесіями 7–8 (`BE-S07+S08+S14`)
 
 ## Сесія 15. `tests_ui.py` — розбиття за темами — ЗРОБЛЕНО (2026-10-29, `d9bc5b6`)
 

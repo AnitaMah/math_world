@@ -28,6 +28,7 @@ from education.services import check_answer
 from schools.models import SchoolMembership
 
 from .models import LessonProgress
+from .serializers import progress_dict
 from .services import get_player, lesson_of, lesson_tasks, record_answer, record_solution
 
 CHECK_LIMIT = 10           # спроб на один підпункт
@@ -57,12 +58,6 @@ def _payload_text(request, field: str, max_len: int):
     if len(text) > max_len:
         return None, api_error(400, f"{field}_too_long", "Задовго")
     return text, None
-
-
-def progress_dict(prog) -> dict | None:
-    if prog is None:
-        return None
-    return {"solved": prog.solved, "total": prog.total, "points": prog.points, "stars": prog.stars}
 
 
 @api_view

@@ -19,7 +19,8 @@ from django.shortcuts import get_object_or_404
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_GET
 
-from .models import ContentBlock, Exercise, Figure, Grade, Item, Paragraph, Section, SubExercise, Textbook
+from .models import Exercise, Figure, Grade, Item, Paragraph, Section, SubExercise, Textbook
+from .serializers import block_dict, exercise_dict, figure_dict, subexercise_dict
 from .services import THEORY_BLOCK_TYPES, lesson_exercises, playable_counts
 
 MAX_PAGE_SIZE = 50
@@ -46,32 +47,6 @@ def api_view(view):
             return api_error(405, "method_not_allowed", f"Дозволено: {response.get('Allow', '')}")
         return response
     return wrapper
-
-
-# --------------------------------------------------------------------------- серіалізатори (без відповідей!)
-
-
-def figure_dict(fig: Figure) -> dict:
-    return {"id": fig.pk, "number": fig.number, "caption": fig.caption,
-            "url": f"/api/figures/{fig.pk}/image" if fig.image else None}
-
-
-def subexercise_dict(sub: SubExercise) -> dict:
-    return {"id": sub.pk, "number": sub.number, "text": sub.text}
-
-
-def exercise_dict(ex: Exercise) -> dict:
-    return {"id": ex.pk, "number": ex.number, "difficulty": ex.difficulty, "block_type": ex.block.block_type,
-            "condition": ex.condition, "condition_tail": ex.condition_tail, "homework": ex.homework,
-            "auto_checkable": ex.auto_checkable,
-            # підпункти needs_review теж не показуємо (напр. сумнівна мітка «1)» замість «5)»)
-            "subexercises": [subexercise_dict(s) for s in ex.subexercises.all() if not s.needs_review],
-            "figures": [figure_dict(f) for f in ex.figures.all()]}
-
-
-def block_dict(block: ContentBlock) -> dict:
-    return {"id": block.pk, "type": block.block_type, "title": block.title, "text": block.text,
-            "figures": [figure_dict(f) for f in block.figures.all()]}
 
 
 # --------------------------------------------------------------------------- ендпоінти
