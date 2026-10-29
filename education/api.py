@@ -132,7 +132,8 @@ def textbook_tree(request, textbook_id):
 @require_GET
 def grades(request):
     """Класи для екрана «Світ»: підручник, к-сть розділів/уроків, зірки гравця, поточний урок."""
-    from .game import get_player
+    from game.services import get_player
+
     from .grade_map import grade_summary, load_grade
 
     player = get_player(request, create=False)
@@ -149,10 +150,10 @@ def grade_map(request, number):
     учнів цього шкільного класу із зіркою (`None`, якщо без завдань). Доступно лише тому, хто може
     керувати класом (його вчитель, адмін школи, superuser) — інакше 403.
     """
+    from game.services import get_player
     from schools.models import SchoolClass
     from schools.services import can_manage_class
 
-    from .game import get_player
     from .grade_map import class_percent_map, load_grade, map_payload
     from .views import get_lang
 
@@ -256,7 +257,7 @@ def progress_dict(prog) -> dict | None:
 @require_POST
 def check(request, pk):
     """POST {"answer": "3,5"} → {"correct", "points", "progress"}. Правильну відповідь не розкриваємо."""
-    from .game import get_player, record_answer
+    from game.services import get_player, record_answer
 
     sub = get_object_or_404(SubExercise.objects.select_related("exercise__block").prefetch_related("answers"),
                             pk=pk, needs_review=False, exercise__needs_review=False)
@@ -282,8 +283,9 @@ AI_LIMIT_PER_DAY = 5
 @require_POST
 def solution(request, pk):
     """POST {"solution": "..."} → ШІ-перевірка текстової задачі (лише задачі, що є ШІ-завданнями уроку)."""
+    from game.services import get_player, lesson_of, lesson_tasks, record_solution
+
     from .ai_check import AiUnavailable, get_ai_checker
-    from .game import get_player, lesson_of, lesson_tasks, record_solution
 
     ex = get_object_or_404(Exercise.objects.select_related("block", "textbook__grade"), pk=pk, needs_review=False)
     if f"e{ex.pk}" not in {t.id for t in lesson_tasks(lesson_of(ex))}:
@@ -309,8 +311,8 @@ def solution(request, pk):
 @require_GET
 def play(request, kind, pk):
     """Усі завдання уроку для екрана гри (без відповідей) + прогрес поточного гравця."""
-    from .game import get_player, lesson_tasks
-    from .models import LessonProgress
+    from game.models import LessonProgress
+    from game.services import get_player, lesson_tasks
 
     from .grade_map import find_lesson
 
@@ -354,9 +356,8 @@ def _points_history(player) -> list[dict]:
 @api_view
 @require_GET
 def me(request):
+    from game.services import get_player
     from schools.models import SchoolMembership
-
-    from .game import get_player
 
     player = get_player(request, create=False)
     is_teacher = (request.user.is_authenticated

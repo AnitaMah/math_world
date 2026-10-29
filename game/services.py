@@ -11,10 +11,10 @@ from django.db import transaction
 from django.db.models import Prefetch
 from django.utils import timezone
 
-from .models import (
-    DIFFICULTY_POINTS, Answer, Attempt, Exercise, Item, LessonProgress, Paragraph, Player, SubExercise,
-)
-from .services import answers_equal, expected_answer
+from education.models import Answer, Exercise, Item, Paragraph, SubExercise
+from education.services import answers_equal, expected_answer
+
+from .models import DIFFICULTY_POINTS, Attempt, LessonProgress, Player
 
 AI_TASKS_PER_LESSON = 3
 FULL_POINTS_ATTEMPTS = 2           # з 1-ї–2-ї спроби — повні бали, далі — половина

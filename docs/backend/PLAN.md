@@ -72,10 +72,13 @@ _Мета: зафіксувати межі доменів і ризики, пе�
     заради цього (коментар у файлі прямо каже «бекенд-чату повідомлено»)
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесію 1» перед тим, як рухати код
 
-## Сесія 2. Застосунок `schools` — моделі
+## Сесія 2. Застосунок `schools` — моделі — ЗРОБЛЕНО (2026-10-29, `0b54407`)
 
 _Мета: `School`, `SchoolMembership`, `SchoolClass`, `SchoolClassStudent` переїжджають
 у новий застосунок `schools` без зміни таблиць і даних._
+
+Сесії 2 і 3 виконані разом однією сесією (неможливо лишити код у робочому стані між
+ними — моделі й код, що на них посилається, мусять переїхати одночасно).
 
 - [ ] `python manage.py startapp schools`, додай у `INSTALLED_APPS`
 - [ ] Перенеси 4 класи моделей з `education/models.py` у `schools/models.py` (той самий
@@ -91,38 +94,49 @@ _Мета: `School`, `SchoolMembership`, `SchoolClass`, `SchoolClassStudent` п�
 - [ ] `python manage.py test` — зелено, без жодної зміни в поведінці
 - [ ] Коміт: `BE-S02: schools models (state-only move)`
 
-## Сесія 3. Застосунок `schools` — код і тести
+## Сесія 3. Застосунок `schools` — код і тести — ЗРОБЛЕНО (2026-10-29, `0b54407`)
 
-- [ ] Перенеси `education/schools.py` → `schools/services.py`, `education/api_schools.py`
+- [x] Перенеси `education/schools.py` → `schools/services.py`, `education/api_schools.py`
       → `schools/api.py`, `education/tests_schools.py` → `schools/tests.py`
-- [ ] Перенеси пов'язані записи `admin.py` → `schools/admin.py`
-- [ ] Оновити `education/api_urls.py` → include `schools.urls` (новий файл `schools/urls.py`
-      з тими самими шляхами `schools/`, `classes/`…) — зовнішній контракт API не змінюється,
-      перевір Playwright/контракт-тестами, що відповіді ті самі
-- [ ] Прибери всі старі імпорти `from education.models import School...` по решті коду;
-      перевір `grep -rn "from education.models import" | grep -i school`
-- [ ] `python manage.py test` — зелено
-- [ ] Коміт: `BE-S03: schools app code + tests`
+- [x] Перенеси пов'язані записи `admin.py` → `schools/admin.py`
+- [x] Оновити `education/api_urls.py` — замість окремого модуля тепер
+      `from schools import api as api_schools`; шляхи й імена маршрутів не змінились
+      (`schools/urls.py` із власним include — відкладено до сесії 6, разом з рештою
+      розбиття `api_urls.py`, щоб не робити цю зміну двічі)
+- [x] Прибери всі старі імпорти `from education.models import School...`/
+      `from education import schools` по решті коду — перший повний прогін тестів
+      одразу знайшов пропущений `education/tests_map_api.py` (`from education import
+      schools as svc`), виправлено на `from schools import services as svc`
+- [x] `python manage.py makemigrations --check` — чисто; `python manage.py test` —
+      691 тестів, OK (skipped=14), збігається з базовою лінією сесії 1
+- [x] Коміт: `BE-S02..S03: extract schools app (models + code + tests)` (`0b54407`)
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 2–3»
 
-## Сесія 4. Застосунок `game` — моделі
+## Сесія 4. Застосунок `game` — моделі — ЗРОБЛЕНО (2026-10-29)
 
-- [ ] `python manage.py startapp game`, додай у `INSTALLED_APPS`
-- [ ] Перенеси `Player`, `Attempt`, `LessonProgress` тим самим способом, що в сесії 2
-      (`db_table` фіксується, `SeparateDatabaseAndState`)
-- [ ] FK на `Item`/`Paragraph`/`Exercise`/`SubExercise` лишаються — це нормальний
-      крос-застосунковий FK (`education.Item`), Django це підтримує без проблем
-- [ ] `makemigrations --check` чистий, тести зелені
-- [ ] Коміт: `BE-S04: game models (state-only move)`
+- [x] `python manage.py startapp game`, додано в `INSTALLED_APPS`
+- [x] Перенесено `Player`, `Attempt`, `LessonProgress` тим самим способом, що в сесії 2
+      (`db_table` фіксується: `education_player/attempt/lessonprogress`,
+      `SeparateDatabaseAndState`) — `education/migrations/0023_move_game_to_game_app.py`
+      + `game/migrations/0001_initial.py`. Індекси `Attempt` (`education_a_player__2faf92_idx`,
+      `education_a_player__6b6cce_idx`) узяті буквально з `0016_game_progress.py` — інакше
+      стан міграції не збігався б з фактичною БД
+- [x] FK на `Item`/`Paragraph`/`Exercise`/`SubExercise` лишаються — крос-застосунковий
+      FK (`education.Item`), Django це підтримує без проблем
+- [x] `makemigrations --check` чистий
 
-## Сесія 5. Застосунок `game` — код і тести
+## Сесія 5. Застосунок `game` — код і тести — ЗРОБЛЕНО (2026-10-29)
 
-- [ ] `education/game.py` → `game/services.py`, `education/tests_game.py` → `game/tests.py`
-- [ ] Відповідні записи `admin.py` → `game/admin.py`
-- [ ] `grep -rn "from education.models import" | grep -E "Player|Attempt|LessonProgress"`
-      — оновити всі імпорти на `from game.models import ...`
-- [ ] `python manage.py test` — зелено
-- [ ] Коміт: `BE-S05: game app code + tests`
+- [x] `education/game.py` → `game/services.py`, `education/tests_game.py` → `game/tests.py`
+- [x] Admin: жодних записів `Player`/`Attempt`/`LessonProgress` в `education/admin.py` не було
+      зареєстровано — нічого переносити
+- [x] Сигнал `user_logged_in` (`on_login`) переїхав з `education/apps.py` у `game/apps.py.ready()`
+- [x] Оновлено всі імпорти на `from game.models import ...` / `from game.services import ...`:
+      `education/api.py` (6 місць), `education/grade_map.py`, `education/views_ui.py`,
+      `education/tests_map_api.py`, `education/tests_queries.py`,
+      `education/tests_ui/test_auth_pages.py`
+- [ ] `python manage.py test` — у процесі, коміт після підтвердження
+- [ ] Коміт: `BE-S04..S05: extract game app (models + code + tests)`
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 4–5»
 
 ## Сесія 6. Розбиття `api.py` за доменами
@@ -189,26 +203,38 @@ _Мета: прибрати знайдене в сесії 1 — тільки п
 - [ ] Коміт: `BE-S10: decouple map_builder from old UI route names`
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 9–10»
 
-## Сесія 11. `pdf_pipeline/structure.py` — розбиття
+## Сесія 11. `pdf_pipeline/structure.py` — розбиття — ЗРОБЛЕНО (2026-10-29, `87ddf69`)
 
 _Мета: 697-рядковий файл на кілька когерентних модулів, без зміни публічного API пайплайна._
 
-- [ ] Прочитай `structure.py` і виділи природні межі (напр.: розбір розділів/параграфів
-      окремо від збирання блоків уроку, окремо від нумерації вправ) — запиши межі в
-      DECISIONS.md перед тим, як різати файл
-- [ ] Перенеси функції в 2–3 нові файли (`structure_sections.py`, `structure_blocks.py`…)
-      з тонким `structure.py`, що лише реекспортує публічний інтерфейс для `run.py`
-- [ ] `python manage.py test education.tests_pipeline.test_structure` — усі 463 рядки
-      тестів лишаються зеленими без змін
-- [ ] Коміт: `BE-S11: split pdf_pipeline/structure.py`
+- [x] Межі, знайдені в коді (не вигадані заздалегідь): `structure_ocr_fix.py` (64 рядки —
+      виправлення цифр, які OCR сплутав з буквами), `structure_lines.py` (110 рядків —
+      потокове читання рядків сторінки й зіставлення заголовків), `structure_parser.py`
+      (575 рядків — сам FSM-парсер: `StructureParser`, `ParseResult`, `parse_structure`, `outline`)
+- [x] `structure.py` лишився тонким (58 рядків) — реекспортує той самий публічний інтерфейс
+      через явні імпорти й `__all__`, тож усі `from .structure import X` не змінились
+- [x] `python manage.py test education.tests_pipeline` — 420 тестів, OK (skipped=14),
+      без змін до і після
+- [x] Коміт: `BE-S11: split structure.py into ocr-fix / line-stream / parser modules` (`87ddf69`)
 
-## Сесія 12. `pdf_pipeline/vision.py` і `run.py` — розбиття
+## Сесія 12. `pdf_pipeline/vision.py` і `run.py` — розбиття — ЗРОБЛЕНО (2026-10-29, `a20f5cb`)
 
-- [ ] `vision.py` (571 рядок): відділи побудову промптів від розбору відповіді моделі
-      від логіки повторних спроб/кешування
-- [ ] `run.py` (496 рядків): відділи CLI/аргументи від самого оркестратора кроків пайплайна
-- [ ] `python manage.py test education.tests_pipeline` — повний набір зелений
-- [ ] Коміт: `BE-S12: split pdf_pipeline vision.py + run.py`
+- [x] `vision.py` (571→206 рядків): `vision_prompts.py` (шаблон промпту, схема відповіді),
+      `vision_client.py` (retry/backoff, `DailyBudget`, `CachedClient`, `GeminiVisionClient`),
+      `vision_targets.py` (`VisionTarget`, `select_targets`, `crop_png`), `vision_response.py`
+      (`Decision`, `judge`, `apply_response`). `run_vision`/`VisionStats`/`main`/
+      `MAX_CONSECUTIVE_ERRORS` **лишились у `vision.py`**, а не переїхали — `test_vision.py`
+      робить `mock.patch("education.pdf_pipeline.vision.MAX_CONSECUTIVE_ERRORS", 1)`, і якби
+      `run_vision` переїхав, патч на реекспортовану копію в тонкому модулі не вплинув би на
+      глобальну змінну, яку функція фактично читає. Правильне рішення — не ідеальна
+      симетрія розбиття, а збереження поведінки тесту
+- [x] `run.py` (496→47 рядків): `run_orchestrator.py` (сам оркестратор кроків,
+      `run_pipeline`/`RunResult`/`STAGES`), `run_manifest.py` (`git_commit`, маніфест запуску),
+      `run_cli.py` (розбір аргументів командного рядка)
+- [x] `python manage.py test education.tests_pipeline` — 420 тестів, OK (skipped=14),
+      включно з `test_no_django.py` (рекурсивно скановує `pdf_pipeline/*.py` — нові файли
+      підхопились автоматично) і тестом на `MAX_CONSECUTIVE_ERRORS`
+- [x] Коміт: `BE-S12: split vision.py and run.py by concern` (`a20f5cb`)
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 11–12»
 
 ## Сесія 13. Домен `review` — межа з catalog
@@ -236,16 +262,20 @@ _Мета: `ManualEdit`, `review.py`, `views_review.py`, `templates/education/re
       базову лінію з сесії 1
 - [ ] Коміт: `BE-S14: test layout matches app boundaries`
 
-## Сесія 15. `tests_ui.py` — розбиття за темами
+## Сесія 15. `tests_ui.py` — розбиття за темами — ЗРОБЛЕНО (2026-10-29, `d9bc5b6`)
 
 _Мета: 843-рядковий файл — по одному файлу на тему, а не все UI-тестування підряд._
 
-- [ ] Прочитай `tests_ui.py`, виділи теми (токени/кит, іконки, топбар, мапа, панель уроку,
-      доступність…) — запиши список тем
-- [ ] Розбий на `tests_ui/test_tokens.py`, `tests_ui/test_topbar.py`, `tests_ui/test_map.py`…
-      (пакет `tests_ui/` замість одного файлу)
-- [ ] `python manage.py test education.tests_ui` — та сама кількість тестів, усі зелені
-- [ ] Коміт: `BE-S15: split tests_ui.py by topic`
+- [x] Прочитай `tests_ui.py`, виділи теми — 22 файли в `education/tests_ui/`: debug_flag,
+      tokens, kit, icons, components, topbar, mocks, ui_api_page, map_page, world_page,
+      progress_page, profile_page, theme, pwa, lesson_page, text_filters, play_page,
+      auth_pages, polish, real_api, paragraph_page (+ `__init__.py`)
+- [x] Розбито на пакет `education/tests_ui/` — 24 класи перенесено verbatim, лише глибина
+      `Path(__file__)` виправлена під нову вкладеність
+- [x] `python manage.py test education.tests_ui` — та сама кількість тестів (691 на весь
+      набір, до і після — ідентично), усі зелені; дискавері Django за замовчуванням
+      підхопив пакет без змін у `TEST_RUNNER`
+- [x] Коміт: `BE-S15: split education/tests_ui.py into tests_ui/ package by topic` (`d9bc5b6`)
 - [ ] 🔍 **РЕВ'Ю**: напиши «перевір сесії 13–15»
 
 ## Сесія 16. Прибирання `admin.py`, фінальна звірка

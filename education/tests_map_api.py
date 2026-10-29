@@ -3,11 +3,13 @@ from django.contrib.auth.models import User
 from django.test import SimpleTestCase
 from django.urls import reverse
 
+from game.models import Player
+from game.services import record_answer
+from game.tests import GameFixture
 from schools import services as svc
-from education.game import record_answer
+
 from education.grade_map import assign_states, load_grade
-from education.models import Answer, ContentBlock, Exercise, Item, Player, SubExercise
-from education.tests_game import GameFixture
+from education.models import Answer, ContentBlock, Exercise, Item, SubExercise
 from tools.frontend.check_mocks import STATES, check_grade_map
 
 

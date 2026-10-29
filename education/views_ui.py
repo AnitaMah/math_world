@@ -193,7 +193,9 @@ def _lesson_render(request, kind, lesson):
     діти бачать умови, а не відповіді, і не бачать сумнівного (як і в грі).
     """
     from django.urls import reverse
-    from .game import get_player
+
+    from game.services import get_player
+
     from .services import playable_counts
     from .views import _blocks_context, _item_title, get_lang
 

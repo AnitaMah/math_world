@@ -5,7 +5,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 
 from education.models import Answer, ContentBlock, Exercise, Figure, SubExercise
-from education.tests_game import GameFixture
+from game.tests import GameFixture
 
 
 class QueryCountTests(GameFixture):

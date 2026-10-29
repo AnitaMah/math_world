@@ -10,9 +10,11 @@ from django.urls import reverse
 from django.utils import timezone
 
 from education.ai_check import AiVerdict, FakeAiChecker, build_prompt, parse_verdict
-from education.game import lesson_tasks, merge_players, record_answer, record_solution, stars_for
-from education.models import Answer, Attempt, ContentBlock, Exercise, LessonProgress, Player, SubExercise
+from education.models import Answer, ContentBlock, Exercise, SubExercise
 from education.tests_api import LessonFixture
+
+from .models import Attempt, LessonProgress, Player
+from .services import lesson_tasks, merge_players, record_answer, record_solution, stars_for
 
 
 class GameFixture(LessonFixture):
@@ -68,7 +70,7 @@ class PointsTests(GameFixture):
         self.assertEqual((prog.solved, prog.stars), (2, 1))       # 2/3 = 67 % → ★
         Exercise.objects.create(textbook=self.tb, block=self.ex.block, number=30, order=30, is_word_problem=True)
         self.assertEqual(lesson_tasks(self.item, self.player)[-1].kind, "ai")
-        from education.game import recompute_progress
+        from .services import recompute_progress
         self.assertEqual(recompute_progress(self.player, self.item).stars, 1)
 
     def test_streak(self):

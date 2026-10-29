@@ -38,7 +38,7 @@ class AuthPagesTests(TestCase):
         self.assertNotIn('id="id_username-hint"', html)                  # підказку замінює помилка
 
     def test_signup_keeps_guest_and_goes_home(self):
-        from education.models import Player
+        from game.models import Player
         session = self.client.session
         session.save()
         guest = Player.objects.create(session_key=session.session_key, points=5)
