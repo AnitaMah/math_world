@@ -60,7 +60,7 @@ def _debug_only():
 def ui_tokens(request):
     """`/ui/tokens/` — усі токени з tokens.css плашками, острови, вузли, шрифти, контраст."""
     _debug_only()
-    return render(request, "education/ui_tokens.html", {
+    return render(request, "education/ui/tokens.html", {
         "groups": TOKEN_GROUPS,
         "pairs": CONTRAST_PAIRS,
         "islands": range(1, 6),
@@ -74,7 +74,7 @@ def ui_kit(request):
     from ..templatetags.ui import ICONS
     sec_chips = [(1, "I", "Натуральні числа"), (2, "I", "Додавання і віднімання"), (3, "I", "Множення і ділення"),
                  (4, "II", "Звичайні дроби"), (5, "II", "Десяткові дроби")]
-    return render(request, "education/ui_kit.html", {"icons": sorted(ICONS), "sec_chips": sec_chips})
+    return render(request, "education/ui/kit.html", {"icons": sorted(ICONS), "sec_chips": sec_chips})
 
 
 def progress_page(request):
@@ -97,7 +97,7 @@ def profile_page(request):
 def ui_api(request):
     """`/ui/api/` — відповіді API-клієнта й normalizeMap() (реальний бекенд або ?mock=1)."""
     _debug_only()
-    return render(request, "education/ui_api.html")
+    return render(request, "education/ui/api.html")
 
 
 def service_worker(request):

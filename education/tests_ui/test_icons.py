@@ -41,7 +41,7 @@ class IconTagTests(TestCase):
         import re
         from pathlib import Path
         from education.templatetags.ui import ICONS
-        sprite = (Path(__file__).resolve().parents[1] / "templates" / "education" / "_icons.html").read_text(encoding="utf-8")
+        sprite = (Path(__file__).resolve().parents[1] / "templates" / "education" / "partials" / "icons.html").read_text(encoding="utf-8")
         self.assertEqual(set(re.findall(r'<symbol id="i-([a-z-]+)"', sprite)), set(ICONS))
 
     @override_settings(DEBUG=True)

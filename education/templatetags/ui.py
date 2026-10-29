@@ -12,7 +12,7 @@ from django.utils.html import format_html
 
 register = template.Library()
 
-# Усі символи спрайту templates/education/_icons.html (тест звіряє список зі спрайтом)
+# Усі символи спрайту templates/education/partials/icons.html (тест звіряє список зі спрайтом)
 ICONS = frozenset({
     "star", "bolt", "flame", "play", "boat", "logo",
     "lock", "map", "chart", "user", "check", "sparkle", "close",
@@ -49,7 +49,7 @@ def _short_author(textbook):
     return author.split(",")[0].split()[0] if author else ""
 
 
-@register.inclusion_tag("education/_topbar.html", takes_context=True)
+@register.inclusion_tag("education/partials/topbar.html", takes_context=True)
 def topbar(context):
     """Верхня панель: класи предмета (вкладки), чіпи гравця (заповнює js/me.js), вхід/ім’я.
 

@@ -103,10 +103,10 @@
     <div class="kit-grid">
       <div class="card stack stack--gap-3 isl-2">
         <div class="row row--between">
-          {% include "education/_stars.html" with count=1 size=30 %}
+          {% include "education/partials/stars.html" with count=1 size=30 %}
           <span class="muted kit-small">Розв’язано 6 з 17</span>
         </div>
-        {% include "education/_progress.html" with value=6 max=17 label="Розв’язано 6 з 17" %}
+        {% include "education/partials/progress.html" with value=6 max=17 label="Розв’язано 6 з 17" %}
         <p class="muted-2 kit-tiny">★ — 30 % завдань · ★★ — 70 % · ★★★ — усі</p>
       </div>
       <div class="stack stack--gap-3">
@@ -116,15 +116,15 @@
       </div>
     </div>
     <div class="row row--gap-6 row--wrap kit-stars-demo">
-      {% include "education/_stars.html" with count=3 size=14 outline=True %}
-      {% include "education/_stars.html" with count=2 size=20 %}
-      {% include "education/_stars.html" with count=1 size=22 %}
-      {% include "education/_stars.html" with count=0 size=30 %}
+      {% include "education/partials/stars.html" with count=3 size=14 outline=True %}
+      {% include "education/partials/stars.html" with count=2 size=20 %}
+      {% include "education/partials/stars.html" with count=1 size=22 %}
+      {% include "education/partials/stars.html" with count=0 size=30 %}
     </div>
     <div class="stack stack--gap-2 isl-1">
-      {% include "education/_progress.html" with value=8 max=18 size="sm" label="8 з 18 зірок" %}
-      {% include "education/_progress.html" with value=6 max=17 size="md" label="6 з 17" %}
-      {% include "education/_progress.html" with value=0 max=0 label="Завдань немає" %}
+      {% include "education/partials/progress.html" with value=8 max=18 size="sm" label="8 з 18 зірок" %}
+      {% include "education/partials/progress.html" with value=6 max=17 size="md" label="6 з 17" %}
+      {% include "education/partials/progress.html" with value=0 max=0 label="Завдань немає" %}
     </div>
   </section>
 
@@ -147,7 +147,7 @@
         <div class="score-row isl-{{ n }}">
           <div class="score-row__head"><span class="score-row__label">{{ roman }} · §{{ n }} {{ name }}</span><span class="score-row__score">{% cycle "8 / 18 ★" "3 / 27 ★" "0 / 27 ★" "0 / 15 ★" "0 / 27 ★" %}</span></div>
           {% cycle 8 3 0 0 0 as got silent %}{% cycle 18 27 27 15 27 as total silent %}
-          {% include "education/_progress.html" with value=got max=total size="sm" %}
+          {% include "education/partials/progress.html" with value=got max=total size="sm" %}
         </div>
         {% endfor %}
       </div>

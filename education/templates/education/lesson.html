@@ -30,7 +30,7 @@
         {% endif %}
       {% endif %}
       <a class="btn btn--secondary" href="{{ map_url }}">{% icon "map" size=18 %}На мапу</a>
-      {% if is_lesson %}{% include "education/_stars.html" with count=stars size=22 %}{% endif %}
+      {% if is_lesson %}{% include "education/partials/stars.html" with count=stars size=22 %}{% endif %}
     </div>
   </header>
 
@@ -43,7 +43,7 @@
         <a class="lesson-list__link" href="{{ it.url }}">
           <span class="lesson-list__num">{{ it.obj.number }}</span>
           <span class="lesson-list__title">{{ it.title }}</span>
-          {% if it.playable %}{% include "education/_stars.html" with count=it.stars size=14 %}{% else %}<span class="lesson-list__soon">скоро</span>{% endif %}
+          {% if it.playable %}{% include "education/partials/stars.html" with count=it.stars size=14 %}{% else %}<span class="lesson-list__soon">скоро</span>{% endif %}
         </a>
       </li>
       {% endfor %}
@@ -52,7 +52,7 @@
   {% endif %}
 
   {% if blocks %}
-    {% include "education/_lesson_blocks.html" %}
+    {% include "education/partials/lesson_blocks.html" %}
   {% elif is_lesson %}
     <p class="empty-note">Теорію й вправи цього уроку ще не імпортовано з підручника.</p>
   {% endif %}

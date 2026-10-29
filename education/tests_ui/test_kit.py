@@ -33,7 +33,7 @@ class BaseTemplateTests(TestCase):
     def test_no_google_fonts_in_new_templates(self):
         from pathlib import Path
         tpl = Path(__file__).resolve().parents[1] / "templates" / "education"
-        for name in ("base.html", "ui_kit.html", "ui_tokens.html"):
+        for name in ("base.html", "ui/kit.html", "ui/tokens.html"):
             self.assertNotIn("fonts.googleapis.com", (tpl / name).read_text(encoding="utf-8"), name)
 
     def test_every_font_face_file_exists(self):

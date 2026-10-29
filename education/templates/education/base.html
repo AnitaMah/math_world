@@ -30,10 +30,10 @@
 </head>
 <body class="{% block body_class %}{% endblock %}">
   <a class="skip-link" href="#main">Перейти до вмісту</a>
-  {% include "education/_icons.html" %}
+  {% include "education/partials/icons.html" %}
   {% block topbar %}{% topbar %}{% endblock %}
   <main id="main" tabindex="-1">{% block content %}{% endblock %}</main>
-  {% block bottom_nav %}{% include "education/_bottom_nav.html" %}{% endblock %}
+  {% block bottom_nav %}{% include "education/partials/bottom_nav.html" %}{% endblock %}
   <div hidden>{% csrf_token %}</div>
   <script type="module" src="{% static 'education/js/me.js' %}"></script>
   <script type="module" src="{% static 'education/js/sw-register.js' %}"></script>

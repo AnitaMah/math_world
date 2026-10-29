@@ -1,5 +1,5 @@
 {# Прогрес-бар. Параметри: value, max, label (для скрінрідера), size = "" | "md" | "sm". #}
-{# {% include "education/_progress.html" with value=6 max=17 label="Розв’язано 6 з 17" size="md" %} #}
+{# {% include "education/partials/progress.html" with value=6 max=17 label="Розв’язано 6 з 17" size="md" %} #}
 <div class="progress{% if size %} progress--{{ size }}{% endif %}" role="progressbar"
      aria-valuemin="0" aria-valuemax="{{ max|default:0 }}" aria-valuenow="{{ value|default:0 }}"{% if label %} aria-label="{{ label }}"{% endif %}>
   <div class="progress__fill" style="--p: {% if max %}{% widthratio value max 100 %}{% else %}0{% endif %}%"></div>
