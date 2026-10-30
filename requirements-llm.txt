@@ -1,7 +1,5 @@
 # Локальна генерація контенту і картинок (tools/llm/,
 # команда generate_item_content). Необов'язково, дуже важке: torch займає кілька ГБ.
-celery
-redis
 requests
 diffusers
 transformers
