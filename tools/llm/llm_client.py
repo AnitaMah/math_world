@@ -82,7 +82,7 @@ def _send_gemini_prompt(prompt: str, image_path: str = None) -> str:
     prompt/зображенням не витрачає денну квоту повторно.
     """
     try:
-        from scripts.gemini_client import GeminiClient, GeminiBudgetExceeded
+        from tools.llm.gemini_client import GeminiClient, GeminiBudgetExceeded
     except ImportError as e:
         return f"❌ Не вдалося завантажити Gemini-клієнт: {e}"
 
