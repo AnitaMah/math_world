@@ -2364,6 +2364,18 @@ _Мета: перевірити, що пайплайн справді уніве
 
 _Мета: прибрати дублікати після того, як новий пайплайн повністю замінив старий._
 
+**Примітка (2026-10-30):** перевірено через `find`/`grep` по всьому репо — жодного з файлів
+нижче (`content_classifier.py`, `math_heuristic.py`, `import_content_blocks.py`,
+`scripts/render_pdf_pages.py`, `scripts/ocr_pages.py`, `scripts/classify_content.py`,
+`scripts/inspect_item.py`, `Claude outputs/classify_content.py`, старий `scripts/gemini_client.py`)
+уже не існує — кроки 1909–1940, 1942 закриті (видалено ще до цього сеансу рефакторингу,
+просто без позначки `[x]` тут). Із решти: `toc_parser.py` (1941) і далі активно
+використовується `import_curriculum`/`parse_textbook` — лишено свідомо, не замінено
+структурою пайплайна. Долю `Lesson`/`TheoryPractice` (1945) вирішено в `docs/backend/DECISIONS.md`
+(сесії 1, 9): `Lesson` видалено, `TheoryPractice` лишено — власник ще користується
+`generate_item_content`. Старий `review/` з фікстурами (1943–1944) на диску не знайдено;
+`tools/llm/gemini_client.py`'s `review/gemini_cache` — це сьогоднішній кеш-шлях за
+замовчуванням, інша річ з тим самим ім'ям, не той старий кеш, про який цей пункт.
 
 ### 25.1
 
