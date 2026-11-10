@@ -109,8 +109,9 @@ Three Django apps, split by domain (`docs/backend/DECISIONS.md` has the full rea
 ```
 education/          curriculum catalog + PDF import + review (the "core" app)
   models.py          curriculum data model (textbooks, sections, exercises, content blocks)
-  api.py, serializers.py, api_urls.py   catalog JSON API
-  services.py, review.py, views_review.py   answer checking, manual review workflow
+  api/               catalog JSON API (views, serializers, urls)
+  views/             UI views (ui, review, context)
+  services.py, review.py   answer checking, manual review workflow
   pdf_pipeline/      PDF → JSON pipeline (OCR, layout, structure, vision, validation)
   importers/         JSON → database import
   management/commands/   import, export, backup/restore, review tools
@@ -120,6 +121,7 @@ game/                player progress, points, stars, streaks (depends on the cat
   models.py, services.py, api.py, urls.py, serializers.py
 docs/                design decisions, plans and pipeline documentation
 tools/frontend/      JS unit tests and Playwright visual tests
+tools/llm/           optional local/cloud LLM content generation helpers
 ```
 
 ## Copyright note
